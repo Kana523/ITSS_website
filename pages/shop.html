@@ -1,0 +1,227 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="../assets/images/icons/itssfav.ico" type="image/x-icon">
+  <link rel="stylesheet" href="../assets/styling/css/base.css">
+  <link rel="stylesheet" href="../assets/styling/css/shop.css">
+
+  <script src="../assets/js/shop-filter.js" defer></script>
+  <script src="../assets/js/legal-notice.js" defer></script>
+
+  <title>ITS-S Store</title>
+</head>
+
+<body>
+
+  <div class="page">
+    <header>
+      <div class="container-logo">
+        <img src="../assets/images/icons/itss.png" alt="CorpLogo">
+          <div class="container-logo-name-motto">
+            <div class="logo-name">Interstellar Systems</div>
+            <p>Organically grown space boats!</p>
+          </div>
+      </div>
+
+      <nav>
+        <a href="home.html">Home</a>
+        <a href="about.html">About</a>
+        <a href="about.html">Accesibility</a>
+      </nav>
+    </header>
+
+    <h1 style="align-self: center;">STORE</h1>
+
+    <div class="grid-container">
+      <!-- Top bar spanning full width -->
+      <div class="top-bar">
+        <div class="top-bar-panel top-bar-panel--discounts">
+          <p class="top-bar-headline">Current Discounts</p>
+          <h2 class="top-bar-kicker">10% off all cruisers this week.</h2>
+        </div>
+
+        <div class="top-bar-panel top-bar-panel--buyback">
+          <p class="top-bar-headline">Buyback</p>
+          <p class="top-bar-kicker">Looking to sell materials? evemail Neo Achasse or</p>
+          <a class="buy-button top-bar-button" href="buyback.html">Go to Buyback</a>
+        </div>
+      </div>
+
+  <!-- Left column: filters -->
+  <aside class="filter">
+    <p class="title" style="text-align: center;">Filters</p>
+
+    <form class="filter-form" id="shop-filters" autocomplete="off">
+
+      <label class="filter-option">
+        <input type="checkbox" data-parent value="instock">
+        In Stock
+      </label>
+
+      <label class="filter-option">
+        <input type="checkbox" data-parent value="boats">
+        Boats
+      </label>
+
+      <label class="filter-option">
+        <input type="checkbox" data-parent value="modules">
+        Modules
+      </label>
+
+      <div class="filter-group">
+  <div class="filter-row">
+    <input id="filter-materials" type="checkbox" value="materials" data-parent>
+    <label for="filter-materials" class="filter-label filter-label--dropdown">Materials</label>
+
+    <button
+      type="button"
+      class="filter-toggle"
+      aria-controls="materials-sub"
+      aria-expanded="false"
+      aria-label="Toggle Materials sub-filters"
+    ></button>
+  </div>
+
+  <div id="materials-sub" class="filter-sub" hidden>
+    <label><input type="checkbox" value="materials:moon" data-child> Moon</label>
+    <label><input type="checkbox" value="materials:ore" data-child> Ore</label>
+    <label><input type="checkbox" value="materials:planetary" data-child> Planetary</label>
+  </div>
+</div>
+
+      <label class="filter-option">
+        <input type="checkbox" data-parent value="blueprints">
+        Blueprints
+      </label>
+
+      <label class="filter-option">
+        <input type="checkbox" data-parent value="other">
+        Other stuff
+      </label>
+
+      <button type="button" class="buy-button" id="filter-clear"><p>Clear</p></button>
+    </form>
+  </aside>
+
+  <!-- Right column: main display / products -->
+  <section class="display">
+
+    <div class="item-card" data-category="boats">
+
+        <div class="item-card-image">
+          <p class="title">Enriched Uranium</p>
+          <p class="type">Materials</p>
+        </div>
+        
+        <div class="item-card-text">
+          <img src="../assets/images/items/planetary/uranium-upscaled-pixelbin.png" alt="zirnitra">
+
+          <div class="text">
+            <p><span class="label">Stock:</span> 3</p>
+            <p><span class="label">New Stock:</span> 10. Dec. (x10)</p>
+            <p><span class="label">Price:</span> 5.8bil</p>
+            <div class="item-card-actions">
+              <div class="stock-state"> <!-- TODO add hover effect when new stock is available.-->
+                <img class="stock-state-icon" src="../assets/images/icons/chatgpt_stocks.png" alt="" aria-hidden="true">
+                <span class="stock-state-count">3</span>
+              </div>
+              <div class="buy-button">
+                <p>BUY</p> <!-- Turns this into a link later-->
+              </div>
+            </div>
+          </div>
+        </div>
+    </div>
+
+    <div class="item-card" data-category="materials">
+
+        <div class="item-card-image">
+          <p class="title">Zirnitra</p>
+          <p class="type">Capital Ship</p>
+        </div>
+        
+        <div class="item-card-text">
+          <img src="../assets/images/items/ships/zirnitra-render-128.jpg" alt="zirnitra">
+
+          <div class="text">
+            <p><span class="label">New Stock:</span> 10. Dec. (x10)</p>
+            <p><span class="label">Stock:</span> 0</p>
+            <p>Price: 5.8bil</p>
+            <div class="item-card-actions">
+              <div class="stock-state">
+                <img class="stock-state-icon" src="../assets/images/icons/chatgpt_stocks.png" alt="" aria-hidden="true">
+                <span class="stock-state-count">0</span>
+              </div>
+              <div class="buy-button">
+                <p>BUY</p> <!-- Turns this into a link later-->
+              </div>
+            </div>
+          </div>
+        </div>
+    </div>
+
+    <div class="item-card" data-category="materials" data-sub="planetary">
+
+      <div class="item-card-image-text">
+
+        <div class="item-card-image">
+          <p class="title">Looking to build it? Also on buying section become regular supplier</p>
+          <img src="../assets/images/items/ships/zirnitra-render-128.jpg" alt="zirnitra">
+        </div>
+        
+        <div class="item-card-text">
+
+          <div class="buy-button">
+            <p>Go to blueprint section</p> <!-- Turns this into a link later-->
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+    <footer>
+      <p>
+        EVE Online and the EVE logo are the registered trademarks of CCP hf.
+        All rights are reserved worldwide.
+        This material is used with limited permission of CCP Games.
+        No official affiliation or endorsement by CCP Games is stated or implied.
+
+        <button
+          type="button"
+          id="ccp-legal-trigger"
+          class="ccp-legal-trigger"
+          aria-describedby="ccp-legal-tooltip"
+        >
+          Full legal notice
+        </button>
+      </p>
+
+      <!-- Tooltip bubble -->
+      <div id="ccp-legal-tooltip" class="ccp-legal-tooltip" role="tooltip">
+        EVE Online and the EVE logo are the registered trademarks of CCP hf. 
+        All rights are reserved worldwide. 
+        All other trademarks are the property of their respective owners. 
+        EVE Online, the EVE logo, EVE and all associated logos and designs 
+        are the intellectual property of CCP hf. All artwork, screenshots, 
+        characters, vehicles, storylines, world facts or other recognizable 
+        features of the intellectual property relating to these trademarks 
+        are likewise the intellectual property of CCP hf. CCP hf. has granted 
+        permission to Interstellar Systems to use EVE Online and all associated logos 
+        and designs for promotional and information purposes on its website 
+        but does not endorse, and is not in any way affiliated with, Interstellar Systems. 
+        CCP is in no way responsible for the content on or functioning of this website, 
+        nor can it be liable for any damage arising from the use of this website.
+      </div>
+    </footer>
+  </div>
+</body>
+</html>
+
+
+
+
+

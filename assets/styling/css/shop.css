@@ -1,0 +1,271 @@
+﻿header {
+    padding: 0 10px 0 0;
+}
+
+.grid-container {
+    display: grid;
+    flex: 1;
+    grid-template-rows: auto 1fr;
+    grid-template-columns: 200px minmax(0, 1fr);
+    grid-template-areas:
+        "top-bar top-bar"
+        "filter display";
+    gap: 18px;
+    overflow: visible;
+}
+
+.top-bar {
+  grid-area: top-bar;
+  display: flex;
+  background: transparent;
+  box-shadow: 0 0 24px rgba(0, 0, 0, 0.22);
+}
+
+.top-bar-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+}
+
+.top-bar-panel--discounts {
+  flex: 1 1;
+  display: flex;
+  align-items: center;
+}
+
+.top-bar-panel--buyback {
+  flex: 1 1;
+  align-items: center;
+  padding-left: 18px;
+}
+
+.top-bar-kicker {
+  font-family: 'Roboto';
+  font-size: 0.78rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.top-bar-headline {
+  font-size: 1.55rem;
+  line-height: 1.1;
+}
+
+.top-bar-copy {
+  max-width: 38ch;
+}
+
+.top-bar-button {
+  margin-top: 6px;
+  min-width: 156px;
+  text-decoration: none;
+}
+
+.filter {
+  display: flex;
+  flex-direction: column;
+  grid-area: filter;
+  padding: 10px;
+  align-items: center;
+}
+
+.display {
+  grid-area: display;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  justify-content: space-evenly;
+}
+
+/*Card CSS */
+.item-card {
+  display: flex;
+  flex-direction: column;
+  border: 4px solid transparent;
+  padding: 5px;
+  border-image: linear-gradient(to bottom, #d9b775, #6b5939) 1;
+}
+
+.item-card-image {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.title {
+  font-size: 28px;
+  font-weight: bold;
+  max-width: 350px;
+}
+
+.type {
+  margin-bottom: auto;
+}
+
+.item-card-text {
+  display: flex;
+  font-size: large;
+  gap: 5px;
+}
+
+/* 128x128px product icons */
+.item-card-text > img{
+  width: 128px;
+  height: 128px;
+  flex: 0 0 64px;      /* donâ€™t shrink in flex */
+  object-fit: contain; /* keep aspect if any odd icons */
+  display: block;
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+}
+
+.label{
+  font-weight: 700;
+}
+
+.item-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: auto;
+  align-self: flex-end;
+}
+
+.stock-state {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px 3px 6px;
+  border: 1px solid rgba(255, 215, 138, 0.28);
+  border-radius: 999px;
+  background: rgba(10, 12, 18, 0.45);
+}
+
+.stock-state-icon {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  display: block;
+}
+
+.stock-state-count {
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1;
+  background: linear-gradient(to bottom, #FFDD9C, #AB9061);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ===== Filter dropdown (Materials -> Moon/Ore/Planetary) ===== */
+.filter-form{
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+}
+
+.filter-option{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  user-select: none;
+}
+
+.filter-group{
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.filter-row{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.filter-label--dropdown{
+  cursor: pointer;
+  user-select: none;
+}
+
+/* the arrow button */
+.filter-toggle{
+  margin-left: auto;
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,215,138,.25);
+  background: rgba(10,12,18,.70);
+  cursor: pointer;
+  position: relative;
+}
+
+/* chevron */
+.filter-toggle::before{
+  content: "";
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid rgba(233,227,214,.85);
+  border-bottom: 2px solid rgba(233,227,214,.85);
+  transform: rotate(45deg);
+}
+
+.filter-toggle.open::before{
+  transform: rotate(-135deg);
+}
+
+.filter-sub{
+  margin-left: 28px; /* lines up under the label (adjust if needed) */
+  display: grid;
+  gap: 2px;
+}
+
+/* Ensure hidden actually hides even if .filter-sub sets display */
+.filter-sub[hidden]{
+  display: none !important;
+}
+
+.display .buy-button{
+  margin-top: auto;
+  align-self: flex-end;
+}
+
+.item-card-actions .buy-button {
+  margin-top: 0;
+  align-self: auto;
+}
+@media (max-width: 780px) {
+  .grid-container {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "top-bar"
+      "filter"
+      "display";
+  }
+
+  .top-bar {
+    flex-direction: column;
+  }
+
+  .top-bar-panel--buyback {
+    max-width: none;
+    padding-left: 0;
+    padding-top: 14px;
+    border-left: none;
+    border-top: 1px solid rgba(255, 215, 138, 0.18);
+  }
+
+  .filter {
+    align-items: stretch;
+  }
+}

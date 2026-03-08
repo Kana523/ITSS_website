@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="../assets/images/icons/itssfav.ico" type="image/x-icon">
+  <link rel="stylesheet" href="../assets/styling/css/base.css">
+  <link rel="stylesheet" href="../assets/styling/css/home.css">
+
+  <script src="../assets/js/legal-notice.js" defer></script>
+  
+  <title>ITS-S Home</title>
+  
+</head>
+
+<!--Fonts to use: Roboto, Courier New...
+      Complete home page, Home page: News, discounts, upcoming, etc etc. add header on top, footer bottom, nav under header, re-organise content a bit
+            shopping cart function, add to cart, emails, removes from site etc. removes from stock
+            Buy/reserve button next to boat on home page
+
+            ADD disclaimer in the footer, eve is ownership etc etc.
+
+      Add script functionality, imports from spreadsheet, dynamic, database
+
+      Ships>Capital, Subcapital>buying-selling-pre order all in one
+
+      Blueprints> BPCs> Packs
+
+      WILD PROJECT: WEBSITE MARKETPLACE & APPRAISAL
+
+      Switch for readability mode
+
+      create a "news" page
+-->
+
+<body>
+  <div class="page">
+    <header>
+      <div class="container-logo">
+        <img src="../assets/images/icons/itss.png" alt="CorpLogo">
+          <div class="container-logo-name-motto">
+            <div class="logo-name">Interstellar Systems</div>
+            <p>Organically grown space boats!</p>
+          </div>
+      </div>
+
+      <nav>
+        <a href="shop.html">Shop</a>
+        <a href="about.html">About</a>
+        <a href="pages/about.html">Accesibility</a>
+      </nav>
+    </header>
+
+    <main>
+      <article>
+        <h1>Highlights</h1>
+
+        <div class="container-highlights">
+
+          <div class="container-highlights-item">
+            <h2>Enriched Uranium</h2>
+            <img src="../assets/images/items/ships/zirnitra-render-128.jpg" alt="zirnitra">
+            <p>Stock: 3</p>
+            <p>New Stock on: 10. Dec. (x3)</p>
+            <p>Price: 5.8bil</p>
+            <div class="buy-button">
+              <a href="shop.html">BUY</a> <!-- Turns this into a link later-->
+            </div>
+          </div>
+
+          <div class="container-highlights-item">
+            <h2>Zirnitra</h2>
+            <img src="../assets/images/items/ships/zirnitra-render-128.jpg" alt="zirnitra">
+            <p>Stock: 3</p>
+            <p>New Stock on: 10. Dec. (x3)</p>
+            <p>Price: 5.8bil</p>
+            <div class="buy-button">
+              <a href="shop.html">BUY</a> <!-- Turns this into a link later-->
+            </div>
+          </div>
+
+          <div class="container-highlights-item">
+            <h2>Zirnitra</h2>
+            <img src="../assets/images/items/ships/zirnitra-render-128.jpg" alt="zirnitra">
+            <p>Stock: 3</p>
+            <p>New Stock on: 10. Dec. (x3)</p>
+            <p>Price: 5.8bil</p>
+            <div class="buy-button">
+              <a href="shop.html">BUY</a> <!-- Turns this into a link later-->
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <div class="go-shop-wrapper">
+        <a href="pages/shop.html" class="go-shop-btn">Go to shop</a>
+      </div>
+
+      <article style="margin-top: 50px;">
+        <h1>Sell your materials</h1>
+
+        <div class="container-highlights">
+
+          <div class="container-highlights-item">
+            <h2>Enriched Uranium</h2>
+            <img src="../assets/images/items/planetary/enriched-uranium.png" alt="zirnitra">
+            <p>Stock: 157,329</p>
+            <p>Price(ea): 11,200</p>
+            <div class="buy-button">
+              <a href="shop.html">SELL</a> <!-- Turns this into a link later-->
+            </div>
+          </div>
+    
+          <div class="container-highlights-item">
+            <h2>Why is the Rum gone?</h2>
+            <img src="../assets/images/items/rum.png" alt="zirnitra">
+            <p>Stock: 0</p>
+            <p>Price(ea): Priceless!</p>
+            <div class="buy-button">
+              <a href="shop.html">SELL</a> <!-- Turns this into a link later-->
+            </div>
+          </div>
+    
+          <div class="container-highlights-item">
+            <h2>Enriched Uranium</h2>
+            <img src="../assets/images/items/planetary/enriched-uranium.png" alt="zirnitra">
+            <p>Stock: 157,329</p>
+            <p>Price(ea): 11,200</p>
+            <div class="buy-button">
+              <a href="shop.html">SELL</a> <!-- Turns this into a link later-->
+            </div>
+          </div>
+        </div>
+      </article>
+    </main>
+
+    <section class="container-evemail">
+      <div class="requests">Or evemail Neo Achasse (Karmafleet), if you prefer that way.</div>
+    </section>
+
+    <footer>
+      <p>
+        EVE Online and the EVE logo are the registered trademarks of CCP hf.
+        All rights are reserved worldwide.
+        This material is used with limited permission of CCP Games.
+        No official affiliation or endorsement by CCP Games is stated or implied.
+
+        <button
+          type="button"
+          id="ccp-legal-trigger"
+          class="ccp-legal-trigger"
+          aria-describedby="ccp-legal-tooltip"
+        >
+          Full legal notice
+        </button>
+      </p>
+
+      <!-- Tooltip bubble -->
+      <div id="ccp-legal-tooltip" class="ccp-legal-tooltip" role="tooltip">
+        EVE Online and the EVE logo are the registered trademarks of CCP hf. 
+        All rights are reserved worldwide. 
+        All other trademarks are the property of their respective owners. 
+        EVE Online, the EVE logo, EVE and all associated logos and designs 
+        are the intellectual property of CCP hf. All artwork, screenshots, 
+        characters, vehicles, storylines, world facts or other recognizable 
+        features of the intellectual property relating to these trademarks 
+        are likewise the intellectual property of CCP hf. CCP hf. has granted 
+        permission to Interstellar Systems to use EVE Online and all associated logos 
+        and designs for promotional and information purposes on its website 
+        but does not endorse, and is not in any way affiliated with, Interstellar Systems. 
+        CCP is in no way responsible for the content on or functioning of this website, 
+        nor can it be liable for any damage arising from the use of this website.
+      </div>
+    </footer>
+  </div>
+</body>
+</html>
