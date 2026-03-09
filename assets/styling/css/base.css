@@ -47,6 +47,10 @@ header a {
   font-size: larger;
 }
 
+a {
+  text-decoration: none;
+}
+
 nav {
     display: flex;
     gap: 10px;

@@ -37,7 +37,6 @@
 .top-bar-panel--buyback {
   flex: 1 1;
   align-items: center;
-  padding-left: 18px;
 }
 
 .top-bar-kicker {
@@ -45,21 +44,6 @@
   font-size: 0.78rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-}
-
-.top-bar-headline {
-  font-size: 1.55rem;
-  line-height: 1.1;
-}
-
-.top-bar-copy {
-  max-width: 38ch;
-}
-
-.top-bar-button {
-  margin-top: 6px;
-  min-width: 156px;
-  text-decoration: none;
 }
 
 .filter {
@@ -147,8 +131,8 @@
 }
 
 .stock-state-icon {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   object-fit: contain;
   display: block;
 }
