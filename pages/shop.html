@@ -55,7 +55,7 @@
   <aside class="filter">
     <p class="title" style="text-align: center;">Filters</p>
 
-    <form class="filter-form" id="shop-filters" autocomplete="off">
+    <form class="filter-form" autocomplete="off">
 
       <label class="filter-option">
         <input type="checkbox" data-parent value="instock">
@@ -75,7 +75,7 @@
       <div class="filter-group">
         <div class="filter-row">
           <input id="filter-materials" type="checkbox" value="materials" data-parent>
-          <label for="filter-materials" class="filter-label filter-label--dropdown">Materials</label>
+          <label for="filter-materials" class="filter-label--dropdown">Materials</label>
 
           <button
             type="button"
@@ -111,70 +111,69 @@
   <section class="display">
 
     <div class="item-card" data-category="materials" data-sub="planetary">
+      <img src="../assets/images/items/planetary/uranium-upscaled-pixelbin.png" alt="Enriched Uranium">
 
-        <div class="item-card-image">
-          <p class="title">Enriched Uranium</p>
-        </div>
-        
-        <div class="item-card-text">
-          <img src="../assets/images/items/planetary/uranium-upscaled-pixelbin.png" alt="zirnitra">
+      <div class="text">
+        <p class="title">Enriched Uranium</p>
 
-          <div class="text">
-            <p class="type">Materials</p>
-            <p><span class="label">Price:</span> 5.8bil</p>
-            <div class="item-card-actions">
-              <div class="stock-state"> <!-- TODO add hover effect when new stock is available.-->
-                <img class="stock-state-icon" src="../assets/images/icons/chatgpt_stocks.png" alt="" aria-hidden="true">
-                <span class="stock-state-count">3</span>
-              </div>
-              <div class="buy-button">
-                <p>BUY</p> <!-- Turns this into a link later-->
-              </div>
-            </div>
+        <div class="item-card-meta">
+          <p class="type">Materials</p>
+
+          <div class="stock-state"> <!-- TODO add hover effect when new stock is available. -->
+            <img class="stock-state-icon" src="../assets/images/icons/chatgpt_stocks.png" alt="" aria-hidden="true">
+            <span class="stock-state-count">3</span>
+          </div>
+
+          <p class="item-price"><span class="label">Price:</span> 5.8bil</p>
+
+          <div class="buy-button">
+            <p>BUY</p> <!-- Turns this into a link later -->
           </div>
         </div>
-    </div>
-
-    <div class="item-card" data-category="boats">
-
-        <div class="item-card-image">
-          <p class="title">Zirnitra</p>
-          <p class="type">Capital Ship</p>
-        </div>
-        
-        <div class="item-card-text">
-          <img src="../assets/images/items/ships/zirnitra-render-128.jpg" alt="zirnitra">
-
-          <div class="text">
-            <p><span class="label">New Stock:</span> 10. Dec. (x10)</p>
-            <p><span class="label">Stock:</span> 0</p>
-            <p>Price: 5.8bil</p>
-            <div class="item-card-actions">
-              <div class="stock-state">
-                <img class="stock-state-icon" src="../assets/images/icons/chatgpt_stocks.png" alt="" aria-hidden="true">
-                <span class="stock-state-count">0</span>
-              </div>
-              <div class="buy-button">
-                <p>BUY</p> <!-- Turns this into a link later-->
-              </div>
-            </div>
-          </div>
-        </div>
+      </div>
     </div>
 
     <div class="item-card" data-category="materials" data-sub="planetary">
+      <img src="../assets/images/items/planetary/uranium-upscaled-pixelbin.png" alt="Enriched Uranium">
 
-      <div class="item-card-image-text">
+      <div class="text">
+        <p class="title">Enriched Uranium</p>
 
-        <div class="item-card-image">
-          <p class="title">Looking to build it? Also on buying section become regular supplier</p>
-          <img src="../assets/images/items/ships/zirnitra-render-128.jpg" alt="zirnitra">
-        </div>
-        
-        <div class="item-card-text">
+        <div class="item-card-meta">
+          <p class="type">Materials</p>
+
+          <div class="stock-state"> <!-- TODO add hover effect when new stock is available. -->
+            <img class="stock-state-icon" src="../assets/images/icons/chatgpt_stocks.png" alt="" aria-hidden="true">
+            <span class="stock-state-count">3</span>
+          </div>
+
+          <p class="item-price"><span class="label">Price:</span> 5.8bil</p>
 
           <div class="buy-button">
-            <p>Go to blueprint section</p> <!-- Turns this into a link later-->
+            <p>BUY</p> <!-- Turns this into a link later -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="item-card" data-category="boats">
+      <img src="../assets/images/items/ships/zirnitra-render-128.jpg" alt="Zirnitra">
+
+      <div class="text">
+        <p class="title">Zirnitra</p>
+
+        <div class="item-card-meta">
+          <p class="type">Capital Ship</p>
+
+          <div class="stock-state">
+            <img class="stock-state-icon" src="../assets/images/icons/chatgpt_stocks.png" alt="" aria-hidden="true">
+            <span class="stock-state-count">0</span>
+          </div>
+
+          <p class="item-price"><span class="label">Price:</span> 5.8bil</p>
+
+          <div class="buy-button">
+            <p>BUY</p> <!-- Turns this into a link later -->
           </div>
         </div>
       </div>
@@ -220,6 +219,10 @@
   </div>
 </body>
 </html>
+
+
+
+
 
 
 
