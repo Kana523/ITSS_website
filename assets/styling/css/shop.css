@@ -69,6 +69,7 @@
   border: 4px solid transparent;
   padding: 5px;
   border-image: linear-gradient(to bottom, #d9b775, #6b5939) 1;
+  min-width: 350px;
 }
 
 .item-card-image {
@@ -219,15 +220,6 @@
   display: none !important;
 }
 
-.display .buy-button{
-  margin-top: auto;
-  align-self: flex-end;
-}
-
-.item-card-actions .buy-button {
-  margin-top: 0;
-  align-self: auto;
-}
 @media (max-width: 780px) {
   .grid-container {
     grid-template-columns: 1fr;
