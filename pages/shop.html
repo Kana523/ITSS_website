@@ -46,16 +46,17 @@
     <h1 style="align-self: center;">STORE</h1>
 
     <div class="grid-container">
+
       <!-- Top bar spanning full width -->
       <div class="top-bar">
-        <div class="top-bar-panel top-bar-panel--discounts">
-          <h2 class="title">Active Promotions</h2>
-          <p class="top-bar-kicker">10% off all cruisers this week.</p>
+        <div class="top-bar-panel top-bar-panel-section">
+          <h2>Active Promotions</h2>
+          <p>10% off all cruisers this week.</p>
         </div>
 
-        <div class="top-bar-panel top-bar-panel--buyback">
-          <h2 class="title">Trade</h2>
-          <p class="top-bar-kicker">Bring Materials?</p>
+        <div class="top-bar-panel top-bar-panel-section">
+          <h2>Trade</h2>
+          <p>Bring Materials?</p>
           <div class="buy-button">
             <a href="buyback.html">TAKE COIN</a>
           </div>
@@ -68,7 +69,7 @@
 
     <form class="filter-form" autocomplete="off">
 
-      <label class="filter-option">
+      <label>
         <input type="checkbox" data-parent value="instock">
         In Stock
       </label>
@@ -100,16 +101,43 @@
   <section class="display">
 
     <div class="item-card" data-category="materials" data-sub="planetary">
+        <h2>Capital Ancillary Current Router II</h2>
+
+        <p>Materials</p>
+
+      <img src="../assets/images/items/minerals/tritanium-128.png" alt="Tritanium image">
+
+      <div class="text">
+        <div class="item-card-footer">
+          <p><strong>Price:</strong> 6.4mil</p>
+
+          <div class="stock-state" aria-label="In stock: 12"> <!--TODO add a script that changes this stock number based on stock-->
+            <!-- TODO add a hover option of when next stock is available-->
+            <img src="../assets/images/icons/chatgpt_stocks.png" alt="stock icon" aria-hidden="true">
+            <p class="stock-state-count" aria-hidden="true">12</p>
+          </div>
+        </div>
+
+        <div class="buy-button">
+          <p>BUY</p> <!-- Turns this into a link later -->
+        </div>
+      </div>
+    </div>
+
+
+    
+
+    <div class="item-card" data-category="materials" data-sub="planetary">
       <div class="item-card-head">
-        <h3 class="title">Tritanium</h3>
-        <p class="type">Materials</p>
+        <h3>Capital Ancillary Current Router II</h3>
+        <p>Materials</p>
       </div>
 
       <img src="../assets/images/items/minerals/tritanium-128.png" alt="Tritanium image">
 
       <div class="text">
         <div class="item-card-footer">
-          <p class="item-price"><span class="label">Price:</span> 6.4mil</p>
+          <p class="item-price"><b>Price:</b> 6.4mil</p>
 
           <div class="stock-state">
             <!-- TODO add a hover option of when next stock is available-->
@@ -120,54 +148,6 @@
 
         <div class="buy-button buy-button--full">
           <p>BUY</p> <!-- Turns this into a link later -->
-        </div>
-      </div>
-    </div>
-
-    <div class="item-card" data-category="materials" data-sub="planetary">
-      <div class="item-card-head">
-        <p class="title">Tritanium</p>
-        <p class="type">Materials</p>
-      </div>
-
-      <img src="../assets/images/items/minerals/tritanium-128.png" alt="Tritanium">
-
-      <div class="text">
-        <div class="item-card-footer">
-          <p class="item-price"><span class="label">Price:</span> 6.4mil</p>
-
-          <div class="stock-state">
-            <img class="stock-state-icon" src="../assets/images/icons/chatgpt_stocks.png" alt="" aria-hidden="true">
-            <span class="stock-state-count">8</span>
-          </div>
-        </div>
-
-        <div class="buy-button buy-button--full">
-          <p>BUY</p> <!-- Turn this into a link later -->
-        </div>
-      </div>
-    </div>
-
-    <div class="item-card" data-category="materials" data-sub="planetary">
-      <div class="item-card-head">
-        <p class="title">Tritanium</p>
-        <p class="type">Materials</p>
-      </div>
-
-      <img src="../assets/images/items/ships/zirnitra-render-128.jpg" alt="Zirnitra image">
-
-      <div class="text">
-        <div class="item-card-footer">
-          <p class="item-price"><span class="label">Price:</span> 6.4mil</p>
-
-          <div class="stock-state">
-            <img class="stock-state-icon" src="../assets/images/icons/chatgpt_stocks.png" alt="" aria-hidden="true">
-            <span class="stock-state-count">0</span>
-          </div>
-        </div>
-
-        <div class="buy-button buy-button--full">
-          <p>BUY</p> <!-- Turn this into a link later -->
         </div>
       </div>
     </div>
