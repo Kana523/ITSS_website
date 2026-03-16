@@ -28,6 +28,15 @@
   gap: 5px;
 }
 
+.top-bar-panel-section--promo {
+  flex-direction: row;
+}
+
+.promo-copy {
+  display: flex;
+  flex-direction: column;
+}
+
 .display {
   grid-area: display;
   display: flex;
