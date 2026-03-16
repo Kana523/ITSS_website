@@ -19,20 +19,14 @@
   display: flex;
 }
 
-.top-bar-panel {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 5px;
-}
-
 .top-bar-panel-section {
   flex: 1 1;
   display: flex;
   align-items: center;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
 }
-
-
 
 .display {
   grid-area: display;
@@ -108,11 +102,7 @@
 .filter-row{
   display: flex;
   align-items: center;
-}
-
-.filter-label--dropdown{
-  cursor: pointer;
-  user-select: none;
+  gap: 5px;
 }
 
 /* the arrow button */
@@ -162,22 +152,6 @@
       "top-bar"
       "filter"
       "display";
-  }
-
-  .top-bar {
-    flex-direction: column;
-  }
-
-  .top-bar-panel--buyback {
-    max-width: none;
-    padding-left: 0;
-    padding-top: 14px;
-    border-left: none;
-    border-top: 1px solid rgba(255, 215, 138, 0.18);
-  }
-
-  .filter {
-    align-items: stretch;
   }
 }
 
