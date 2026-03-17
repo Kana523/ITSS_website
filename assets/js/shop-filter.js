@@ -6,51 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const childCbs  = Array.from(document.querySelectorAll(".filter input[data-child]"));
 
   const clearBtn = document.getElementById("filter-clear");
-  const activeFiltersEl = document.getElementById("active-filters");
   const resultsCountEl = document.getElementById("results-count");
-
-  function labelForCheckbox(cb) {
-    const id = cb.id || "";
-    if (id) {
-      const linkedLabel = document.querySelector(`label[for="${id}"]`);
-      if (linkedLabel) return linkedLabel.textContent.trim();
-    }
-
-    const wrappingLabel = cb.closest("label");
-    if (wrappingLabel) {
-      return wrappingLabel.textContent.replace(/\s+/g, " ").trim();
-    }
-
-    return (cb.value || "").replace(/[:\-]+/g, " ").trim();
-  }
-
-  function renderActiveFilterChips(activeParentBoxes, activeChildBoxes) {
-    if (!activeFiltersEl) return;
-    activeFiltersEl.innerHTML = "";
-
-    const activeBoxes = [...activeParentBoxes, ...activeChildBoxes];
-    if (activeBoxes.length === 0) {
-      const empty = document.createElement("span");
-      empty.className = "active-filters-empty";
-      empty.textContent = "None";
-      activeFiltersEl.appendChild(empty);
-      return;
-    }
-
-    activeBoxes.forEach((cb) => {
-      const label = labelForCheckbox(cb);
-      const chip = document.createElement("button");
-      chip.type = "button";
-      chip.className = "filter-chip";
-      chip.textContent = `${label} x`;
-      chip.setAttribute("aria-label", `Remove filter ${label}`);
-      chip.addEventListener("click", () => {
-        cb.checked = false;
-        applyFilters();
-      });
-      activeFiltersEl.appendChild(chip);
-    });
-  }
 
   function inferCategory(card) {
     const explicit = (card.dataset.category || "").trim().toLowerCase();
@@ -141,7 +97,6 @@ document.addEventListener("DOMContentLoaded", () => {
       resultsCountEl.textContent = `Showing ${shownCount} ${noun}`;
     }
 
-    renderActiveFilterChips(activeParentBoxes, activeChildBoxes);
   }
 
   // --- Filter dropdown toggles (arrow only) ---
