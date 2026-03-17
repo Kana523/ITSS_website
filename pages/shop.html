@@ -134,11 +134,21 @@
 
       <button type="button" class="buy-button" id="filter-clear">Clear</button>
     </form>
+
+    <section class="active-filters-panel" aria-label="Active filters">
+      <p class="active-filters-title">Active Filters</p>
+      <div id="active-filters" class="active-filters-list">
+        <span class="active-filters-empty">None</span>
+      </div>
+    </section>
+
+    <div class="display-meta">
+      <p id="results-count" class="results-count" aria-live="polite">Showing 0 items</p>
+    </div>
   </aside>
 
   <!-- Right column: main display / products -->
   <section class="display">
-
     <div class="item-card" data-category="materials" data-sub="planetary">
         <h2>Capital Ancillary Current Router II</h2>
 
