@@ -59,7 +59,7 @@
 
         <div class="top-bar-panel-section">
           <h2>Trade</h2>
-          <p>Bring Materials?</p>
+          <p>Bring Materials!</p>
           <div class="buy-button">
             <a href="buyback.html">TAKE COIN</a>
           </div>
@@ -77,6 +77,11 @@
         In Stock
       </label>
 
+      <label>
+        <input type="checkbox" data-parent value="ship">
+        Ships
+      </label>
+
       <div class="filter-group">
         <div class="filter-row">
           <input id="filter-materials" type="checkbox" value="materials" data-parent>
@@ -92,9 +97,40 @@
         </div>
 
         <div id="materials-sub" class="filter-sub" hidden>
+          <label><input type="checkbox" value="materials:components" data-child> Components</label>
+          <label><input type="checkbox" value="materials:minerals" data-child> Minerals</label>
           <label><input type="checkbox" value="materials:planetary" data-child> Planetary</label>
+          <label><input type="checkbox" value="materials:reactions" data-child> Reactions</label>
+          <label><input type="checkbox" value="materials:ice-products" data-child> Ice Products</label>
         </div>
       </div>
+
+      <div class="filter-group">
+        <div class="filter-row">
+          <input id="filter-blueprints" type="checkbox" value="blueprints" data-parent>
+          <label for="filter-blueprints" class="filter-label">Blueprints</label>
+
+          <button
+            type="button"
+            class="filter-toggle"
+            aria-controls="blueprints-sub"
+            aria-expanded="false"
+            aria-label="Toggle Blueprints sub-filters"
+          ></button>
+        </div>
+
+        <div id="blueprints-sub" class="filter-sub" hidden>
+          <label><input type="checkbox" value="blueprints:ships" data-child> Ships</label>
+          <label><input type="checkbox" value="blueprints:modules" data-child> Modules</label>
+          <label><input type="checkbox" value="blueprints:packs" data-child> Packs</label>
+          <label><input type="checkbox" value="blueprints:other" data-child> Other</label>
+        </div>
+      </div>
+
+      <label>
+        <input type="checkbox" data-parent value="Miscellaneous">
+        Miscellaneous
+      </label>
 
       <button type="button" class="buy-button" id="filter-clear">Clear</button>
     </form>

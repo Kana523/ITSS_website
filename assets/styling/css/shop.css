@@ -122,8 +122,8 @@
 /* the arrow button */
 .filter-toggle{
   margin-left: auto;
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   border-radius: 10px;
   border: 1px solid rgba(255,215,138,.25);
   background: rgba(10,12,18,.70);

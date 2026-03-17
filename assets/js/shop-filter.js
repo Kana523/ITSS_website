@@ -87,11 +87,13 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // --- Materials dropdown toggle (arrow only) ---
-  const toggleBtn = document.querySelector(".filter-toggle");
-  const subMenu = document.getElementById("materials-sub");
+  // --- Filter dropdown toggles (arrow only) ---
+  const toggleBtns = Array.from(document.querySelectorAll(".filter-toggle"));
+  toggleBtns.forEach((toggleBtn) => {
+    const controlsId = toggleBtn.getAttribute("aria-controls");
+    const subMenu = controlsId ? document.getElementById(controlsId) : null;
+    if (!subMenu) return;
 
-  if (toggleBtn && subMenu) {
     const setOpen = (open) => {
       subMenu.hidden = !open;
       toggleBtn.classList.toggle("open", open);
@@ -105,7 +107,7 @@ document.addEventListener("DOMContentLoaded", () => {
       e.stopPropagation();
       setOpen(subMenu.hidden); // hidden -> open, open -> hidden
     });
-  }
+  });
 
   applyFilters();
 });
