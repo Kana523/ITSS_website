@@ -75,6 +75,66 @@
   width: 100%;
 }
 
+.item-buy-controls {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.qty-picker {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #ffd78a;
+  background: rgba(10, 12, 18, 0.85);
+}
+
+.qty-btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-right: 1px solid rgba(255, 215, 138, 0.35);
+  background: transparent;
+  color: #d9b775;
+  cursor: pointer;
+  font: inherit;
+}
+
+.qty-picker .qty-btn:last-child {
+  border-right: none;
+  border-left: 1px solid rgba(255, 215, 138, 0.35);
+}
+
+.qty-input {
+  width: 3ch;
+  min-width: 3ch;
+  max-width: 8ch;
+  height: 28px;
+  border: none;
+  text-align: center;
+  background: transparent;
+  color: #d9b775;
+  font: inherit;
+  transition: width 0.12s ease;
+}
+
+.qty-input:focus {
+  outline: 1px solid rgba(255, 215, 138, 0.55);
+  outline-offset: -1px;
+}
+
+.qty-input::-webkit-outer-spin-button,
+.qty-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.qty-input[type=number] {
+  -moz-appearance: textfield;
+}
+
 .item-card-footer {
   display: flex;
   align-items: center;
@@ -95,6 +155,7 @@
   grid-area: filter;
   padding: 10px;
   align-items: center;
+  gap: 16px;
 }
 
 /* ===== Filter dropdown (Materials -> Moon/Ore/Planetary) ===== */
@@ -105,6 +166,156 @@
   padding: 5px;
   width: 100%;
   box-sizing: border-box;
+}
+
+.cart-panel {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px;
+  border: 2px solid transparent;
+  border-image: linear-gradient(to bottom, #d9b775, #6b5939) 1;
+  background: linear-gradient(160deg, rgba(8, 11, 18, 0.86), rgba(23, 30, 46, 0.72));
+}
+
+.cart-panel h3,
+.cart-panel p,
+.cart-panel span {
+  background: linear-gradient(to bottom,#FFDD9C, #AB9061);
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.cart-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.cart-clear {
+  border: 1px solid #ffd78a;
+  background: rgba(10, 12, 18, 0.85);
+  color: #d9b775;
+  -webkit-text-fill-color: #d9b775;
+  cursor: pointer;
+  padding: 4px 8px;
+  font: inherit;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.cart-clear:hover {
+  background-color: rgba(34, 48, 74, 0.95);
+  color: #d9b775;
+  -webkit-text-fill-color: #d9b775;
+  transform: translateY(-1px);
+  box-shadow: 0 0 12px rgba(255, 215, 138, 0.35);
+}
+
+.cart-clear:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cart-summary,
+.cart-total {
+  margin-top: 8px;
+}
+
+.cart-items {
+  list-style: none;
+  margin: 8px 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cart-empty {
+  padding: 8px;
+  border: 1px dashed rgba(255, 215, 138, 0.5);
+  text-align: center;
+}
+
+.cart-item {
+  border: 1px solid rgba(255, 215, 138, 0.35);
+  background: rgba(6, 8, 13, 0.45);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cart-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cart-item-name {
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.cart-item-price {
+  font-size: 0.85rem;
+  opacity: 0.9;
+}
+
+.cart-item-controls {
+  display: grid;
+  grid-template-columns: auto auto auto;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.cart-item-qty {
+  min-width: 20px;
+  text-align: center;
+}
+
+.cart-action-btn,
+.cart-remove-btn {
+  border: 1px solid #ffd78a;
+  background: rgba(10, 12, 18, 0.85);
+  color: #d9b775;
+  -webkit-text-fill-color: #d9b775;
+  cursor: pointer;
+  font: inherit;
+  padding: 2px 8px;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.cart-action-btn:hover,
+.cart-remove-btn:hover {
+  background-color: rgba(34, 48, 74, 0.95);
+  color: #d9b775;
+  -webkit-text-fill-color: #d9b775;
+  transform: translateY(-1px);
+  box-shadow: 0 0 10px rgba(255, 215, 138, 0.3);
+}
+
+.cart-remove-btn {
+  grid-column: 1 / -1;
+  width: 100%;
+  margin-left: 0;
+}
+
+.buy-button:hover,
+.qty-btn:hover {
+  background-color: rgba(34, 48, 74, 0.95);
+  color: #d9b775;
+  -webkit-text-fill-color: #d9b775;
+}
+
+.cart-panel .cart-clear:focus-visible,
+.cart-panel .cart-clear:active,
+.cart-panel .cart-action-btn:focus-visible,
+.cart-panel .cart-action-btn:active,
+.cart-panel .cart-remove-btn:focus-visible,
+.cart-panel .cart-remove-btn:active {
+  color: #d9b775;
+  -webkit-text-fill-color: #d9b775;
 }
 
 .filter label {
