@@ -6,6 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const childCbs  = Array.from(document.querySelectorAll(".filter input[data-child]"));
 
   const clearBtn = document.getElementById("filter-clear");
+  const resultsCountEl = document.getElementById("results-count");
 
   function inferCategory(card) {
     const explicit = (card.dataset.category || "").trim().toLowerCase();
@@ -63,15 +64,19 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   function applyFilters() {
+    const activeParentBoxes = parentCbs.filter(c => c.checked);
+    const activeChildBoxes = childCbs.filter(c => c.checked);
+
     const activeParents = new Set(
-      parentCbs.filter(c => c.checked).map(c => (c.value || "").toLowerCase())
+      activeParentBoxes.map(c => (c.value || "").toLowerCase())
     );
 
     const activeChildren = new Set(
-      childCbs.filter(c => c.checked).map(c => (c.value || "").toLowerCase())
+      activeChildBoxes.map(c => (c.value || "").toLowerCase())
     );
 
     const nothingSelected = activeParents.size === 0 && activeChildren.size === 0;
+    let shownCount = 0;
 
     cards.forEach(card => {
       const cat = inferCategory(card);
@@ -84,7 +89,14 @@ document.addEventListener("DOMContentLoaded", () => {
         (childKey && activeChildren.has(childKey));
 
       card.style.display = show ? "" : "none";
+      if (show) shownCount += 1;
     });
+
+    if (resultsCountEl) {
+      const noun = shownCount === 1 ? "item" : "items";
+      resultsCountEl.textContent = `Showing ${shownCount} ${noun}`;
+    }
+
   }
 
   // --- Filter dropdown toggles (arrow only) ---

@@ -32,11 +32,6 @@
   flex-direction: row;
 }
 
-.promo-copy {
-  display: flex;
-  flex-direction: column;
-}
-
 .display {
   grid-area: display;
   display: flex;
@@ -44,6 +39,13 @@
   align-content: flex-start;
   justify-content: space-evenly;
 }
+
+.display-meta {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+}
+
 
 /*Card CSS */
 .item-card {
@@ -101,6 +103,8 @@
   flex-direction: column;
   gap: 5px;
   padding: 5px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .filter label {
@@ -168,10 +172,3 @@
       "display";
   }
 }
-
-
-
-
-
-
-
