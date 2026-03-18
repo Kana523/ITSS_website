@@ -9,6 +9,7 @@
 
   <script src="../assets/js/accessibility-toggle.js"></script>
   <script src="../assets/js/shop-filter.js" defer></script>
+  <script src="../assets/js/shop-cart.js" defer></script>
   <script src="../assets/js/legal-notice.js" defer></script>
 
   <title>ITS-S Store</title>
@@ -68,6 +69,16 @@
 
   <!-- Left column: filters -->
   <aside class="filter">
+    <section class="cart-panel" aria-labelledby="cart-title">
+      <div class="cart-panel-header">
+        <h3 id="cart-title">Cart</h3>
+        <button type="button" class="cart-clear" id="cart-clear">Clear</button>
+      </div>
+      <p class="cart-summary">Items: <span id="cart-count">0</span></p>
+      <ul class="cart-items" id="cart-items" aria-live="polite" aria-label="Cart items"></ul>
+      <p class="cart-total">Total: <span id="cart-total">0</span></p>
+    </section>
+
     <h3 class="title" style="text-align: center;">Filters</h3>
 
     <form class="filter-form" autocomplete="off">
@@ -82,28 +93,10 @@
         Ships
       </label>
 
-      <div class="filter-group">
-        <div class="filter-row">
-          <input id="filter-materials" type="checkbox" value="materials" data-parent>
-          <label for="filter-materials" class="filter-label">Materials</label>
-
-          <button
-            type="button"
-            class="filter-toggle"
-            aria-controls="materials-sub"
-            aria-expanded="false"
-            aria-label="Toggle Materials sub-filters"
-          ></button>
-        </div>
-
-        <div id="materials-sub" class="filter-sub" hidden>
-          <label><input type="checkbox" value="materials:components" data-child> Components</label>
-          <label><input type="checkbox" value="materials:minerals" data-child> Minerals</label>
-          <label><input type="checkbox" value="materials:planetary" data-child> Planetary</label>
-          <label><input type="checkbox" value="materials:reactions" data-child> Reactions</label>
-          <label><input type="checkbox" value="materials:ice-products" data-child> Ice Products</label>
-        </div>
-      </div>
+      <label>
+        <input type="checkbox" data-parent value="ship">
+        Components
+      </label>
 
       <div class="filter-group">
         <div class="filter-row">
@@ -138,11 +131,12 @@
         <p id="results-count" aria-live="polite">Showing 0 items</p>
       </div>
     </form>
+
   </aside>
 
   <!-- Right column: main display / products -->
   <section class="display">
-    <div class="item-card" data-category="materials" data-sub="planetary">
+    <div class="item-card" data-sku="capital-ancillary-current-router-ii-rum" data-name="Capital Ancillary Current Router II" data-price="6400000" data-price-label="6.4mil" data-category="materials" data-sub="planetary">
         <h2>Capital Ancillary Current Router II</h2>
 
         <p>Materials</p>
@@ -160,13 +154,27 @@
           </div>
         </div>
 
-        <div class="buy-button">
-          <p>BUY</p> <!-- Turns this into a link later -->
+        <div class="item-buy-controls">
+          <div class="qty-picker" aria-label="Select quantity">
+            <button type="button" class="qty-btn" data-qty-action="decrease" aria-label="Decrease quantity">-</button>
+            <input
+              type="number"
+              class="qty-input"
+              data-cart-qty
+              min="1"
+              step="1"
+              value="1"
+              inputmode="numeric"
+              aria-label="Quantity"
+            >
+            <button type="button" class="qty-btn" data-qty-action="increase" aria-label="Increase quantity">+</button>
+          </div>
+          <button type="button" class="buy-button" data-cart-add>BUY</button>
         </div>
       </div>
     </div>
 
-    <div class="item-card" data-category="materials" data-sub="planetary">
+    <div class="item-card" data-sku="capital-ancillary-current-router-ii-result" data-name="Capital Ancillary Current Router II" data-price="6400000" data-price-label="6.4mil" data-category="materials" data-sub="planetary">
       <div class="item-card-head">
         <h3>Capital Ancillary Current Router II</h3>
         <p>Materials</p>
@@ -185,8 +193,22 @@
           </div>
         </div>
 
-        <div class="buy-button buy-button--full">
-          <p>BUY</p> <!-- Turns this into a link later -->
+        <div class="item-buy-controls">
+          <div class="qty-picker" aria-label="Select quantity">
+            <button type="button" class="qty-btn" data-qty-action="decrease" aria-label="Decrease quantity">-</button>
+            <input
+              type="number"
+              class="qty-input"
+              data-cart-qty
+              min="1"
+              step="1"
+              value="1"
+              inputmode="numeric"
+              aria-label="Quantity"
+            >
+            <button type="button" class="qty-btn" data-qty-action="increase" aria-label="Increase quantity">+</button>
+          </div>
+          <button type="button" class="buy-button buy-button--full" data-cart-add>BUY</button>
         </div>
       </div>
     </div>
