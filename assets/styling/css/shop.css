@@ -1,8 +1,4 @@
-﻿header {
-    padding: 0 10px 0 0;
-}
-
-.grid-container {
+﻿.grid-container {
     display: grid;
     flex: 1;
     grid-template-rows: auto 1fr;
@@ -129,10 +125,6 @@
 .qty-input::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
-}
-
-.qty-input[type=number] {
-  -moz-appearance: textfield;
 }
 
 .item-card-footer {
@@ -301,9 +293,8 @@
   margin-left: 0;
 }
 
-.buy-button:hover,
 .qty-btn:hover {
-  background-color: rgba(34, 48, 74, 0.95);
+  background-color: var(--surface-hover);
   color: #d9b775;
   -webkit-text-fill-color: #d9b775;
 }

@@ -35,12 +35,11 @@
 -->
 
 <body>
-  <div class="page">
     <header>
       <div class="container-logo">
         <img src="../assets/images/icons/itss.png" alt="CorpLogo">
           <div class="container-logo-name-motto">
-            <div class="logo-name">Interstellar Systems</div>
+            <h2>Interstellar Systems</h2>
             <p>Organically grown space boats!</p>
           </div>
       </div>
@@ -68,16 +67,27 @@
 
         <div class="container-highlights">
 
-          <div class="container-highlights-item">
-            <h2>Enriched Uranium</h2>
-            <img src="../assets/images/items/ships/zirnitra-render-128.jpg" alt="zirnitra">
-            <p>Stock: 3</p>
-            <p>New Stock on: 10. Dec. (x3)</p>
-            <p>Price: 5.8bil</p>
-            <div class="buy-button">
-              <a href="shop.html">BUY</a> <!-- Turns this into a link later-->
+          <article class="item-card" data-sku="capital-ancillary-current-router-ii-rum" data-name="Capital Ancillary Current Router II" data-price="6400000" data-price-label="6.4mil" data-category="materials" data-sub="planetary">
+            <h2>Capital Ancillary Current Router II</h2>
+            <p>Materials</p>
+            <img src="../assets/images/items/rum.png" alt="Tritanium image">
+
+            <div class="text">
+              <div class="item-card-footer">
+                <p><strong>Price:</strong> 6.4mil</p>
+
+                <div class="stock-state" aria-label="In stock: 12"> <!--TODO add a script that changes this stock number based on stock-->
+                  <!-- TODO add a hover option of when next stock is available-->
+                  <img src="../assets/images/icons/stock.png" alt="stock icon" aria-hidden="true">
+                  <p class="stock-state-count" aria-hidden="true">12</p>
+                </div>
+              </div>
+
+              <div class="item-buy-controls">
+                <button type="button" class="buy-button" data-cart-add>BUY</button>
+              </div>
             </div>
-          </div>
+          </article>
 
           <div class="container-highlights-item">
             <h2>Zirnitra</h2>
@@ -102,10 +112,6 @@
           </div>
         </div>
       </article>
-
-      <div class="go-shop-wrapper">
-        <a href="pages/shop.html" class="go-shop-btn">Go to shop</a>
-      </div>
 
       <article style="margin-top: 50px;">
         <h1>Sell your materials</h1>
@@ -145,8 +151,12 @@
       </article>
     </main>
 
-    <section class="container-evemail">
-      <div class="requests">Or evemail Neo Achasse (Karmafleet), if you prefer that way.</div>
+    <div class="go-shop-wrapper">
+      <a href="pages/shop.html" class="buy-button">Go to shop</a>
+    </div>
+
+    <section class="go-shop-wrapper">
+      <p>Or evemail Neo Achasse (Karmafleet), if you prefer that way.</p>
     </section>
 
     <footer>
@@ -183,6 +193,5 @@
         nor can it be liable for any damage arising from the use of this website.
       </div>
     </footer>
-  </div>
 </body>
 </html>

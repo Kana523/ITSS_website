@@ -16,13 +16,11 @@
 </head>
 
 <body>
-
-  <div class="page">
     <header>
       <div class="container-logo">
         <img src="../assets/images/icons/itss.png" alt="CorpLogo">
           <div class="container-logo-name-motto">
-            <div class="logo-name">Interstellar Systems</div>
+            <h2>Interstellar Systems</h2>
             <p>Organically grown space boats!</p>
           </div>
       </div>
@@ -44,7 +42,7 @@
       </nav>
     </header>
 
-    <h1 style="align-self: center;">STORE</h1>
+    <h1>STORE</h1>
 
     <div class="grid-container">
 
@@ -136,11 +134,9 @@
 
   <!-- Right column: main display / products -->
   <section class="display">
-    <div class="item-card" data-sku="capital-ancillary-current-router-ii-rum" data-name="Capital Ancillary Current Router II" data-price="6400000" data-price-label="6.4mil" data-category="materials" data-sub="planetary">
-        <h2>Capital Ancillary Current Router II</h2>
-
-        <p>Materials</p>
-
+    <article class="item-card" data-sku="capital-ancillary-current-router-ii-rum" data-name="Capital Ancillary Current Router II" data-price="6400000" data-price-label="6.4mil" data-category="materials" data-sub="planetary">
+      <h2>Capital Ancillary Current Router II</h2>
+      <p>Materials</p>
       <img src="../assets/images/items/rum.png" alt="Tritanium image">
 
       <div class="text">
@@ -172,46 +168,7 @@
           <button type="button" class="buy-button" data-cart-add>BUY</button>
         </div>
       </div>
-    </div>
-
-    <div class="item-card" data-sku="capital-ancillary-current-router-ii-result" data-name="Capital Ancillary Current Router II" data-price="6400000" data-price-label="6.4mil" data-category="materials" data-sub="planetary">
-      <div class="item-card-head">
-        <h3>Capital Ancillary Current Router II</h3>
-        <p>Materials</p>
-      </div>
-
-      <img src="../assets/images/items/result_0.png" alt="Tritanium image">
-
-      <div class="text">
-        <div class="item-card-footer">
-          <p class="item-price"><b>Price:</b> 6.4mil</p>
-
-          <div class="stock-state">
-            <!-- TODO add a hover option of when next stock is available-->
-            <img class="stock-state-icon" src="../assets/images/icons/chatgpt_stocks.png" alt="" aria-hidden="true">
-            <span class="stock-state-count">12</span>
-          </div>
-        </div>
-
-        <div class="item-buy-controls">
-          <div class="qty-picker" aria-label="Select quantity">
-            <button type="button" class="qty-btn" data-qty-action="decrease" aria-label="Decrease quantity">-</button>
-            <input
-              type="number"
-              class="qty-input"
-              data-cart-qty
-              min="1"
-              step="1"
-              value="1"
-              inputmode="numeric"
-              aria-label="Quantity"
-            >
-            <button type="button" class="qty-btn" data-qty-action="increase" aria-label="Increase quantity">+</button>
-          </div>
-          <button type="button" class="buy-button buy-button--full" data-cart-add>BUY</button>
-        </div>
-      </div>
-    </div>
+    </article>
   </section>
 
 </div>
@@ -250,7 +207,6 @@
         nor can it be liable for any damage arising from the use of this website.
       </div>
     </footer>
-  </div>
 </body>
 </html>
 
