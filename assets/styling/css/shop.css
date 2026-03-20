@@ -42,44 +42,6 @@
   margin-top: 10px;
 }
 
-
-/*Card CSS */
-.item-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  min-width: 250px;
-  max-width: 250px;
-  border: 2px solid transparent;
-  padding: 8px;
-  border-image: linear-gradient(to bottom, #d9b775, #6b5939) 1;
-}
-
-.item-card h2 {
-  width: 100%;
-  text-align: center;
-}
-
-.item-card img {
-  padding-top: 5px;
-  padding-bottom: 5px;
-}
-
-.text {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-}
-
-.item-buy-controls {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  margin-top: 6px;
-}
-
 .qty-picker {
   display: inline-flex;
   align-items: center;
@@ -127,18 +89,7 @@
   margin: 0;
 }
 
-.item-card-footer {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 15px;
-}
 
-.stock-state {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
 
 /* Filtering related CSS */
 .filter {
