@@ -7,7 +7,6 @@
   <link rel="stylesheet" href="../assets/styling/css/base.css">
   <link rel="stylesheet" href="../assets/styling/css/shop.css">
 
-  <script src="../assets/js/accessibility-toggle.js"></script>
   <script src="../assets/js/shop-filter.js" defer></script>
   <script src="../assets/js/shop-cart.js" defer></script>
   <script src="../assets/js/legal-notice.js" defer></script>
@@ -16,13 +15,11 @@
 </head>
 
 <body>
-
-  <div class="page">
     <header>
       <div class="container-logo">
         <img src="../assets/images/icons/itss.png" alt="CorpLogo">
           <div class="container-logo-name-motto">
-            <div class="logo-name">Interstellar Systems</div>
+            <h2>Interstellar Systems</h2>
             <p>Organically grown space boats!</p>
           </div>
       </div>
@@ -30,21 +27,10 @@
       <nav>
         <a href="home.html">Home</a>
         <a href="about.html">About</a>
-        <button
-          type="button"
-          class="a11y-toggle"
-          id="a11y-toggle"
-          data-a11y-toggle
-          aria-pressed="false"
-          aria-label="Turn accessibility mode on"
-        >
-          <span class="a11y-toggle-dot" aria-hidden="true"></span>
-          <span class="a11y-toggle-text">A11Y OFF</span>
-        </button>
       </nav>
     </header>
 
-    <h1 style="align-self: center;">STORE</h1>
+    <h1>STORE</h1>
 
     <div class="grid-container">
 
@@ -61,25 +47,15 @@
         <div class="top-bar-panel-section">
           <h2>Trade</h2>
           <p>Bring Materials!</p>
-          <div class="buy-button">
-            <a href="buyback.html">TAKE COIN</a>
-          </div>
+          <a href="buyback.html" class="buy-button">TAKE COIN</a>
         </div>
       </div>
 
   <!-- Left column: filters -->
   <aside class="filter">
-    <section class="cart-panel" aria-labelledby="cart-title">
-      <div class="cart-panel-header">
-        <h3 id="cart-title">Cart</h3>
-        <button type="button" class="cart-clear" id="cart-clear">Clear</button>
-      </div>
-      <p class="cart-summary">Items: <span id="cart-count">0</span></p>
-      <ul class="cart-items" id="cart-items" aria-live="polite" aria-label="Cart items"></ul>
-      <p class="cart-total">Total: <span id="cart-total">0</span></p>
-    </section>
+    
 
-    <h3 class="title" style="text-align: center;">Filters</h3>
+    <h3 class="title">Filters</h3>
 
     <form class="filter-form" autocomplete="off">
 
@@ -132,16 +108,23 @@
       </div>
     </form>
 
+    <section class="cart-panel" aria-labelledby="cart-title">
+      <div class="cart-panel-header">
+        <h3 id="cart-title">Cart</h3>
+        <button type="button" class="cart-clear" id="cart-clear">Clear</button>
+      </div>
+      <ul class="cart-items" id="cart-items" aria-live="polite" aria-label="Cart items"></ul>
+      <p class="cart-total">Total: <span id="cart-total">0</span></p>
+    </section>
+
   </aside>
 
   <!-- Right column: main display / products -->
   <section class="display">
-    <div class="item-card" data-sku="capital-ancillary-current-router-ii-rum" data-name="Capital Ancillary Current Router II" data-price="6400000" data-price-label="6.4mil" data-category="materials" data-sub="planetary">
-        <h2>Capital Ancillary Current Router II</h2>
-
-        <p>Materials</p>
-
-      <img src="../assets/images/items/rum.png" alt="Tritanium image">
+    <article class="item-card" data-sku="capital-ancillary-current-router-ii-rum" data-name="Capital Ancillary Current Router II" data-price="6400000" data-price-label="6.4mil" data-category="materials" data-sub="planetary">
+      <h2>Capital Ancillary Current Router II</h2>
+      <p>Materials</p>
+      <img src="../assets/images/items/ships/zirnitra-render-128.avif" alt="Tritanium image">
 
       <div class="text">
         <div class="item-card-footer">
@@ -172,46 +155,7 @@
           <button type="button" class="buy-button" data-cart-add>BUY</button>
         </div>
       </div>
-    </div>
-
-    <div class="item-card" data-sku="capital-ancillary-current-router-ii-result" data-name="Capital Ancillary Current Router II" data-price="6400000" data-price-label="6.4mil" data-category="materials" data-sub="planetary">
-      <div class="item-card-head">
-        <h3>Capital Ancillary Current Router II</h3>
-        <p>Materials</p>
-      </div>
-
-      <img src="../assets/images/items/result_0.png" alt="Tritanium image">
-
-      <div class="text">
-        <div class="item-card-footer">
-          <p class="item-price"><b>Price:</b> 6.4mil</p>
-
-          <div class="stock-state">
-            <!-- TODO add a hover option of when next stock is available-->
-            <img class="stock-state-icon" src="../assets/images/icons/chatgpt_stocks.png" alt="" aria-hidden="true">
-            <span class="stock-state-count">12</span>
-          </div>
-        </div>
-
-        <div class="item-buy-controls">
-          <div class="qty-picker" aria-label="Select quantity">
-            <button type="button" class="qty-btn" data-qty-action="decrease" aria-label="Decrease quantity">-</button>
-            <input
-              type="number"
-              class="qty-input"
-              data-cart-qty
-              min="1"
-              step="1"
-              value="1"
-              inputmode="numeric"
-              aria-label="Quantity"
-            >
-            <button type="button" class="qty-btn" data-qty-action="increase" aria-label="Increase quantity">+</button>
-          </div>
-          <button type="button" class="buy-button buy-button--full" data-cart-add>BUY</button>
-        </div>
-      </div>
-    </div>
+    </article>
   </section>
 
 </div>
@@ -250,7 +194,6 @@
         nor can it be liable for any damage arising from the use of this website.
       </div>
     </footer>
-  </div>
 </body>
 </html>
 

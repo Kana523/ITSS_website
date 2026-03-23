@@ -11,109 +11,88 @@
   font-weight: normal;
   font-style: normal;
 }
+/* TODO delete unused fonts before deployment */
+
+:root {
+  /* Fonts */
+  --font-title: 'Space_Grotesk', Courier, monospace;
+  --font-text: 'Roboto', sans-serif;
+
+  /* Text colours */
+  --text-gold-top: #ffdd9c;
+  --text-gold-mid: #d8b065;
+  --text-gold-bottom: #ae8538;
+  --text-gradient-gold: linear-gradient(to bottom, var(--text-gold-top), var(--text-gold-bottom));
+
+  /* Border colours */
+  --gold-border-gradient: linear-gradient(to bottom, var(--text-gold-mid), var(--text-gold-bottom));
+  --gold-border-alternate: rgba(255, 215, 138, 0.35);
+
+  /* Hover effects */
+  --surface-hover: rgba(34, 48, 74, 0.95);
+
+  /* Background colours */
+  --surface-850: rgba(8, 11, 18, 0.86);
+  --surface-700: rgba(23, 30, 46, 0.72);
+  --button-background: rgba(10, 12, 18, 0.85);
+
+  /* Formatting */
+  --radius-pill: 999px;
+  --border-width: 2px;
+  --transition-fast: 0.15s ease;
+  --font-small: 14px;
+  --font-medium: 20px;
+  --font-large: 30px;
+}
+
+*{
+  margin: 0;
+}
 
 body {
   background-image: url(../../images/backgrounds/galaxybg.avif);
   background-size: cover;
   min-height: 100vh;
-  margin: 0 auto;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
-body h1,h2,h3,h4,p,a, .logo-name, .requests, label {
-  background: linear-gradient(to bottom,#FFDD9C, #AB9061);
+:is(h1, h2, h3) {
+  background: var(--text-gradient-gold);
   background-clip: text;
+  -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  margin: 0;
+  font-family: var(--font-title);
+  align-self: center;
 }
 
-.page {
-    margin: 0 auto;
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-    font-family: 'Space_Grotesk', Courier, monospace;
+:is(p,a,label) {
+  color: var(--text-gold-bottom);
+  text-decoration: none;
+  font-family: var(--font-text);
+}
+
+a {
+  font-weight: bold;
 }
 
 /* Start of header*/
 header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-family: 'Roboto';
-    line-height: 1;
+  display: flex;
+  justify-content: space-between;
+  line-height: 1;
+  padding: 0 10px 0 0;
 }
 
 header a {
-  font-size: larger;
-}
-
-a {
-  text-decoration: none;
+  font-size: var(--font-medium);
 }
 
 nav {
     display: flex;
     gap: 10px;
     align-items: center;
-    font-weight: bold;
-}
-
-.a11y-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 5px 10px 5px 6px;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 215, 138, 0.35);
-  background: linear-gradient(135deg, rgba(10, 13, 21, 0.9), rgba(30, 38, 57, 0.74));
-  color: #e9e3d6;
-  font-family: "Roboto", sans-serif;
-  font-size: 1rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
-}
-
-.a11y-toggle-dot {
-  width: 18px;
-  height: 18px;
-  flex-shrink: 0;
-  border-radius: 999px;
-  background: #c8c2b2;
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.55);
-  transform: translateX(0);
-  transition: transform 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease;
-}
-
-.a11y-toggle-text {
-  display: inline-block;
-  min-width: 76px;
-  text-align: left;
-}
-
-.a11y-toggle:hover {
-  border-color: rgba(255, 215, 138, 0.68);
-  box-shadow: 0 0 12px rgba(255, 215, 138, 0.24);
-}
-
-.a11y-toggle:focus-visible {
-  outline: 2px solid #8ad8ff;
-  outline-offset: 2px;
-}
-
-.a11y-toggle[aria-pressed="true"] {
-  border-color: rgba(129, 250, 176, 0.92);
-  background: linear-gradient(135deg, rgba(8, 51, 32, 0.95), rgba(18, 109, 78, 0.76));
-  color: #e7fff1;
-  box-shadow: 0 0 16px rgba(43, 206, 132, 0.35);
-}
-
-.a11y-toggle[aria-pressed="true"] .a11y-toggle-dot {
-  background: #89ffb8;
-  transform: translateX(8px);
-  box-shadow: 0 0 10px rgba(137, 255, 184, 0.6);
 }
 
 /* Container for the top left logo, title and subtitle */
@@ -137,12 +116,11 @@ nav {
 
 footer {
   text-align: center;
-  font-size: 0.75rem;
   margin-top: auto;
-  font-family: 'Roboto';
+  font-size: var(--font-small);
 }
 
-/* === CCP legal notice tooltip (centered over pointer + viewport-friendly) === */
+/* === CCP legal notice tooltip === */
 
 .ccp-legal-trigger {
   background: none;
@@ -150,7 +128,6 @@ footer {
   color: inherit;
   text-decoration: underline;
   cursor: pointer;
-  margin-left: 0.25rem;
   padding: 0;
 }
 
@@ -158,134 +135,77 @@ footer {
 .ccp-legal-tooltip {
   position: fixed; /* positioned by JS near pointer */
   max-width: min(450px, calc(100vw - 20px));
-  padding: 0.75rem 1rem;
-  font-size: 1rem;
-  line-height: 1.4;
-
-  background: #111;
-  color: #f5f5f5;
-
-  border-radius: 10px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-
-  z-index: 9999;
-  display: none;
+  font-size: var(--font-medium);
+  background: var(--surface-850);
+  color: var(--text-gold-top);
   pointer-events: none; /* prevents hover flicker */
 }
 
-/* Arrow: JS sets --arrow-left so it stays pointed at the cursor */
-.ccp-legal-tooltip::after {
-  content: "";
-  position: absolute;
-  width: 0;
-  height: 0;
-
-  border-width: 8px;
-  border-style: solid;
-
-  /* tooltip above pointer, arrow points DOWN */
-  border-color: #111 transparent transparent transparent;
-
-  bottom: 0;
-  left: var(--arrow-left, 50%);
-  transform: translate(-50%, 100%);
-}
-
-/* If JS decides to place tooltip below pointer, flip arrow */
-.ccp-legal-tooltip.below::after {
-  top: 0;
-  bottom: auto;
-
-  /* arrow points UP */
-  border-color: transparent transparent #111 transparent;
-
-  transform: translate(-50%, -100%);
-}
-
 .buy-button {
-  display: flex;
   background: transparent;
   border-radius: 999px;
-  justify-content: center;
   padding: 5px;
   min-width: 70px;
 
-  border: 1px solid #ffd78a;
-  color: #d9b775;
-  background-clip: border-box;
-  
-  font-size: 0.9rem;
-  font-weight: 700;
+  border: 1px solid var(--text-gold-top);
+  color: var(--text-gold-mid);
+  font-weight: bold;
   cursor: pointer;
-  transition:
-    background-color 0.15s ease,
-    transform 0.15s ease,
-    box-shadow 0.15s ease,
-    color 0.15s ease;
 }
 
 /* hover: brighter, more “primary” */
 .buy-button:hover {
-  background-color: #3a6b9b;
-  color: #24180a;
-  -webkit-text-fill-color: #24180a;
-  transform: translateY(-1px);
-  box-shadow: 0 0 14px rgba(255, 215, 138, 0.45);
+  background-color: var(--surface-hover);
 }
 
-/* pressed state */
-.buy-button:active {
-  transform: translateY(0);
-  box-shadow: 0 0 6px rgba(255, 215, 138, 0.3);
-}
-
-.container-evemail {
-  display: inline-block;
+/*Card CSS */
+.item-card {
+  display: flex;
   flex-direction: column;
   align-items: center;
-  font-size: larger;
-  margin: 10px auto 8px;      /* space above Highlights */
-  padding: 8px 12px;
-  background: rgba(0, 0, 0, 0.7);
-  box-sizing: border-box;
+  min-width: 200px;
+  max-width: 200px;
+  border: 2px solid transparent;
+  padding: 8px;
+  border-image: var(--gold-border-gradient) 1;
 }
 
-:root[data-a11y="on"] body {
-  background-image: radial-gradient(circle at 20% 18%, rgba(19, 33, 58, 0.82), rgba(7, 8, 13, 0.95) 50%), url(../../images/backgrounds/galaxybg.png);
+.item-card h2 {
+  text-align: center;
 }
 
-:root[data-a11y="on"] body h1,
-:root[data-a11y="on"] body h2,
-:root[data-a11y="on"] body h3,
-:root[data-a11y="on"] body h4,
-:root[data-a11y="on"] body p,
-:root[data-a11y="on"] body a,
-:root[data-a11y="on"] body .logo-name,
-:root[data-a11y="on"] body .requests,
-:root[data-a11y="on"] body label {
-  background: none;
-  color: #f5f8ff;
-  -webkit-text-fill-color: #f5f8ff;
+.item-card img {
+  max-width: 128px;
+  max-height: 128px;
+  padding-top: 2px;
+  padding-bottom: 2px;
 }
 
-:root[data-a11y="on"] body {
-  font-size: 1.08rem;
+.text {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
 }
 
-:root[data-a11y="on"] p,
-:root[data-a11y="on"] a,
-:root[data-a11y="on"] label {
-  line-height: 1.5;
+.item-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
 }
 
-:root[data-a11y="on"] .buy-button,
-:root[data-a11y="on"] .go-shop-btn {
-  border-color: #fff2ba;
-  background-color: rgba(42, 76, 114, 0.86);
+.stock-state {
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
 
-:root[data-a11y="on"] *:focus-visible {
-  outline: 3px solid #8ad8ff;
-  outline-offset: 2px;
+.item-buy-controls {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 6px;
 }
-
+/*End of Card CSS */

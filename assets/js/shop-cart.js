@@ -4,7 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const cartTotalEl = document.getElementById("cart-total");
   const cartClearBtn = document.getElementById("cart-clear");
 
-  if (!cartCountEl || !cartItemsEl || !cartTotalEl) {
+  if (!cartItemsEl || !cartTotalEl) {
     return;
   }
 
@@ -225,7 +225,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const totalItems = items.reduce((sum, item) => sum + item.qty, 0);
     const totalValue = items.reduce((sum, item) => sum + item.price * item.qty, 0);
 
-    cartCountEl.textContent = String(totalItems);
+    if (cartCountEl) {
+      cartCountEl.textContent = String(totalItems);
+    }
     cartTotalEl.textContent = formatPrice(totalValue);
 
     cartItemsEl.innerHTML = "";

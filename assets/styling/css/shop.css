@@ -1,8 +1,4 @@
-﻿header {
-    padding: 0 10px 0 0;
-}
-
-.grid-container {
+﻿.grid-container {
     display: grid;
     flex: 1;
     grid-template-rows: auto 1fr;
@@ -10,7 +6,7 @@
     grid-template-areas:
         "top-bar top-bar"
         "filter display";
-    gap: 18px;
+    gap: 15px;
     overflow: visible;
 }
 
@@ -46,65 +42,26 @@
   margin-top: 10px;
 }
 
-
-/*Card CSS */
-.item-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  min-width: 250px;
-  max-width: 250px;
-  border: 2px solid transparent;
-  padding: 8px;
-  border-image: linear-gradient(to bottom, #d9b775, #6b5939) 1;
-}
-
-.item-card h2 {
-  width: 100%;
-  text-align: center;
-}
-
-.item-card img {
-  padding-top: 5px;
-  padding-bottom: 5px;
-}
-
-.text {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-}
-
-.item-buy-controls {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  margin-top: 6px;
-}
-
 .qty-picker {
   display: inline-flex;
   align-items: center;
-  border: 1px solid #ffd78a;
-  background: rgba(10, 12, 18, 0.85);
+  border: 1px solid var(--text-gold-mid);
+  background: var(--button-background);
 }
 
 .qty-btn {
   width: 28px;
   height: 28px;
-  border: none;
-  border-right: 1px solid rgba(255, 215, 138, 0.35);
+  border-right: 1px solid var(--gold-border-alternate);
   background: transparent;
-  color: #d9b775;
+  color: var(--text-gold-mid);
   cursor: pointer;
   font: inherit;
 }
 
 .qty-picker .qty-btn:last-child {
   border-right: none;
-  border-left: 1px solid rgba(255, 215, 138, 0.35);
+  border-left: 1px solid var(--gold-border-alternate);
 }
 
 .qty-input {
@@ -115,13 +72,11 @@
   border: none;
   text-align: center;
   background: transparent;
-  color: #d9b775;
-  font: inherit;
-  transition: width 0.12s ease;
+  color: var(--text-gold-mid);
 }
 
 .qty-input:focus {
-  outline: 1px solid rgba(255, 215, 138, 0.55);
+  outline: 1px solid var(--gold-border-alternate);
   outline-offset: -1px;
 }
 
@@ -131,22 +86,7 @@
   margin: 0;
 }
 
-.qty-input[type=number] {
-  -moz-appearance: textfield;
-}
 
-.item-card-footer {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 15px;
-}
-
-.stock-state {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
 
 /* Filtering related CSS */
 .filter {
@@ -155,7 +95,6 @@
   grid-area: filter;
   padding: 10px;
   align-items: center;
-  gap: 16px;
 }
 
 /* ===== Filter dropdown (Materials -> Moon/Ore/Planetary) ===== */
@@ -173,14 +112,14 @@
   box-sizing: border-box;
   padding: 10px;
   border: 2px solid transparent;
-  border-image: linear-gradient(to bottom, #d9b775, #6b5939) 1;
-  background: linear-gradient(160deg, rgba(8, 11, 18, 0.86), rgba(23, 30, 46, 0.72));
+  border-image: var(--gold-border-gradient) 1;
+  background: linear-gradient(160deg, var(--surface-850), var(--surface-700));
 }
 
 .cart-panel h3,
 .cart-panel p,
 .cart-panel span {
-  background: linear-gradient(to bottom,#FFDD9C, #AB9061);
+  background: var(--text-gradient-gold);
   background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -193,10 +132,10 @@
 }
 
 .cart-clear {
-  border: 1px solid #ffd78a;
-  background: rgba(10, 12, 18, 0.85);
-  color: #d9b775;
-  -webkit-text-fill-color: #d9b775;
+  border: 1px solid var(--text-gold-top);
+  background: var(--button-background);
+  color: var(--text-gold-mid);
+  -webkit-text-fill-color: var(--text-gold-mid);
   cursor: pointer;
   padding: 4px 8px;
   font: inherit;
@@ -204,11 +143,11 @@
 }
 
 .cart-clear:hover {
-  background-color: rgba(34, 48, 74, 0.95);
-  color: #d9b775;
-  -webkit-text-fill-color: #d9b775;
+  background-color: var(--surface-hover);
+  color: var(--text-gold-mid);
+  -webkit-text-fill-color: var(--text-gold-mid);
   transform: translateY(-1px);
-  box-shadow: 0 0 12px rgba(255, 215, 138, 0.35);
+  box-shadow: 0 0 12px var(--gold-border-alternate);
 }
 
 .cart-clear:disabled {
@@ -232,13 +171,13 @@
 
 .cart-empty {
   padding: 8px;
-  border: 1px dashed rgba(255, 215, 138, 0.5);
+  border: 1px dashed var(--gold-border-alternate);
   text-align: center;
 }
 
 .cart-item {
-  border: 1px solid rgba(255, 215, 138, 0.35);
-  background: rgba(6, 8, 13, 0.45);
+  border: 1px solid var(--gold-border-alternate);
+  background: var(--surface-850);
   padding: 8px;
   display: flex;
   flex-direction: column;
@@ -276,10 +215,10 @@
 
 .cart-action-btn,
 .cart-remove-btn {
-  border: 1px solid #ffd78a;
-  background: rgba(10, 12, 18, 0.85);
-  color: #d9b775;
-  -webkit-text-fill-color: #d9b775;
+  border: 1px solid var(--text-gold-top);
+  background: var(--button-background);
+  color: var(--text-gold-mid);
+  -webkit-text-fill-color: var(--text-gold-mid);
   cursor: pointer;
   font: inherit;
   padding: 2px 8px;
@@ -288,11 +227,11 @@
 
 .cart-action-btn:hover,
 .cart-remove-btn:hover {
-  background-color: rgba(34, 48, 74, 0.95);
-  color: #d9b775;
-  -webkit-text-fill-color: #d9b775;
+  background-color: var(--surface-hover);
+  color: var(--text-gold-mid);
+  -webkit-text-fill-color: var(--text-gold-mid);
   transform: translateY(-1px);
-  box-shadow: 0 0 10px rgba(255, 215, 138, 0.3);
+  box-shadow: 0 0 10px var(--gold-border-alternate);
 }
 
 .cart-remove-btn {
@@ -301,11 +240,10 @@
   margin-left: 0;
 }
 
-.buy-button:hover,
 .qty-btn:hover {
-  background-color: rgba(34, 48, 74, 0.95);
-  color: #d9b775;
-  -webkit-text-fill-color: #d9b775;
+  background-color: var(--surface-hover);
+  color: var(--text-gold-mid);
+  -webkit-text-fill-color: var(--text-gold-mid);
 }
 
 .cart-panel .cart-clear:focus-visible,
@@ -314,8 +252,8 @@
 .cart-panel .cart-action-btn:active,
 .cart-panel .cart-remove-btn:focus-visible,
 .cart-panel .cart-remove-btn:active {
-  color: #d9b775;
-  -webkit-text-fill-color: #d9b775;
+  color: var(--text-gold-mid);
+  -webkit-text-fill-color: var(--text-gold-mid);
 }
 
 .filter label {
@@ -340,8 +278,8 @@
   width: 32px;
   height: 32px;
   border-radius: 10px;
-  border: 1px solid rgba(255,215,138,.25);
-  background: rgba(10,12,18,.70);
+  border: 1px solid var(--gold-border-alternate);
+  background: var(--button-background);
   cursor: pointer;
   position: relative;
 }
@@ -354,8 +292,8 @@
   margin: auto;
   width: 8px;
   height: 8px;
-  border-right: 2px solid rgba(233,227,214,.85);
-  border-bottom: 2px solid rgba(233,227,214,.85);
+  border-right: 2px solid var(--text-gold-top);
+  border-bottom: 2px solid var(--text-gold-top);
   transform: rotate(45deg);
 }
 
