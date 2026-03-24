@@ -6,6 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const childCbs  = Array.from(document.querySelectorAll(".filter input[data-child]"));
 
   const clearBtn = document.getElementById("filter-clear");
+  const searchInput = document.getElementById("filter-search");
   const resultsCountEl = document.getElementById("results-count");
 
   function inferCategory(card) {
@@ -34,6 +35,15 @@ document.addEventListener("DOMContentLoaded", () => {
     return childCbs.filter(cb => (cb.value || "").toLowerCase().startsWith(prefix));
   }
 
+  function searchTextFor(card) {
+    const name = (card.querySelector("h2, h3")?.textContent || "").toLowerCase();
+    const subtitle = (card.querySelector("p")?.textContent || "").toLowerCase();
+    const sku = (card.dataset.sku || "").toLowerCase();
+    const category = inferCategory(card);
+    const sub = inferSub(card);
+    return `${name} ${subtitle} ${sku} ${category} ${sub}`.trim();
+  }
+
   // Parent checked => show whole category, so clear its children
   parentCbs.forEach(parent => {
     parent.addEventListener("change", () => {
@@ -58,12 +68,16 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   clearBtn?.addEventListener("click", () => {
+    if (searchInput) searchInput.value = "";
     parentCbs.forEach(cb => (cb.checked = false));
     childCbs.forEach(cb => (cb.checked = false));
     applyFilters();
   });
 
+  searchInput?.addEventListener("input", applyFilters);
+
   function applyFilters() {
+    const query = (searchInput?.value || "").trim().toLowerCase();
     const activeParentBoxes = parentCbs.filter(c => c.checked);
     const activeChildBoxes = childCbs.filter(c => c.checked);
 
@@ -82,11 +96,15 @@ document.addEventListener("DOMContentLoaded", () => {
       const cat = inferCategory(card);
       const sub = inferSub(card);
       const childKey = sub ? `${cat}:${sub}` : "";
+      const matchesSearch = !query || searchTextFor(card).includes(query);
 
       const show =
-        nothingSelected ||
-        activeParents.has(cat) ||
-        (childKey && activeChildren.has(childKey));
+        matchesSearch &&
+        (
+          nothingSelected ||
+          activeParents.has(cat) ||
+          (childKey && activeChildren.has(childKey))
+        );
 
       card.style.display = show ? "" : "none";
       if (show) shownCount += 1;

@@ -107,6 +107,24 @@
   box-sizing: border-box;
 }
 
+.filter-search {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+#filter-search {
+  border: 1px solid var(--gold-border-alternate);
+  background: var(--button-background);
+  color: var(--text-gold-mid);
+  padding: 6px 8px;
+}
+
+#filter-search::placeholder {
+  color: var(--text-gold-mid);
+  opacity: 0.8;
+}
+
 .cart-panel {
   width: 100%;
   box-sizing: border-box;
