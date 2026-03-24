@@ -120,11 +120,10 @@ document.addEventListener("DOMContentLoaded", () => {
   function syncProductPriceLabels() {
     const cards = Array.from(document.querySelectorAll(".display .item-card"));
     cards.forEach((card) => {
-      const safePrice = parsePriceToIsk(card.dataset.price, card.dataset.priceLabel);
+      const safePrice = parsePriceToIsk(card.dataset.price);
       const formattedPrice = formatPrice(safePrice);
 
       card.dataset.price = String(safePrice);
-      card.dataset.priceLabel = formattedPrice;
 
       const priceEl = card.querySelector(".item-price") || card.querySelector(".item-card-footer p");
       if (!priceEl) return;
@@ -149,17 +148,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const sku = String(card.dataset.sku || "").trim();
     if (!sku) return null;
 
-    const name =
-      String(card.dataset.name || "").trim() ||
-      String(card.querySelector("h2, h3")?.textContent || "Unnamed item").trim();
+    const name = String(card.querySelector("h2, h3")?.textContent || "Unnamed item").trim();
 
-    const safePrice = parsePriceToIsk(card.dataset.price, card.dataset.priceLabel);
+    const safePrice = parsePriceToIsk(card.dataset.price);
 
     return {
       sku,
       name,
-      price: safePrice,
-      priceLabel: formatPrice(safePrice)
+      price: safePrice
     };
   }
 
@@ -184,7 +180,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     cart[product.sku].price = product.price;
-    cart[product.sku].priceLabel = formatPrice(product.price);
     cart[product.sku].qty += clampQty(qtyToAdd);
     saveCart();
     renderCart();

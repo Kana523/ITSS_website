@@ -69,10 +69,26 @@
         Ships
       </label>
 
-      <label>
-        <input type="checkbox" data-parent value="ship">
-        Components
-      </label>
+      <div class="filter-group">
+        <div class="filter-row">
+          <input id="filter-materials" type="checkbox" value="materials" data-parent>
+          <label for="filter-materials" class="filter-label">Materials</label>
+
+          <button
+            type="button"
+            class="filter-toggle"
+            aria-controls="materials-sub"
+            aria-expanded="false"
+            aria-label="Toggle Materials sub-filters"
+          ></button>
+        </div>
+
+        <div id="materials-sub" class="filter-sub" hidden>
+          <label><input type="checkbox" value="materials:planetary" data-child> Planetary</label>
+          <label><input type="checkbox" value="materials:reaction" data-child> Reaction</label>
+          <label><input type="checkbox" value="materials:component" data-child> Component</label>
+        </div>
+      </div>
 
       <div class="filter-group">
         <div class="filter-row">
@@ -121,19 +137,509 @@
 
   <!-- Right column: main display / products -->
   <section class="display">
-    <article class="item-card" data-sku="capital-ancillary-current-router-ii-rum" data-name="Capital Ancillary Current Router II" data-price="6400000" data-price-label="6.4mil" data-category="materials" data-sub="planetary">
-      <h2>Capital Ancillary Current Router II</h2>
-      <p>Materials</p>
-      <img src="../assets/images/items/ships/zirnitra-render-128.avif" alt="Tritanium image">
+    <article class="item-card" data-sku="zirnitra" data-price="4400000000" data-category="ship">
+      <h2>Zirnitra</h2>
+      <p>Ship</p>
+      <img src="../assets/images/items/ships/zirnitra-render-128.avif" alt="zirnitra image">
 
       <div class="text">
         <div class="item-card-footer">
-          <p><strong>Price:</strong> 6.4mil</p>
+          <p><strong>Price:</strong> 4.4bil</p>
 
-          <div class="stock-state" aria-label="In stock: 12"> <!--TODO add a script that changes this stock number based on stock-->
+          <div class="stock-state" aria-label="In stock: 2"> <!--TODO add a script that changes this stock number based on stock-->
             <!-- TODO add a hover option of when next stock is available-->
             <img src="../assets/images/icons/stock.png" alt="stock icon" aria-hidden="true">
-            <p class="stock-state-count" aria-hidden="true">12</p>
+            <p class="stock-state-count" aria-hidden="true">2</p>
+          </div>
+        </div>
+
+        <div class="item-buy-controls">
+          <div class="qty-picker" aria-label="Select quantity">
+            <button type="button" class="qty-btn" data-qty-action="decrease" aria-label="Decrease quantity">-</button>
+            <input
+              type="number"
+              class="qty-input"
+              data-cart-qty
+              min="1"
+              step="1"
+              value="1"
+              inputmode="numeric"
+              aria-label="Quantity"
+            >
+            <button type="button" class="qty-btn" data-qty-action="increase" aria-label="Increase quantity">+</button>
+          </div>
+          <button type="button" class="buy-button" data-cart-add>BUY</button>
+        </div>
+      </div>
+    </article>
+
+    <article class="item-card" data-sku="sylramic-fibers" data-price="8750000" data-category="materials" data-sub="reaction">
+      <h2>Sylramic Fibers</h2>
+      <p>Materials</p>
+      <img src="../assets/images/items/ships/zirnitra-render-128.avif" alt="Sylramic Fibers image">
+
+      <div class="text">
+        <div class="item-card-footer">
+          <p><strong>Price:</strong> 8.75mil</p>
+
+          <div class="stock-state" aria-label="In stock: 22">
+            <img src="../assets/images/icons/stock.png" alt="stock icon" aria-hidden="true">
+            <p class="stock-state-count" aria-hidden="true">22</p>
+          </div>
+        </div>
+
+        <div class="item-buy-controls">
+          <div class="qty-picker" aria-label="Select quantity">
+            <button type="button" class="qty-btn" data-qty-action="decrease" aria-label="Decrease quantity">-</button>
+            <input
+              type="number"
+              class="qty-input"
+              data-cart-qty
+              min="1"
+              step="1"
+              value="1"
+              inputmode="numeric"
+              aria-label="Quantity"
+            >
+            <button type="button" class="qty-btn" data-qty-action="increase" aria-label="Increase quantity">+</button>
+          </div>
+          <button type="button" class="buy-button" data-cart-add>BUY</button>
+        </div>
+      </div>
+    </article>
+
+    <article class="item-card" data-sku="reinforced-carbon-fiber" data-price="12300000" data-category="materials" data-sub="reaction">
+      <h2>Reinforced Carbon Fiber</h2>
+      <p>Materials</p>
+      <img src="../assets/images/items/ships/zirnitra-render-128.avif" alt="Reinforced Carbon Fiber image">
+
+      <div class="text">
+        <div class="item-card-footer">
+          <p><strong>Price:</strong> 12.3mil</p>
+
+          <div class="stock-state" aria-label="In stock: 16">
+            <img src="../assets/images/icons/stock.png" alt="stock icon" aria-hidden="true">
+            <p class="stock-state-count" aria-hidden="true">16</p>
+          </div>
+        </div>
+
+        <div class="item-buy-controls">
+          <div class="qty-picker" aria-label="Select quantity">
+            <button type="button" class="qty-btn" data-qty-action="decrease" aria-label="Decrease quantity">-</button>
+            <input
+              type="number"
+              class="qty-input"
+              data-cart-qty
+              min="1"
+              step="1"
+              value="1"
+              inputmode="numeric"
+              aria-label="Quantity"
+            >
+            <button type="button" class="qty-btn" data-qty-action="increase" aria-label="Increase quantity">+</button>
+          </div>
+          <button type="button" class="buy-button" data-cart-add>BUY</button>
+        </div>
+      </div>
+    </article>
+
+    <article class="item-card" data-sku="titanium-carbide" data-price="9600000" data-category="materials" data-sub="reaction">
+      <h2>Titanium Carbide</h2>
+      <p>Materials</p>
+      <img src="../assets/images/items/ships/zirnitra-render-128.avif" alt="Titanium Carbide image">
+
+      <div class="text">
+        <div class="item-card-footer">
+          <p><strong>Price:</strong> 9.6mil</p>
+
+          <div class="stock-state" aria-label="In stock: 31">
+            <img src="../assets/images/icons/stock.png" alt="stock icon" aria-hidden="true">
+            <p class="stock-state-count" aria-hidden="true">31</p>
+          </div>
+        </div>
+
+        <div class="item-buy-controls">
+          <div class="qty-picker" aria-label="Select quantity">
+            <button type="button" class="qty-btn" data-qty-action="decrease" aria-label="Decrease quantity">-</button>
+            <input
+              type="number"
+              class="qty-input"
+              data-cart-qty
+              min="1"
+              step="1"
+              value="1"
+              inputmode="numeric"
+              aria-label="Quantity"
+            >
+            <button type="button" class="qty-btn" data-qty-action="increase" aria-label="Increase quantity">+</button>
+          </div>
+          <button type="button" class="buy-button" data-cart-add>BUY</button>
+        </div>
+      </div>
+    </article>
+
+    <article class="item-card" data-sku="tungsten-carbide" data-price="10100000" data-category="materials" data-sub="reaction">
+      <h2>Tungsten Carbide</h2>
+      <p>Materials</p>
+      <img src="../assets/images/items/ships/zirnitra-render-128.avif" alt="Tungsten Carbide image">
+
+      <div class="text">
+        <div class="item-card-footer">
+          <p><strong>Price:</strong> 10.1mil</p>
+
+          <div class="stock-state" aria-label="In stock: 14">
+            <img src="../assets/images/icons/stock.png" alt="stock icon" aria-hidden="true">
+            <p class="stock-state-count" aria-hidden="true">14</p>
+          </div>
+        </div>
+
+        <div class="item-buy-controls">
+          <div class="qty-picker" aria-label="Select quantity">
+            <button type="button" class="qty-btn" data-qty-action="decrease" aria-label="Decrease quantity">-</button>
+            <input
+              type="number"
+              class="qty-input"
+              data-cart-qty
+              min="1"
+              step="1"
+              value="1"
+              inputmode="numeric"
+              aria-label="Quantity"
+            >
+            <button type="button" class="qty-btn" data-qty-action="increase" aria-label="Increase quantity">+</button>
+          </div>
+          <button type="button" class="buy-button" data-cart-add>BUY</button>
+        </div>
+      </div>
+    </article>
+
+    <article class="item-card" data-sku="pressurized-oxidizers" data-price="7800000" data-category="materials" data-sub="reaction">
+      <h2>Pressurized Oxidizers</h2>
+      <p>Materials</p>
+      <img src="../assets/images/items/ships/zirnitra-render-128.avif" alt="Pressurized Oxidizers image">
+
+      <div class="text">
+        <div class="item-card-footer">
+          <p><strong>Price:</strong> 7.8mil</p>
+
+          <div class="stock-state" aria-label="In stock: 19">
+            <img src="../assets/images/icons/stock.png" alt="stock icon" aria-hidden="true">
+            <p class="stock-state-count" aria-hidden="true">19</p>
+          </div>
+        </div>
+
+        <div class="item-buy-controls">
+          <div class="qty-picker" aria-label="Select quantity">
+            <button type="button" class="qty-btn" data-qty-action="decrease" aria-label="Decrease quantity">-</button>
+            <input
+              type="number"
+              class="qty-input"
+              data-cart-qty
+              min="1"
+              step="1"
+              value="1"
+              inputmode="numeric"
+              aria-label="Quantity"
+            >
+            <button type="button" class="qty-btn" data-qty-action="increase" aria-label="Increase quantity">+</button>
+          </div>
+          <button type="button" class="buy-button" data-cart-add>BUY</button>
+        </div>
+      </div>
+    </article>
+
+    <article class="item-card" data-sku="ferrogel" data-price="15800000" data-category="materials" data-sub="reaction">
+      <h2>Ferrogel</h2>
+      <p>Materials</p>
+      <img src="../assets/images/items/ships/zirnitra-render-128.avif" alt="Ferrogel image">
+
+      <div class="text">
+        <div class="item-card-footer">
+          <p><strong>Price:</strong> 15.8mil</p>
+
+          <div class="stock-state" aria-label="In stock: 8">
+            <img src="../assets/images/icons/stock.png" alt="stock icon" aria-hidden="true">
+            <p class="stock-state-count" aria-hidden="true">8</p>
+          </div>
+        </div>
+
+        <div class="item-buy-controls">
+          <div class="qty-picker" aria-label="Select quantity">
+            <button type="button" class="qty-btn" data-qty-action="decrease" aria-label="Decrease quantity">-</button>
+            <input
+              type="number"
+              class="qty-input"
+              data-cart-qty
+              min="1"
+              step="1"
+              value="1"
+              inputmode="numeric"
+              aria-label="Quantity"
+            >
+            <button type="button" class="qty-btn" data-qty-action="increase" aria-label="Increase quantity">+</button>
+          </div>
+          <button type="button" class="buy-button" data-cart-add>BUY</button>
+        </div>
+      </div>
+    </article>
+
+    <article class="item-card" data-sku="fernite-carbide" data-price="11200000" data-category="materials" data-sub="reaction">
+      <h2>Fernite Carbide</h2>
+      <p>Materials</p>
+      <img src="../assets/images/items/ships/zirnitra-render-128.avif" alt="Fernite Carbide image">
+
+      <div class="text">
+        <div class="item-card-footer">
+          <p><strong>Price:</strong> 11.2mil</p>
+
+          <div class="stock-state" aria-label="In stock: 25">
+            <img src="../assets/images/icons/stock.png" alt="stock icon" aria-hidden="true">
+            <p class="stock-state-count" aria-hidden="true">25</p>
+          </div>
+        </div>
+
+        <div class="item-buy-controls">
+          <div class="qty-picker" aria-label="Select quantity">
+            <button type="button" class="qty-btn" data-qty-action="decrease" aria-label="Decrease quantity">-</button>
+            <input
+              type="number"
+              class="qty-input"
+              data-cart-qty
+              min="1"
+              step="1"
+              value="1"
+              inputmode="numeric"
+              aria-label="Quantity"
+            >
+            <button type="button" class="qty-btn" data-qty-action="increase" aria-label="Increase quantity">+</button>
+          </div>
+          <button type="button" class="buy-button" data-cart-add>BUY</button>
+        </div>
+      </div>
+    </article>
+
+    <article class="item-card" data-sku="broadcast-node" data-price="5200000" data-category="materials" data-sub="planetary">
+      <h2>Broadcast Node</h2>
+      <p>Materials</p>
+      <img src="../assets/images/items/ships/zirnitra-render-128.avif" alt="Broadcast Node image">
+
+      <div class="text">
+        <div class="item-card-footer">
+          <p><strong>Price:</strong> 5.2mil</p>
+
+          <div class="stock-state" aria-label="In stock: 33">
+            <img src="../assets/images/icons/stock.png" alt="stock icon" aria-hidden="true">
+            <p class="stock-state-count" aria-hidden="true">33</p>
+          </div>
+        </div>
+
+        <div class="item-buy-controls">
+          <div class="qty-picker" aria-label="Select quantity">
+            <button type="button" class="qty-btn" data-qty-action="decrease" aria-label="Decrease quantity">-</button>
+            <input
+              type="number"
+              class="qty-input"
+              data-cart-qty
+              min="1"
+              step="1"
+              value="1"
+              inputmode="numeric"
+              aria-label="Quantity"
+            >
+            <button type="button" class="qty-btn" data-qty-action="increase" aria-label="Increase quantity">+</button>
+          </div>
+          <button type="button" class="buy-button" data-cart-add>BUY</button>
+        </div>
+      </div>
+    </article>
+
+    <article class="item-card" data-sku="integrity-response-drones" data-price="6100000" data-category="materials" data-sub="planetary">
+      <h2>Integrity Response Drones</h2>
+      <p>Materials</p>
+      <img src="../assets/images/items/ships/zirnitra-render-128.avif" alt="Integrity Response Drones image">
+
+      <div class="text">
+        <div class="item-card-footer">
+          <p><strong>Price:</strong> 6.1mil</p>
+
+          <div class="stock-state" aria-label="In stock: 11">
+            <img src="../assets/images/icons/stock.png" alt="stock icon" aria-hidden="true">
+            <p class="stock-state-count" aria-hidden="true">11</p>
+          </div>
+        </div>
+
+        <div class="item-buy-controls">
+          <div class="qty-picker" aria-label="Select quantity">
+            <button type="button" class="qty-btn" data-qty-action="decrease" aria-label="Decrease quantity">-</button>
+            <input
+              type="number"
+              class="qty-input"
+              data-cart-qty
+              min="1"
+              step="1"
+              value="1"
+              inputmode="numeric"
+              aria-label="Quantity"
+            >
+            <button type="button" class="qty-btn" data-qty-action="increase" aria-label="Increase quantity">+</button>
+          </div>
+          <button type="button" class="buy-button" data-cart-add>BUY</button>
+        </div>
+      </div>
+    </article>
+
+    <article class="item-card" data-sku="sterile-conduits" data-price="4700000" data-category="materials" data-sub="planetary">
+      <h2>Sterile Conduits</h2>
+      <p>Materials</p>
+      <img src="../assets/images/items/ships/zirnitra-render-128.avif" alt="Sterile Conduits image">
+
+      <div class="text">
+        <div class="item-card-footer">
+          <p><strong>Price:</strong> 4.7mil</p>
+
+          <div class="stock-state" aria-label="In stock: 29">
+            <img src="../assets/images/icons/stock.png" alt="stock icon" aria-hidden="true">
+            <p class="stock-state-count" aria-hidden="true">29</p>
+          </div>
+        </div>
+
+        <div class="item-buy-controls">
+          <div class="qty-picker" aria-label="Select quantity">
+            <button type="button" class="qty-btn" data-qty-action="decrease" aria-label="Decrease quantity">-</button>
+            <input
+              type="number"
+              class="qty-input"
+              data-cart-qty
+              min="1"
+              step="1"
+              value="1"
+              inputmode="numeric"
+              aria-label="Quantity"
+            >
+            <button type="button" class="qty-btn" data-qty-action="increase" aria-label="Increase quantity">+</button>
+          </div>
+          <button type="button" class="buy-button" data-cart-add>BUY</button>
+        </div>
+      </div>
+    </article>
+
+    <article class="item-card" data-sku="wetware-mainframe" data-price="9300000" data-category="materials" data-sub="planetary">
+      <h2>Wetware Mainframe</h2>
+      <p>Materials</p>
+      <img src="../assets/images/items/ships/zirnitra-render-128.avif" alt="Wetware Mainframe image">
+
+      <div class="text">
+        <div class="item-card-footer">
+          <p><strong>Price:</strong> 9.3mil</p>
+
+          <div class="stock-state" aria-label="In stock: 17">
+            <img src="../assets/images/icons/stock.png" alt="stock icon" aria-hidden="true">
+            <p class="stock-state-count" aria-hidden="true">17</p>
+          </div>
+        </div>
+
+        <div class="item-buy-controls">
+          <div class="qty-picker" aria-label="Select quantity">
+            <button type="button" class="qty-btn" data-qty-action="decrease" aria-label="Decrease quantity">-</button>
+            <input
+              type="number"
+              class="qty-input"
+              data-cart-qty
+              min="1"
+              step="1"
+              value="1"
+              inputmode="numeric"
+              aria-label="Quantity"
+            >
+            <button type="button" class="qty-btn" data-qty-action="increase" aria-label="Increase quantity">+</button>
+          </div>
+          <button type="button" class="buy-button" data-cart-add>BUY</button>
+        </div>
+      </div>
+    </article>
+
+    <article class="item-card" data-sku="capital-armor-plates" data-price="68000000" data-category="materials" data-sub="component">
+      <h2>Capital Armor Plates</h2>
+      <p>Materials</p>
+      <img src="../assets/images/items/ships/zirnitra-render-128.avif" alt="Capital Armor Plates image">
+
+      <div class="text">
+        <div class="item-card-footer">
+          <p><strong>Price:</strong> 68mil</p>
+
+          <div class="stock-state" aria-label="In stock: 6">
+            <img src="../assets/images/icons/stock.png" alt="stock icon" aria-hidden="true">
+            <p class="stock-state-count" aria-hidden="true">6</p>
+          </div>
+        </div>
+
+        <div class="item-buy-controls">
+          <div class="qty-picker" aria-label="Select quantity">
+            <button type="button" class="qty-btn" data-qty-action="decrease" aria-label="Decrease quantity">-</button>
+            <input
+              type="number"
+              class="qty-input"
+              data-cart-qty
+              min="1"
+              step="1"
+              value="1"
+              inputmode="numeric"
+              aria-label="Quantity"
+            >
+            <button type="button" class="qty-btn" data-qty-action="increase" aria-label="Increase quantity">+</button>
+          </div>
+          <button type="button" class="buy-button" data-cart-add>BUY</button>
+        </div>
+      </div>
+    </article>
+
+    <article class="item-card" data-sku="capital-capacitor-battery" data-price="75000000" data-category="materials" data-sub="component">
+      <h2>Capital Capacitor Battery</h2>
+      <p>Materials</p>
+      <img src="../assets/images/items/ships/zirnitra-render-128.avif" alt="Capital Capacitor Battery image">
+
+      <div class="text">
+        <div class="item-card-footer">
+          <p><strong>Price:</strong> 75mil</p>
+
+          <div class="stock-state" aria-label="In stock: 9">
+            <img src="../assets/images/icons/stock.png" alt="stock icon" aria-hidden="true">
+            <p class="stock-state-count" aria-hidden="true">9</p>
+          </div>
+        </div>
+
+        <div class="item-buy-controls">
+          <div class="qty-picker" aria-label="Select quantity">
+            <button type="button" class="qty-btn" data-qty-action="decrease" aria-label="Decrease quantity">-</button>
+            <input
+              type="number"
+              class="qty-input"
+              data-cart-qty
+              min="1"
+              step="1"
+              value="1"
+              inputmode="numeric"
+              aria-label="Quantity"
+            >
+            <button type="button" class="qty-btn" data-qty-action="increase" aria-label="Increase quantity">+</button>
+          </div>
+          <button type="button" class="buy-button" data-cart-add>BUY</button>
+        </div>
+      </div>
+    </article>
+
+    <article class="item-card" data-sku="capital-cargo-bay" data-price="59000000" data-category="materials" data-sub="component">
+      <h2>Capital Cargo Bay</h2>
+      <p>Materials</p>
+      <img src="../assets/images/items/ships/zirnitra-render-128.avif" alt="Capital Cargo Bay image">
+
+      <div class="text">
+        <div class="item-card-footer">
+          <p><strong>Price:</strong> 59mil</p>
+
+          <div class="stock-state" aria-label="In stock: 13">
+            <img src="../assets/images/icons/stock.png" alt="stock icon" aria-hidden="true">
+            <p class="stock-state-count" aria-hidden="true">13</p>
           </div>
         </div>
 
