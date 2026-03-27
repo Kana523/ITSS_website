@@ -1,0 +1,165 @@
+header {
+  padding: 0 10px 0 0;
+}
+
+nav a[aria-current="page"] {
+  color: var(--text-gold-top);
+  text-decoration: underline;
+}
+
+.about-page {
+  width: min(1040px, calc(100% - 32px));
+  margin: 28px auto 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.about-title-panel,
+.about-card {
+  padding: 22px;
+  border: 2px solid transparent;
+  border-image: var(--gold-border-gradient) 1;
+  background: linear-gradient(145deg, var(--surface-850), var(--surface-700));
+  box-shadow: 0 0 22px rgba(0, 0, 0, 0.18);
+}
+
+.about-title-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: center;
+  align-items: center;
+}
+
+.about-kicker {
+  font-size: 0.82rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.about-title-panel h1,
+.about-card h2 {
+  text-align: left;
+  align-self: flex-start;
+}
+
+.about-grid {
+  display: grid;
+  gap: 18px;
+}
+
+.about-title-panel h1 {
+  align-self: center;
+  text-align: center;
+  font-size: clamp(2rem, 4.4vw, 3.2rem);
+  line-height: 1;
+}
+
+.about-title-panel p {
+  max-width: 58ch;
+}
+
+.about-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.about-card h2 {
+  margin-bottom: 10px;
+}
+
+.about-offers-card {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.about-offers-section {
+  min-width: 0;
+}
+
+.about-offers-section + .about-offers-section {
+  border-left: 1px solid var(--gold-border-alternate);
+  padding-left: 18px;
+}
+
+.about-owner-card {
+  display: grid;
+  grid-template-columns: 128px minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.about-owner-card img {
+  width: 128px;
+  max-width: 100%;
+  border: 1px solid var(--gold-border-alternate);
+  background: rgba(8, 11, 18, 0.72);
+}
+
+.about-owner-copy {
+  display: flex;
+  flex-direction: column;
+}
+
+.about-owner-copy h3 {
+  margin-bottom: 10px;
+  color: var(--text-gold-top);
+  font-family: var(--font-title);
+  font-size: 1.25rem;
+}
+
+.about-list {
+  padding-left: 18px;
+}
+
+.about-list li {
+  color: var(--text-gold-bottom);
+  font-family: var(--font-text);
+}
+
+.about-list li + li {
+  margin-top: 10px;
+}
+
+@media (max-width: 980px) {
+  .about-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .about-page {
+    width: min(100%, calc(100% - 24px));
+    margin: 20px auto 28px;
+    gap: 16px;
+  }
+
+  .about-title-panel,
+  .about-card {
+    padding: 18px;
+  }
+
+  .about-title-panel h1 {
+    font-size: clamp(1.8rem, 10vw, 2.6rem);
+  }
+
+  .about-owner-card {
+    grid-template-columns: 1fr;
+  }
+
+  .about-owner-card img {
+    width: min(160px, 100%);
+  }
+
+  .about-offers-card {
+    grid-template-columns: 1fr;
+  }
+
+  .about-offers-section + .about-offers-section {
+    border-left: none;
+    border-top: 1px solid var(--gold-border-alternate);
+    padding-left: 0;
+    padding-top: 18px;
+  }
+}
