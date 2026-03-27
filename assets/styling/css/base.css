@@ -120,6 +120,10 @@ footer {
   font-size: var(--font-small);
 }
 
+footer a {
+  font-weight: normal;
+}
+
 /* === CCP legal notice tooltip === */
 
 .ccp-legal-trigger {
