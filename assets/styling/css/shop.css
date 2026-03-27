@@ -41,6 +41,14 @@
   gap: 40px;
 }
 
+.display .item-card {
+  transition: opacity 0.2s ease;
+}
+
+.display .item-card.item-card--out-of-stock {
+  opacity: 0.7;
+}
+
 .display-meta {
   display: flex;
   justify-content: center;

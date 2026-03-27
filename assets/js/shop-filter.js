@@ -9,6 +9,21 @@ document.addEventListener("DOMContentLoaded", () => {
   const searchInput = document.getElementById("filter-search");
   const resultsCountEl = document.getElementById("results-count");
 
+  function stockCountFor(card) {
+    const explicitCount = card.querySelector(".stock-state-count")?.textContent || "";
+    const parsedExplicit = Number.parseInt(explicitCount, 10);
+    if (Number.isFinite(parsedExplicit)) return parsedExplicit;
+
+    const ariaLabel = card.querySelector(".stock-state")?.getAttribute("aria-label") || "";
+    const parsedFromLabel = Number.parseInt(ariaLabel.replace(/[^\d-]/g, ""), 10);
+    return Number.isFinite(parsedFromLabel) ? parsedFromLabel : 0;
+  }
+
+  function syncStockState(card) {
+    const stockCount = stockCountFor(card);
+    card.classList.toggle("item-card--out-of-stock", stockCount <= 0);
+  }
+
   function inferCategory(card) {
     const explicit = (card.dataset.category || "").trim().toLowerCase();
     if (explicit) return explicit;
@@ -93,6 +108,8 @@ document.addEventListener("DOMContentLoaded", () => {
     let shownCount = 0;
 
     cards.forEach(card => {
+      syncStockState(card);
+
       const cat = inferCategory(card);
       const sub = inferSub(card);
       const childKey = sub ? `${cat}:${sub}` : "";
