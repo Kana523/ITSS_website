@@ -41,6 +41,42 @@
   gap: 40px;
 }
 
+.display .item-card {
+  transition: opacity 0.2s ease;
+}
+
+.display .item-card.item-card--out-of-stock {
+  opacity: 0.7;
+}
+
+.stock-state {
+  position: relative;
+}
+
+.item-card--out-of-stock .stock-state[data-next-stock] {
+  cursor: help;
+}
+
+.item-card--out-of-stock .stock-state[data-next-stock]:is(:hover, :focus-visible)::after {
+  content: attr(data-next-stock);
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  transform: translateX(-50%);
+  min-width: 180px;
+  max-width: 220px;
+  padding: 8px 10px;
+  border: 1px solid var(--gold-border-alternate);
+  background: var(--surface-850);
+  color: var(--text-gold-top);
+  font-family: var(--font-text);
+  font-size: 0.85rem;
+  line-height: 1.35;
+  text-align: center;
+  box-shadow: 0 0 16px rgba(0, 0, 0, 0.35);
+  z-index: 5;
+}
+
 .display-meta {
   display: flex;
   justify-content: center;
