@@ -21,7 +21,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function syncStockState(card) {
     const stockCount = stockCountFor(card);
+    const stockState = card.querySelector(".stock-state");
+    const actionButton = card.querySelector("[data-cart-add]");
+    const outOfStock = stockCount <= 0;
+
     card.classList.toggle("item-card--out-of-stock", stockCount <= 0);
+
+    if (!stockState) return;
+
+    stockState.setAttribute("aria-label", `In stock: ${stockCount}`);
+    stockState.tabIndex = outOfStock ? 0 : -1;
+
+    if (outOfStock && !stockState.dataset.nextStock) {
+      stockState.dataset.nextStock = "Next stock date not set yet.";
+    }
+
+    if (actionButton) {
+      actionButton.textContent = outOfStock ? "RESERVE" : "BUY";
+    }
   }
 
   function inferCategory(card) {
