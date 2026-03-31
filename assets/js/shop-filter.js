@@ -3,6 +3,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const cards = Array.from(document.querySelectorAll(".display .item-card"));
   const display = document.querySelector(".display");
   const stockEndpoint = (document.body?.dataset.stockEndpoint || "").trim();
+  const STOCK_CACHE_KEY = "itss_shop_stock_cache_v1";
+  const STOCK_CACHE_MAX_AGE_MS = 15 * 60 * 1000;
 
   const parentCbs = Array.from(document.querySelectorAll(".filter input[data-parent]"));
   const childCbs  = Array.from(document.querySelectorAll(".filter input[data-child]"));
@@ -150,6 +152,64 @@ document.addEventListener("DOMContentLoaded", () => {
     return normalized;
   }
 
+  function serializeStockMap(stockMap) {
+    return Array.from(stockMap.values()).map((record) => ({
+      sku: record.sku,
+      stock: record.stock,
+      nextStock: record.nextStock || "",
+      price: record.price
+    }));
+  }
+
+  function loadCachedStockMap() {
+    try {
+      const rawCache = localStorage.getItem(STOCK_CACHE_KEY);
+      if (!rawCache) return null;
+
+      const parsedCache = JSON.parse(rawCache);
+      if (!parsedCache || typeof parsedCache !== "object") return null;
+
+      const cachedAt = Number(parsedCache.cachedAt);
+      if (!Number.isFinite(cachedAt)) return null;
+
+      if (Date.now() - cachedAt > STOCK_CACHE_MAX_AGE_MS) {
+        return null;
+      }
+
+      const normalized = normalizeStockFeed(parsedCache.records);
+      return normalized.size > 0 ? normalized : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function saveCachedStockMap(stockMap) {
+    if (!(stockMap instanceof Map) || stockMap.size === 0) return;
+
+    try {
+      localStorage.setItem(STOCK_CACHE_KEY, JSON.stringify({
+        cachedAt: Date.now(),
+        records: serializeStockMap(stockMap)
+      }));
+    } catch {
+      // Ignore storage failures so the live feed still works normally.
+    }
+  }
+
+  function applyStockMapToCards(stockMap) {
+    cards.forEach((card) => {
+      const sku = normalizeSku(card.dataset.sku);
+      const record = stockMap.get(sku);
+
+      if (record) {
+        applyRemoteStock(card, record);
+        return;
+      }
+
+      syncStockState(card);
+    });
+  }
+
   function applyRemoteStock(card, record) {
     if (!card || !record) return;
 
@@ -187,9 +247,20 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function loadRemoteStock() {
-    if (!stockEndpoint || stockEndpoint.includes("PASTE_YOUR_GOOGLE_APPS_SCRIPT")) {
-      cards.forEach(syncStockState);
+    const cachedStockMap = loadCachedStockMap();
+    const hasCachedStock = cachedStockMap instanceof Map && cachedStockMap.size > 0;
+
+    if (hasCachedStock) {
+      applyStockMapToCards(cachedStockMap);
+      document.dispatchEvent(new CustomEvent("shop:product-data-updated"));
       applyFilters();
+    }
+
+    if (!stockEndpoint || stockEndpoint.includes("PASTE_YOUR_GOOGLE_APPS_SCRIPT")) {
+      if (!hasCachedStock) {
+        cards.forEach(syncStockState);
+        applyFilters();
+      }
       return;
     }
 
@@ -211,22 +282,15 @@ document.addEventListener("DOMContentLoaded", () => {
         console.warn("Stock feed loaded but did not contain any usable rows.");
       }
 
-      cards.forEach((card) => {
-        const sku = normalizeSku(card.dataset.sku);
-        const record = stockMap.get(sku);
-
-        if (record) {
-          applyRemoteStock(card, record);
-          return;
-        }
-
-        syncStockState(card);
-      });
+      saveCachedStockMap(stockMap);
+      applyStockMapToCards(stockMap);
 
       document.dispatchEvent(new CustomEvent("shop:product-data-updated"));
     } catch (error) {
       console.error("Unable to load remote stock feed.", error);
-      cards.forEach(syncStockState);
+      if (!hasCachedStock) {
+        cards.forEach(syncStockState);
+      }
     }
 
     applyFilters();
