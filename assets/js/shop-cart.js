@@ -185,6 +185,26 @@ document.addEventListener("DOMContentLoaded", () => {
     renderCart();
   }
 
+  function syncCartPricesFromProducts() {
+    let changed = false;
+
+    document.querySelectorAll(".display .item-card").forEach((card) => {
+      const product = getProductData(card);
+      if (!product || !cart[product.sku]) return;
+
+      if (cart[product.sku].price !== product.price) {
+        cart[product.sku].price = product.price;
+        cart[product.sku].priceLabel = formatPrice(product.price);
+        changed = true;
+      }
+    });
+
+    if (!changed) return;
+
+    saveCart();
+    renderCart();
+  }
+
   function decreaseQty(sku) {
     if (!cart[sku]) return;
     cart[sku].qty -= 1;
@@ -359,6 +379,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   syncProductPriceLabels();
   cartClearBtn?.addEventListener("click", clearCart);
+  document.addEventListener("shop:product-data-updated", () => {
+    syncProductPriceLabels();
+    syncCartPricesFromProducts();
+  });
 
   renderCart();
 });

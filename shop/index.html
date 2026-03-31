@@ -14,7 +14,7 @@
   <title>ITS-S Store</title>
 </head>
 
-<body>
+<body data-stock-endpoint="https://script.google.com/macros/s/AKfycbx4P0XIYn5CRCaVCy6iDbfbSRonVuiQeuU0p-PdEmNu5Os1sUZ-ktnGzYZFSK62vlcA/exec">
     <header>
       <div class="container-logo">
         <img src="../assets/images/icons/itss.png" alt="CorpLogo">
@@ -63,19 +63,32 @@
 
     <form class="filter-form" autocomplete="off">
 
-      <div class="filter-search">
-        <input
-          id="filter-search"
-          type="search"
+	      <div class="filter-search">
+	        <input
+	          id="filter-search"
+	          type="search"
           aria-label="Search items"
           placeholder="Search items..."
           autocomplete="off"
-        >
-      </div>
+	        >
+	      </div>
 
-      <label>
-        <input type="checkbox" data-parent value="instock">
-        In Stock
+	      <div class="sort-group">
+	        <label for="display-sort" class="filter-label">Sort By</label>
+	        <select id="display-sort" class="filter-select" aria-label="Sort store items">
+	          <option value="default">Default Order</option>
+	          <option value="stock-desc">Stock: High to Low</option>
+	          <option value="stock-asc">Stock: Low to High</option>
+	          <option value="type-asc">Type: A to Z</option>
+	          <option value="name-asc">Name: A to Z</option>
+	          <option value="price-desc">Price: High to Low</option>
+	          <option value="price-asc">Price: Low to High</option>
+	        </select>
+	      </div>
+
+	      <label>
+	        <input type="checkbox" data-parent value="instock">
+	        In Stock
       </label>
 
       <label>

@@ -152,11 +152,25 @@
   gap: 5px;
 }
 
+.sort-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
 #filter-search {
   border: 1px solid var(--gold-border-alternate);
   background: var(--button-background);
   color: var(--text-gold-mid);
   padding: 6px 8px;
+}
+
+.filter-select {
+  border: 1px solid var(--gold-border-alternate);
+  background: var(--button-background);
+  color: var(--text-gold-mid);
+  padding: 6px 8px;
+  font: inherit;
 }
 
 #filter-search::placeholder {
