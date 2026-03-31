@@ -13,16 +13,31 @@ document.addEventListener("DOMContentLoaded", () => {
   const searchInput = document.getElementById("filter-search");
   const sortSelect = document.getElementById("display-sort");
   const resultsCountEl = document.getElementById("results-count");
-  const originalOrder = new Map(cards.map((card, index) => [card, index]));
+  const cardMeta = new Map();
 
   function stockCountFor(card) {
-    const explicitCount = card.querySelector(".stock-state-count")?.textContent || "";
-    const parsedExplicit = Number.parseInt(explicitCount, 10);
-    if (Number.isFinite(parsedExplicit)) return parsedExplicit;
+    const meta = cardMeta.get(card);
+    if (meta && Number.isFinite(meta.stock)) return meta.stock;
 
-    const ariaLabel = card.querySelector(".stock-state")?.getAttribute("aria-label") || "";
+    const rawCount = meta?.stockCountEl?.dataset.stockRaw || "";
+    const parsedRaw = Number.parseInt(rawCount, 10);
+    if (Number.isFinite(parsedRaw)) {
+      if (meta) meta.stock = parsedRaw;
+      return parsedRaw;
+    }
+
+    const explicitCount = meta?.stockCountEl?.textContent || "";
+    const parsedExplicit = Number.parseInt(explicitCount, 10);
+    if (Number.isFinite(parsedExplicit)) {
+      if (meta) meta.stock = parsedExplicit;
+      return parsedExplicit;
+    }
+
+    const ariaLabel = meta?.stockStateEl?.getAttribute("aria-label") || "";
     const parsedFromLabel = Number.parseInt(ariaLabel.replace(/[^\d-]/g, ""), 10);
-    return Number.isFinite(parsedFromLabel) ? parsedFromLabel : 0;
+    const stock = Number.isFinite(parsedFromLabel) ? parsedFromLabel : 0;
+    if (meta) meta.stock = stock;
+    return stock;
   }
 
   function normalizeSku(value) {
@@ -69,96 +84,70 @@ document.addEventListener("DOMContentLoaded", () => {
     return `${Math.round(amount)} ISK`;
   }
 
-  function stockRecordFromValue(rawValue, fallbackSku = "") {
-    const fallbackStock = typeof rawValue === "number" || typeof rawValue === "string"
-      ? parseStockValue(rawValue)
-      : null;
+  function formatStockCount(value) {
+    const amount = Number(value);
+    if (!Number.isFinite(amount) || amount <= 0) return "0";
 
-    if (fallbackStock !== null) {
-      return {
-        sku: normalizeSku(fallbackSku),
-        stock: fallbackStock,
-        nextStock: "",
-        price: null
-      };
+    function formatUnit(divisor, suffix) {
+      const unitValue = amount / divisor;
+      const trimmed = unitValue
+        .toFixed(2)
+        .replace(/(\.\d*?[1-9])0+$/, "$1")
+        .replace(/\.0+$/, "");
+      return `${trimmed}${suffix}`;
     }
 
-    if (!rawValue || typeof rawValue !== "object") {
-      return null;
+    if (amount >= 1000000000000) {
+      return formatUnit(1000000000000, "t");
     }
-
-    const sku = normalizeSku(rawValue.sku || fallbackSku);
-    const stock = parseStockValue(
-      rawValue.stock
-      ?? rawValue.qty
-      ?? rawValue.quantity
-      ?? rawValue.in_stock
-      ?? rawValue.inStock
-    );
-
-    if (!sku || stock === null) {
-      return null;
+    if (amount >= 1000000000) {
+      return formatUnit(1000000000, "b");
     }
-
-    const nextStock = String(
-      rawValue.next_stock
-      ?? rawValue.nextStock
-      ?? rawValue.restock
-      ?? rawValue.restock_eta
-      ?? rawValue.restockEta
-      ?? ""
-    ).trim();
-
-    const price = parsePriceValue(
-      rawValue.price
-      ?? rawValue.price_isk
-      ?? rawValue.priceIsk
-      ?? rawValue.isk_price
-      ?? rawValue.iskPrice
-    );
-
-    return { sku, stock, nextStock, price };
+    if (amount >= 1000000) {
+      return formatUnit(1000000, "m");
+    }
+    if (amount >= 1000) {
+      return formatUnit(1000, "k");
+    }
+    return String(Math.round(amount));
   }
 
   function normalizeStockFeed(payload) {
     const normalized = new Map();
-
-    if (Array.isArray(payload)) {
-      payload.forEach((entry) => {
-        const record = stockRecordFromValue(entry);
-        if (record) normalized.set(record.sku, record);
-      });
-      return normalized;
-    }
-
-    if (!payload || typeof payload !== "object") {
-      return normalized;
-    }
-
-    const listPayload = payload.items || payload.data || payload.rows || payload.stock;
-    if (Array.isArray(listPayload)) {
-      listPayload.forEach((entry) => {
-        const record = stockRecordFromValue(entry);
-        if (record) normalized.set(record.sku, record);
-      });
+    if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
       return normalized;
     }
 
     Object.entries(payload).forEach(([sku, value]) => {
-      const record = stockRecordFromValue(value, sku);
-      if (record) normalized.set(record.sku, record);
+      if (!value || typeof value !== "object") return;
+
+      const normalizedSku = normalizeSku(sku);
+      const stock = parseStockValue(value.stock);
+      if (!normalizedSku || stock === null) return;
+
+      normalized.set(normalizedSku, {
+        sku: normalizedSku,
+        stock,
+        price: parsePriceValue(value.price),
+        nextStock: String(value.next_stock || "").trim()
+      });
     });
 
     return normalized;
   }
 
   function serializeStockMap(stockMap) {
-    return Array.from(stockMap.values()).map((record) => ({
-      sku: record.sku,
-      stock: record.stock,
-      nextStock: record.nextStock || "",
-      price: record.price
-    }));
+    const serialized = {};
+
+    stockMap.forEach((record, sku) => {
+      serialized[sku] = {
+        stock: record.stock,
+        price: record.price,
+        next_stock: record.nextStock || ""
+      };
+    });
+
+    return serialized;
   }
 
   function loadCachedStockMap() {
@@ -198,8 +187,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function applyStockMapToCards(stockMap) {
     cards.forEach((card) => {
-      const sku = normalizeSku(card.dataset.sku);
-      const record = stockMap.get(sku);
+      const record = stockMap.get(cardMeta.get(card)?.sku || "");
 
       if (record) {
         applyRemoteStock(card, record);
@@ -213,13 +201,15 @@ document.addEventListener("DOMContentLoaded", () => {
   function applyRemoteStock(card, record) {
     if (!card || !record) return;
 
-    const stockCountEl = card.querySelector(".stock-state-count");
-    const stockState = card.querySelector(".stock-state");
-    const priceEl = card.querySelector(".item-price") || card.querySelector(".item-card-footer p");
+    const meta = cardMeta.get(card);
+    const stockCountEl = meta?.stockCountEl;
+    const stockState = meta?.stockStateEl;
+    const priceEl = meta?.priceEl;
 
     if (stockCountEl) {
-      stockCountEl.textContent = String(record.stock);
+      stockCountEl.dataset.stockRaw = String(record.stock);
     }
+    if (meta) meta.stock = record.stock;
 
     if (stockState) {
       stockState.setAttribute("aria-label", `In stock: ${record.stock}`);
@@ -233,6 +223,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (record.price !== null) {
       card.dataset.price = String(record.price);
+      if (meta) meta.price = record.price;
 
       if (priceEl?.querySelector("strong")) {
         priceEl.innerHTML = `<strong>Price:</strong> ${formatPrice(record.price)}`;
@@ -297,14 +288,21 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function syncStockState(card) {
+    const meta = cardMeta.get(card);
     const stockCount = stockCountFor(card);
-    const stockState = card.querySelector(".stock-state");
-    const actionButton = card.querySelector("[data-cart-add]");
+    const stockState = meta?.stockStateEl;
+    const actionButton = meta?.actionButtonEl;
+    const stockCountEl = meta?.stockCountEl;
     const outOfStock = stockCount <= 0;
 
     card.classList.toggle("item-card--out-of-stock", stockCount <= 0);
 
     if (!stockState) return;
+
+    if (stockCountEl) {
+      stockCountEl.dataset.stockRaw = String(stockCount);
+      stockCountEl.textContent = formatStockCount(stockCount);
+    }
 
     stockState.setAttribute("aria-label", `In stock: ${stockCount}`);
     stockState.tabIndex = outOfStock ? 0 : -1;
@@ -339,36 +337,53 @@ document.addEventListener("DOMContentLoaded", () => {
     return explicit || ""; // only needed for sub-filters (moon/ore/planetary)
   }
 
+  function createCardMeta(card, index) {
+    const name = String(card.querySelector("h2, h3")?.textContent || "").trim();
+    const subtitle = String(card.querySelector(":scope > p")?.textContent || "").trim();
+    const category = inferCategory(card);
+    const sub = inferSub(card);
+    const sku = normalizeSku(card.dataset.sku);
+
+    return {
+      index,
+      sku,
+      name,
+      typeLabel: subtitle || (sub ? `${category} ${sub}` : category),
+      category,
+      sub,
+      searchText: `${name.toLowerCase()} ${subtitle.toLowerCase()} ${sku} ${category} ${sub}`.trim(),
+      stockStateEl: card.querySelector(".stock-state"),
+      stockCountEl: card.querySelector(".stock-state-count"),
+      actionButtonEl: card.querySelector("[data-cart-add]"),
+      priceEl: card.querySelector(".item-price") || card.querySelector(".item-card-footer p"),
+      stock: null,
+      price: parsePriceValue(card.dataset.price) ?? 0
+    };
+  }
+
+  cards.forEach((card, index) => {
+    cardMeta.set(card, createCardMeta(card, index));
+  });
+
   function childrenFor(parentValue) {
     const prefix = parentValue + ":";
     return childCbs.filter(cb => (cb.value || "").toLowerCase().startsWith(prefix));
   }
 
   function searchTextFor(card) {
-    const name = (card.querySelector("h2, h3")?.textContent || "").toLowerCase();
-    const subtitle = (card.querySelector("p")?.textContent || "").toLowerCase();
-    const sku = (card.dataset.sku || "").toLowerCase();
-    const category = inferCategory(card);
-    const sub = inferSub(card);
-    return `${name} ${subtitle} ${sku} ${category} ${sub}`.trim();
+    return cardMeta.get(card)?.searchText || "";
   }
 
   function nameFor(card) {
-    return String(card.querySelector("h2, h3")?.textContent || "").trim();
+    return cardMeta.get(card)?.name || "";
   }
 
   function typeLabelFor(card) {
-    const explicitLabel = String(card.querySelector(":scope > p")?.textContent || "").trim();
-    if (explicitLabel) return explicitLabel;
-
-    const category = inferCategory(card);
-    const sub = inferSub(card);
-    return sub ? `${category} ${sub}` : category;
+    return cardMeta.get(card)?.typeLabel || "";
   }
 
   function priceFor(card) {
-    const parsed = Number(String(card.dataset.price || "").replace(/,/g, ""));
-    return Number.isFinite(parsed) ? parsed : 0;
+    return cardMeta.get(card)?.price || 0;
   }
 
   function compareText(left, right) {
@@ -408,7 +423,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return priceFor(a) - priceFor(b) || nameComparison;
       }
 
-      return (originalOrder.get(a) || 0) - (originalOrder.get(b) || 0);
+      return (cardMeta.get(a)?.index || 0) - (cardMeta.get(b)?.index || 0);
     });
 
     return visibleCards;
@@ -471,12 +486,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const hiddenCards = [];
 
     cards.forEach(card => {
-      syncStockState(card);
-
-      const cat = inferCategory(card);
-      const sub = inferSub(card);
+      const meta = cardMeta.get(card);
+      const cat = meta?.category || "";
+      const sub = meta?.sub || "";
       const childKey = sub ? `${cat}:${sub}` : "";
-      const stockCount = stockCountFor(card);
+      const stockCount = meta?.stock ?? stockCountFor(card);
       const matchesSearch = !query || searchTextFor(card).includes(query);
       const matchesStock = !activeParents.has("instock") || stockCount > 0;
       const matchesCategory =
@@ -502,7 +516,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (display) {
       const sortedVisibleCards = sortVisibleCards(visibleCards);
       const hiddenInOriginalOrder = hiddenCards.sort(
-        (a, b) => (originalOrder.get(a) || 0) - (originalOrder.get(b) || 0)
+        (a, b) => (cardMeta.get(a)?.index || 0) - (cardMeta.get(b)?.index || 0)
       );
 
       [...sortedVisibleCards, ...hiddenInOriginalOrder].forEach((card) => {
