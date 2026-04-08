@@ -1,3 +1,63 @@
+// Shared price utilities — exposed as window.ShopUtils for shop-cart.js (which loads after this script)
+function formatPrice(value) {
+  const amount = Number(value);
+  if (!Number.isFinite(amount) || amount <= 0) return "0 ISK";
+
+  function formatUnit(divisor, suffix) {
+    const unitValue = amount / divisor;
+    const trimmed = unitValue
+      .toFixed(3)
+      .replace(/(\.\d*?[1-9])0+$/, "$1")
+      .replace(/\.0+$/, "");
+    return `${trimmed} ${suffix} ISK`;
+  }
+
+  if (amount >= 1000000000000) return formatUnit(1000000000000, "tril");
+  if (amount >= 1000000000) return formatUnit(1000000000, "bil");
+  if (amount >= 1000000) return formatUnit(1000000, "mil");
+  if (amount >= 1000) return formatUnit(1000, "k");
+  return `${Math.round(amount)} ISK`;
+}
+
+function parsePriceToIsk(rawValue, fallbackLabel = "") {
+  const multipliers = {
+    k: 1000,
+    thousand: 1000,
+    m: 1000000,
+    mil: 1000000,
+    million: 1000000,
+    b: 1000000000,
+    bil: 1000000000,
+    billion: 1000000000,
+    t: 1000000000000,
+    tril: 1000000000000,
+    trillion: 1000000000000
+  };
+
+  const candidates = [rawValue, fallbackLabel];
+  for (const candidate of candidates) {
+    const text = String(candidate || "").trim();
+    if (!text) continue;
+
+    const direct = Number(text.replace(/,/g, ""));
+    if (Number.isFinite(direct) && direct > 0) return direct;
+
+    const match = text.match(/^([\d.,]+)\s*([a-zA-Z]+)?\s*(?:isk)?$/i);
+    if (!match) continue;
+
+    const numericValue = Number(match[1].replace(/,/g, ""));
+    if (!Number.isFinite(numericValue) || numericValue <= 0) continue;
+
+    const unit = String(match[2] || "").toLowerCase();
+    const multiplier = unit ? (multipliers[unit] || 1) : 1;
+    return numericValue * multiplier;
+  }
+
+  return 0;
+}
+
+window.ShopUtils = { formatPrice, parsePriceToIsk };
+
 document.addEventListener("DOMContentLoaded", () => {
   // Only filter cards in the product display area
   const cards = Array.from(document.querySelectorAll(".display .item-card"));
@@ -56,34 +116,6 @@ document.addEventListener("DOMContentLoaded", () => {
     return Math.max(0, parsed);
   }
 
-  function formatPrice(value) {
-    const amount = Number(value);
-    if (!Number.isFinite(amount) || amount <= 0) return "0 ISK";
-
-    function formatUnit(divisor, suffix) {
-      const unitValue = amount / divisor;
-      const trimmed = unitValue
-        .toFixed(3)
-        .replace(/(\.\d*?[1-9])0+$/, "$1")
-        .replace(/\.0+$/, "");
-      return `${trimmed} ${suffix} ISK`;
-    }
-
-    if (amount >= 1000000000000) {
-      return formatUnit(1000000000000, "tril");
-    }
-    if (amount >= 1000000000) {
-      return formatUnit(1000000000, "bil");
-    }
-    if (amount >= 1000000) {
-      return formatUnit(1000000, "mil");
-    }
-    if (amount >= 1000) {
-      return formatUnit(1000, "k");
-    }
-    return `${Math.round(amount)} ISK`;
-  }
-
   function formatStockCount(value) {
     const amount = Number(value);
     if (!Number.isFinite(amount) || amount <= 0) return "0";
@@ -97,19 +129,23 @@ document.addEventListener("DOMContentLoaded", () => {
       return `${trimmed}${suffix}`;
     }
 
-    if (amount >= 1000000000000) {
-      return formatUnit(1000000000000, "t");
-    }
-    if (amount >= 1000000000) {
-      return formatUnit(1000000000, "b");
-    }
-    if (amount >= 1000000) {
-      return formatUnit(1000000, "m");
-    }
-    if (amount >= 1000) {
-      return formatUnit(1000, "k");
-    }
+    if (amount >= 1000000000000) return formatUnit(1000000000000, "t");
+    if (amount >= 1000000000) return formatUnit(1000000000, "b");
+    if (amount >= 1000000) return formatUnit(1000000, "m");
+    if (amount >= 1000) return formatUnit(1000, "k");
     return String(Math.round(amount));
+  }
+
+  function updatePriceEl(el, price) {
+    if (!el) return;
+    const label = formatPrice(price);
+    if (el.querySelector("strong")) {
+      el.innerHTML = `<strong>Price:</strong> ${label}`;
+    } else if (el.querySelector("b")) {
+      el.innerHTML = `<b>Price:</b> ${label}`;
+    } else {
+      el.textContent = `Price: ${label}`;
+    }
   }
 
   function normalizeStockFeed(payload) {
@@ -204,7 +240,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const meta = cardMeta.get(card);
     const stockCountEl = meta?.stockCountEl;
     const stockState = meta?.stockStateEl;
-    const priceEl = meta?.priceEl;
 
     if (stockCountEl) {
       stockCountEl.dataset.stockRaw = String(record.stock);
@@ -224,14 +259,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (record.price !== null) {
       card.dataset.price = String(record.price);
       if (meta) meta.price = record.price;
-
-      if (priceEl?.querySelector("strong")) {
-        priceEl.innerHTML = `<strong>Price:</strong> ${formatPrice(record.price)}`;
-      } else if (priceEl?.querySelector("b")) {
-        priceEl.innerHTML = `<b>Price:</b> ${formatPrice(record.price)}`;
-      } else if (priceEl) {
-        priceEl.textContent = `Price: ${formatPrice(record.price)}`;
-      }
+      updatePriceEl(meta?.priceEl, record.price);
     }
 
     syncStockState(card);
@@ -344,6 +372,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const sub = inferSub(card);
     const sku = normalizeSku(card.dataset.sku);
 
+    const priceEl = card.querySelector(".item-price") || card.querySelector(".item-card-footer p");
+
+    // Use parsePriceToIsk so formatted strings like "1.5 mil ISK" in HTML are handled correctly.
+    // Normalize the attribute to a plain number so subsequent reads (cart, sorting) are consistent.
+    const price = parsePriceToIsk(card.dataset.price);
+    card.dataset.price = String(price);
+    updatePriceEl(priceEl, price);
+
     return {
       index,
       sku,
@@ -355,9 +391,9 @@ document.addEventListener("DOMContentLoaded", () => {
       stockStateEl: card.querySelector(".stock-state"),
       stockCountEl: card.querySelector(".stock-state-count"),
       actionButtonEl: card.querySelector("[data-cart-add]"),
-      priceEl: card.querySelector(".item-price") || card.querySelector(".item-card-footer p"),
+      priceEl,
       stock: null,
-      price: parsePriceValue(card.dataset.price) ?? 0
+      price
     };
   }
 

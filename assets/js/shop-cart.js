@@ -8,6 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return;
   }
 
+  const { formatPrice, parsePriceToIsk } = window.ShopUtils;
   const CART_STORAGE_KEY = "itss_shop_cart_v1";
   let cart = loadCart();
 
@@ -50,98 +51,6 @@ document.addEventListener("DOMContentLoaded", () => {
     localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
   }
 
-  function parsePriceToIsk(rawValue, fallbackLabel = "") {
-    const multipliers = {
-      k: 1000,
-      thousand: 1000,
-      m: 1000000,
-      mil: 1000000,
-      million: 1000000,
-      b: 1000000000,
-      bil: 1000000000,
-      billion: 1000000000,
-      t: 1000000000000,
-      tril: 1000000000000,
-      trillion: 1000000000000
-    };
-
-    const candidates = [rawValue, fallbackLabel];
-    for (const candidate of candidates) {
-      const text = String(candidate || "").trim();
-      if (!text) continue;
-
-      const direct = Number(text.replace(/,/g, ""));
-      if (Number.isFinite(direct) && direct > 0) {
-        return direct;
-      }
-
-      const match = text.match(/^([\d.,]+)\s*([a-zA-Z]+)?\s*(?:isk)?$/i);
-      if (!match) continue;
-
-      const numericValue = Number(match[1].replace(/,/g, ""));
-      if (!Number.isFinite(numericValue) || numericValue <= 0) continue;
-
-      const unit = String(match[2] || "").toLowerCase();
-      const multiplier = unit ? (multipliers[unit] || 1) : 1;
-      return numericValue * multiplier;
-    }
-
-    return 0;
-  }
-
-  function formatPrice(value) {
-    const amount = Number(value);
-    if (!Number.isFinite(amount) || amount <= 0) return "0 ISK";
-
-    function formatUnit(divisor, suffix) {
-      const unitValue = amount / divisor;
-      const trimmed = unitValue
-        .toFixed(3)
-        .replace(/(\.\d*?[1-9])0+$/, "$1")
-        .replace(/\.0+$/, "");
-      return `${trimmed} ${suffix} ISK`;
-    }
-
-    if (amount >= 1000000000000) {
-      return formatUnit(1000000000000, "tril");
-    }
-    if (amount >= 1000000000) {
-      return formatUnit(1000000000, "bil");
-    }
-    if (amount >= 1000000) {
-      return formatUnit(1000000, "mil");
-    }
-    if (amount >= 1000) {
-      return formatUnit(1000, "k");
-    }
-    return `${Math.round(amount)} ISK`;
-  }
-
-  function syncProductPriceLabels() {
-    const cards = Array.from(document.querySelectorAll(".display .item-card"));
-    cards.forEach((card) => {
-      const safePrice = parsePriceToIsk(card.dataset.price);
-      const formattedPrice = formatPrice(safePrice);
-
-      card.dataset.price = String(safePrice);
-
-      const priceEl = card.querySelector(".item-price") || card.querySelector(".item-card-footer p");
-      if (!priceEl) return;
-
-      if (priceEl.querySelector("strong")) {
-        priceEl.innerHTML = `<strong>Price:</strong> ${formattedPrice}`;
-        return;
-      }
-
-      if (priceEl.querySelector("b")) {
-        priceEl.innerHTML = `<b>Price:</b> ${formattedPrice}`;
-        return;
-      }
-
-      priceEl.textContent = `Price: ${formattedPrice}`;
-    });
-  }
-
   function getProductData(card) {
     if (!card) return null;
 
@@ -149,14 +58,9 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!sku) return null;
 
     const name = String(card.querySelector("h2, h3")?.textContent || "Unnamed item").trim();
-
     const safePrice = parsePriceToIsk(card.dataset.price);
 
-    return {
-      sku,
-      name,
-      price: safePrice
-    };
+    return { sku, name, price: safePrice };
   }
 
   function clampQty(rawQty) {
@@ -205,19 +109,10 @@ document.addEventListener("DOMContentLoaded", () => {
     renderCart();
   }
 
-  function decreaseQty(sku) {
+  function changeQty(sku, delta) {
     if (!cart[sku]) return;
-    cart[sku].qty -= 1;
-    if (cart[sku].qty <= 0) {
-      delete cart[sku];
-    }
-    saveCart();
-    renderCart();
-  }
-
-  function increaseQty(sku) {
-    if (!cart[sku]) return;
-    cart[sku].qty += 1;
+    cart[sku].qty += delta;
+    if (cart[sku].qty <= 0) delete cart[sku];
     saveCart();
     renderCart();
   }
@@ -237,8 +132,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function renderCart() {
     const items = Object.values(cart);
-    const totalItems = items.reduce((sum, item) => sum + item.qty, 0);
-    const totalValue = items.reduce((sum, item) => sum + item.price * item.qty, 0);
+    let totalItems = 0;
+    let totalValue = 0;
+    for (const item of items) {
+      totalItems += item.qty;
+      totalValue += item.price * item.qty;
+    }
 
     if (cartCountEl) {
       cartCountEl.textContent = String(totalItems);
@@ -353,8 +252,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const sku = String(actionBtn.dataset.sku || "").trim();
     if (!sku) return;
 
-    if (action === "decrease") decreaseQty(sku);
-    if (action === "increase") increaseQty(sku);
+    if (action === "decrease") changeQty(sku, -1);
+    if (action === "increase") changeQty(sku, 1);
     if (action === "remove") removeItem(sku);
   });
 
@@ -377,12 +276,8 @@ document.addEventListener("DOMContentLoaded", () => {
     resizeQtyInput(qtyInput);
   });
 
-  syncProductPriceLabels();
   cartClearBtn?.addEventListener("click", clearCart);
-  document.addEventListener("shop:product-data-updated", () => {
-    syncProductPriceLabels();
-    syncCartPricesFromProducts();
-  });
+  document.addEventListener("shop:product-data-updated", syncCartPricesFromProducts);
 
   renderCart();
 });

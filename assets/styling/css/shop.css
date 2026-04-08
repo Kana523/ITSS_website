@@ -59,11 +59,10 @@
 
 .item-card--out-of-stock .stock-state[data-next-stock]:is(:hover, :focus-visible)::after {
   content: attr(data-next-stock);
-  position: absolute;
   left: 50%;
   bottom: calc(100% + 8px);
   transform: translateX(-50%);
-  min-width: 180px;
+  min-width: 220px;
   max-width: 220px;
   padding: 8px 10px;
   border: 1px solid var(--gold-border-alternate);
