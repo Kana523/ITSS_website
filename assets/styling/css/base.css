@@ -53,7 +53,6 @@ body {
   background-image: url(../../images/backgrounds/galaxybg.avif);
   background-size: cover;
   min-height: 100vh;
-  min-height: 100vh;
   display: flex;
   flex-direction: column;
 }
@@ -147,7 +146,7 @@ footer a {
 
 .buy-button {
   background: transparent;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   padding: 5px;
   min-width: 70px;
 
@@ -171,7 +170,7 @@ footer a {
   min-width: 220px;
   max-width: 220px;
   border: 2px solid transparent;
-  padding: 5px 0 5px 0;
+  padding: 5px 0;
   margin-bottom: 20px;
   border-image: var(--gold-border-gradient) 1;
 }
@@ -183,8 +182,7 @@ footer a {
 .item-card img {
   max-width: 128px;
   max-height: 128px;
-  padding-top: 2px;
-  padding-bottom: 2px;
+  padding: 2px 0;
 }
 
 .text {

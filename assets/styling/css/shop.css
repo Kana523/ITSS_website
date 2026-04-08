@@ -59,6 +59,7 @@
 
 .item-card--out-of-stock .stock-state[data-next-stock]:is(:hover, :focus-visible)::after {
   content: attr(data-next-stock);
+  position: absolute;
   left: 50%;
   bottom: calc(100% + 8px);
   transform: translateX(-50%);
@@ -212,8 +213,6 @@
 
 .cart-clear:hover {
   background-color: var(--surface-hover);
-  color: var(--text-gold-mid);
-  -webkit-text-fill-color: var(--text-gold-mid);
   transform: translateY(-1px);
   box-shadow: 0 0 12px var(--gold-border-alternate);
 }
@@ -223,7 +222,6 @@
   cursor: not-allowed;
 }
 
-.cart-summary,
 .cart-total {
   margin-top: 8px;
 }
@@ -293,8 +291,6 @@
 .cart-action-btn:hover,
 .cart-remove-btn:hover {
   background-color: var(--surface-hover);
-  color: var(--text-gold-mid);
-  -webkit-text-fill-color: var(--text-gold-mid);
   transform: translateY(-1px);
   box-shadow: 0 0 10px var(--gold-border-alternate);
 }
@@ -302,7 +298,6 @@
 .cart-remove-btn {
   grid-column: 1 / -1;
   width: 100%;
-  margin-left: 0;
 }
 
 .qty-btn:hover {

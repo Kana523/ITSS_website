@@ -1,8 +1,4 @@
-﻿header {
-  padding: 0 10px 0 0;
-}
-
-.buyback-page {
+﻿.buyback-page {
   width: min(1120px, calc(100% - 32px));
   margin: 28px auto 40px;
   display: flex;
@@ -21,7 +17,7 @@
 }
 
 .buyback-kicker {
-  font-family: 'Roboto';
+  font-family: var(--font-text);
   font-size: 0.8rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;

@@ -59,10 +59,6 @@ main.legal-layout .legal-hero p {
     gap: 16px;
   }
 
-  main.legal-layout .legal-hero {
-    grid-column: auto;
-  }
-
   main.legal-layout section {
     padding: 18px;
   }
