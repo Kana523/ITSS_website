@@ -11,7 +11,7 @@
   flex-direction: column;
   gap: 10px;
   padding: 24px;
-  border: 1px solid var(--gold-border-alternate);
+  border: var(--border-sm) solid var(--gold-border-alternate);
   background: linear-gradient(135deg, var(--surface-850), var(--surface-700));
   box-shadow: 0 0 24px var(--surface-850);
 }

@@ -38,7 +38,8 @@
 
   /* Formatting */
   --radius-pill: 999px;
-  --border-width: 2px;
+  --border-sm: 1px;
+  --border-md: 2px;
   --transition-fast: 0.15s ease;
   --font-small: 14px;
   --font-medium: 20px;
@@ -107,10 +108,6 @@ nav {
     align-items: center;
 }
 
-.logo-name{
-    font-size: 24px;
-    font-weight: bold;
-}
 /* End of container for the top left logo, title and subtitle */
 
 footer {
@@ -135,7 +132,13 @@ footer a {
 }
 
 /* Tooltip bubble */
+nav a[aria-current="page"] {
+  color: var(--text-gold-top);
+  text-decoration: underline;
+}
+
 .ccp-legal-tooltip {
+  display: none; /* shown by JS on hover/focus */
   position: fixed; /* positioned by JS near pointer */
   max-width: min(450px, calc(100vw - 20px));
   font-size: var(--font-medium);
@@ -150,7 +153,7 @@ footer a {
   padding: 5px;
   min-width: 70px;
 
-  border: 1px solid var(--text-gold-top);
+  border: var(--border-sm) solid var(--text-gold-top);
   color: var(--text-gold-mid);
   font-weight: bold;
   cursor: pointer;
@@ -169,7 +172,7 @@ footer a {
   justify-content: space-between;
   min-width: 220px;
   max-width: 220px;
-  border: 2px solid transparent;
+  border: var(--border-md) solid transparent;
   padding: 5px 0;
   margin-bottom: 20px;
   border-image: var(--gold-border-gradient) 1;

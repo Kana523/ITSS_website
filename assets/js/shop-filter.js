@@ -155,11 +155,17 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     Object.entries(payload).forEach(([sku, value]) => {
-      if (!value || typeof value !== "object") return;
+      if (!value || typeof value !== "object") {
+        console.warn(`Stock feed: skipping entry "${sku}" — expected object, got ${typeof value}`);
+        return;
+      }
 
       const normalizedSku = normalizeSku(sku);
       const stock = parseStockValue(value.stock);
-      if (!normalizedSku || stock === null) return;
+      if (!normalizedSku || stock === null) {
+        console.warn(`Stock feed: skipping entry "${sku}" — missing or invalid sku/stock`);
+        return;
+      }
 
       normalized.set(normalizedSku, {
         sku: normalizedSku,

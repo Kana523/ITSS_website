@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="../assets/styling/css/base.css">
   <link rel="stylesheet" href="../assets/styling/css/shop.css">
 
+  <!-- shop-filter.js must load before shop-cart.js: filter fires shop:product-data-updated which cart listens to -->
   <script src="../assets/js/shop-filter.js" defer></script>
   <script src="../assets/js/shop-cart.js" defer></script>
   <script src="../assets/js/legal-notice.js" defer></script>
@@ -28,7 +29,10 @@
 
       <nav>
         <a href="../">Home</a>
+        <a href="../shop/" aria-current="page">Store</a>
+        <a href="../trade/">Trade</a>
         <a href="../about/">About</a>
+        <a href="../legal/">Legal</a>
       </nav>
     </header>
 
@@ -156,7 +160,7 @@
 
     <section class="cart-panel" aria-labelledby="cart-title"> <!-- TODO redesign the cart panel, make it more compact, maybe image, total price instead of each -->
       <div class="cart-panel-header">
-        <h3 id="cart-title">Cart</h3>
+        <h3 id="cart-title">Cart (<span id="cart-count">0</span>)</h3>
         <button type="button" class="cart-clear" id="cart-clear">Clear</button>
       </div>
       <ul class="cart-items" id="cart-items" aria-live="polite" aria-label="Cart items"></ul>

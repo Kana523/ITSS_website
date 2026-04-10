@@ -203,6 +203,7 @@ document.addEventListener("DOMContentLoaded", () => {
       removeBtn.className = "cart-remove-btn";
       removeBtn.dataset.cartAction = "remove";
       removeBtn.dataset.sku = item.sku;
+      removeBtn.setAttribute("aria-label", `Remove ${item.name} from cart`);
       removeBtn.textContent = "Remove";
 
       controls.appendChild(minusBtn);

@@ -1,8 +1,3 @@
-nav a[aria-current="page"] {
-  color: var(--text-gold-top);
-  text-decoration: underline;
-}
-
 .about-page {
   width: min(1040px, calc(100% - 32px));
   margin: 28px auto 40px;
@@ -14,7 +9,7 @@ nav a[aria-current="page"] {
 .about-title-panel,
 .about-card {
   padding: 22px;
-  border: 2px solid transparent;
+  border: var(--border-md) solid transparent;
   border-image: var(--gold-border-gradient) 1;
   background: linear-gradient(145deg, var(--surface-850), var(--surface-700));
   box-shadow: 0 0 22px rgba(0, 0, 0, 0.18);
@@ -72,7 +67,7 @@ nav a[aria-current="page"] {
 }
 
 .about-offers-section + .about-offers-section {
-  border-left: 1px solid var(--gold-border-alternate);
+  border-left: var(--border-sm) solid var(--gold-border-alternate);
   padding-left: 18px;
 }
 
@@ -86,7 +81,7 @@ nav a[aria-current="page"] {
 .about-owner-card img {
   width: 128px;
   max-width: 100%;
-  border: 1px solid var(--gold-border-alternate);
+  border: var(--border-sm) solid var(--gold-border-alternate);
   background: rgba(8, 11, 18, 0.72);
 }
 
@@ -151,7 +146,7 @@ nav a[aria-current="page"] {
 
   .about-offers-section + .about-offers-section {
     border-left: none;
-    border-top: 1px solid var(--gold-border-alternate);
+    border-top: var(--border-sm) solid var(--gold-border-alternate);
     padding-left: 0;
     padding-top: 18px;
   }
