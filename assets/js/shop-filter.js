@@ -1,22 +1,22 @@
 // Shared price utilities — exposed as window.ShopUtils for shop-cart.js (which loads after this script)
 function formatPrice(value) {
   const amount = Number(value);
-  if (!Number.isFinite(amount) || amount <= 0) return "0 ISK";
+  if (!Number.isFinite(amount) || amount <= 0) return "0";
 
   function formatUnit(divisor, suffix) {
     const unitValue = amount / divisor;
     const trimmed = unitValue
-      .toFixed(3)
+      .toFixed(1)
       .replace(/(\.\d*?[1-9])0+$/, "$1")
       .replace(/\.0+$/, "");
-    return `${trimmed} ${suffix} ISK`;
+    return `${trimmed}${suffix}`;
   }
 
-  if (amount >= 1000000000000) return formatUnit(1000000000000, "tril");
-  if (amount >= 1000000000) return formatUnit(1000000000, "bil");
-  if (amount >= 1000000) return formatUnit(1000000, "mil");
+  if (amount >= 1000000000000) return formatUnit(1000000000000, "t");
+  if (amount >= 1000000000) return formatUnit(1000000000, "b");
+  if (amount >= 1000000) return formatUnit(1000000, "m");
   if (amount >= 1000) return formatUnit(1000, "k");
-  return `${Math.round(amount)} ISK`;
+  return `${Math.round(amount)}`;
 }
 
 function parsePriceToIsk(rawValue, fallbackLabel = "") {
@@ -123,7 +123,7 @@ document.addEventListener("DOMContentLoaded", () => {
     function formatUnit(divisor, suffix) {
       const unitValue = amount / divisor;
       const trimmed = unitValue
-        .toFixed(2)
+        .toFixed(1)
         .replace(/(\.\d*?[1-9])0+$/, "$1")
         .replace(/\.0+$/, "");
       return `${trimmed}${suffix}`;
