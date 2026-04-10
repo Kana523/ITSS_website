@@ -336,7 +336,7 @@ document.addEventListener("DOMContentLoaded", () => {
     stockState.tabIndex = outOfStock ? 0 : -1;
 
     if (outOfStock && !stockState.dataset.nextStock) {
-      stockState.dataset.nextStock = "Next stock date not set yet.";
+      stockState.dataset.nextStock = "Restock Pending";
     }
 
     if (actionButton) {
