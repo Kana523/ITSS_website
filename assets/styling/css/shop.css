@@ -128,17 +128,11 @@
   color: var(--text-gold-mid);
 }
 
-.qty-input:focus {
-  outline: var(--border-sm) solid var(--gold-border-alternate);
-  outline-offset: -1px;
-}
-
 .qty-input::-webkit-outer-spin-button,
 .qty-input::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
-
 
 
 /* Filtering related CSS */
@@ -214,7 +208,6 @@
   border: var(--border-sm) solid var(--text-gold-top);
   background: var(--button-background);
   color: var(--text-gold-mid);
-  -webkit-text-fill-color: var(--text-gold-mid);
   cursor: pointer;
   padding: 4px 8px;
 }
@@ -289,17 +282,14 @@
   border: var(--border-sm) solid var(--text-gold-top);
   background: var(--button-background);
   color: var(--text-gold-mid);
-  -webkit-text-fill-color: var(--text-gold-mid);
   cursor: pointer;
   font: inherit;
   padding: 2px 8px;
-  transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
 }
 
 .cart-action-btn:hover,
 .cart-remove-btn:hover {
   background-color: var(--surface-hover);
-  transform: translateY(-1px);
   box-shadow: 0 0 10px var(--gold-border-alternate);
 }
 
@@ -310,18 +300,6 @@
 
 .qty-btn:hover {
   background-color: var(--surface-hover);
-  color: var(--text-gold-mid);
-  -webkit-text-fill-color: var(--text-gold-mid);
-}
-
-.cart-panel .cart-clear:focus-visible,
-.cart-panel .cart-clear:active,
-.cart-panel .cart-action-btn:focus-visible,
-.cart-panel .cart-action-btn:active,
-.cart-panel .cart-remove-btn:focus-visible,
-.cart-panel .cart-remove-btn:active {
-  color: var(--text-gold-mid);
-  -webkit-text-fill-color: var(--text-gold-mid);
 }
 
 .filter label {
