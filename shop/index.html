@@ -63,9 +63,19 @@
 
   <!-- Left column: filters -->
   <aside class="filter">
-    
 
-    <h3 class="title">Filters</h3>
+    <h3>Sort By</h3>
+    <select id="display-sort" class="filter-select sort-select" aria-label="Sort store items">
+      <option value="default">Default Order</option>
+      <option value="stock-desc">Stock: High to Low</option>
+      <option value="stock-asc">Stock: Low to High</option>
+      <option value="type-asc">Type: A to Z</option>
+      <option value="name-asc">Name: A to Z</option>
+      <option value="price-desc">Price: High to Low</option>
+      <option value="price-asc">Price: Low to High</option>
+    </select>
+
+    <h3>Filters</h3>
 
     <form class="filter-form" autocomplete="off">
 
@@ -77,19 +87,6 @@
           placeholder="Search items..."
           autocomplete="off"
 	        >
-	      </div>
-
-	      <div class="sort-group">
-	        <label for="display-sort" class="filter-label">Sort By</label>
-	        <select id="display-sort" class="filter-select" aria-label="Sort store items">
-	          <option value="default">Default Order</option>
-	          <option value="stock-desc">Stock: High to Low</option>
-	          <option value="stock-asc">Stock: Low to High</option>
-	          <option value="type-asc">Type: A to Z</option>
-	          <option value="name-asc">Name: A to Z</option>
-	          <option value="price-desc">Price: High to Low</option>
-	          <option value="price-asc">Price: Low to High</option>
-	        </select>
 	      </div>
 
 	      <label>
