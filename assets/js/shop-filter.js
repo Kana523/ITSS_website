@@ -346,7 +346,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (actionButton) {
-      actionButton.textContent = outOfStock ? "RESERVE" : "BUY";
+      actionButton.textContent = outOfStock ? "RESERVE" : "ADD TO CART";
     }
   }
 

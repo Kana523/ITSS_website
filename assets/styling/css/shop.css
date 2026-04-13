@@ -95,45 +95,6 @@
   font-size: var(--font-small);
 }
 
-.qty-picker {
-  display: inline-flex;
-  align-items: center;
-  border: var(--border-sm) solid var(--text-gold-mid);
-  background: var(--button-background);
-}
-
-.qty-btn {
-  width: 28px;
-  height: 28px;
-  border-right: var(--border-sm) solid var(--gold-border-alternate);
-  background: transparent;
-  color: var(--text-gold-mid);
-  cursor: pointer;
-  font: inherit;
-}
-
-.qty-picker .qty-btn:last-child {
-  border-right: none;
-  border-left: var(--border-sm) solid var(--gold-border-alternate);
-}
-
-.qty-input {
-  width: 3ch;
-  min-width: 3ch;
-  max-width: 8ch;
-  height: 28px;
-  border: none;
-  text-align: center;
-  background: transparent;
-  color: var(--text-gold-mid);
-}
-
-.qty-input::-webkit-outer-spin-button,
-.qty-input::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-
 
 /* Filtering related CSS */
 .filter {
@@ -296,10 +257,6 @@
 .cart-remove-btn {
   grid-column: 1 / -1;
   width: 100%;
-}
-
-.qty-btn:hover {
-  background-color: var(--surface-hover);
 }
 
 .filter label {

@@ -174,7 +174,6 @@ nav a[aria-current="page"] {
   max-width: 220px;
   border: var(--border-md) solid transparent;
   padding: 5px 0;
-  margin-bottom: 20px;
   border-image: var(--gold-border-gradient) 1;
 }
 
@@ -205,14 +204,12 @@ nav a[aria-current="page"] {
   display: flex;
   align-items: center;
   gap: 5px;
+  position: relative;
 }
 
 .item-buy-controls {
   display: flex;
-  flex-direction: row;
-  align-items: center;
   justify-content: center;
-  gap: 6px;
   margin-top: 6px;
 }
 /*End of Card CSS */
