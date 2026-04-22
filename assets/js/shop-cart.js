@@ -3,6 +3,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const cartItemsEl = document.getElementById("cart-items");
   const cartTotalEl = document.getElementById("cart-total");
   const cartClearBtn = document.getElementById("cart-clear");
+  const cartToggleBtn = document.getElementById("cart-toggle");
+  const cartDropdown = document.getElementById("cart-dropdown");
 
   if (!cartItemsEl || !cartTotalEl) {
     return;
@@ -76,6 +78,18 @@ document.addEventListener("DOMContentLoaded", () => {
     input.style.width = `${widthInCh}ch`;
   }
 
+  function openCart() {
+    if (!cartDropdown) return;
+    cartDropdown.hidden = false;
+    cartToggleBtn?.setAttribute("aria-expanded", "true");
+  }
+
+  function closeCart() {
+    if (!cartDropdown) return;
+    cartDropdown.hidden = true;
+    cartToggleBtn?.setAttribute("aria-expanded", "false");
+  }
+
   function addToCart(product, qtyToAdd = 1) {
     if (!product) return;
 
@@ -117,6 +131,14 @@ document.addEventListener("DOMContentLoaded", () => {
     renderCart();
   }
 
+  function setQty(sku, qty) {
+    if (!cart[sku]) return;
+    const clamped = clampQty(qty);
+    cart[sku].qty = clamped;
+    saveCart();
+    renderCart();
+  }
+
   function removeItem(sku) {
     if (!cart[sku]) return;
     delete cart[sku];
@@ -142,8 +164,12 @@ document.addEventListener("DOMContentLoaded", () => {
     if (cartCountEl) {
       cartCountEl.textContent = String(totalItems);
     }
-    cartTotalEl.textContent = formatPrice(totalValue);
 
+    if (cartToggleBtn) {
+      cartToggleBtn.setAttribute("aria-label", `Cart, ${totalItems} item${totalItems !== 1 ? "s" : ""}`);
+    }
+
+    cartTotalEl.textContent = formatPrice(totalValue);
     cartItemsEl.innerHTML = "";
 
     if (items.length === 0) {
@@ -186,9 +212,14 @@ document.addEventListener("DOMContentLoaded", () => {
       minusBtn.setAttribute("aria-label", `Decrease quantity of ${item.name}`);
       minusBtn.textContent = "-";
 
-      const qty = document.createElement("span");
-      qty.className = "cart-item-qty";
-      qty.textContent = String(item.qty);
+      const qtyInput = document.createElement("input");
+      qtyInput.type = "number";
+      qtyInput.className = "cart-item-qty";
+      qtyInput.min = "1";
+      qtyInput.max = "999999";
+      qtyInput.value = String(item.qty);
+      qtyInput.dataset.cartQtyInput = item.sku;
+      qtyInput.setAttribute("aria-label", `Quantity of ${item.name}`);
 
       const plusBtn = document.createElement("button");
       plusBtn.type = "button";
@@ -207,7 +238,7 @@ document.addEventListener("DOMContentLoaded", () => {
       removeBtn.textContent = "Remove";
 
       controls.appendChild(minusBtn);
-      controls.appendChild(qty);
+      controls.appendChild(qtyInput);
       controls.appendChild(plusBtn);
       controls.appendChild(removeBtn);
 
@@ -219,7 +250,20 @@ document.addEventListener("DOMContentLoaded", () => {
     if (cartClearBtn) cartClearBtn.disabled = false;
   }
 
+  cartToggleBtn?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (cartDropdown?.hidden) openCart(); else closeCart();
+  });
+
   document.addEventListener("click", (event) => {
+    // Close dropdown when clicking outside the cart widget
+    if (cartDropdown && !cartDropdown.hidden) {
+      const cartNav = document.getElementById("cart-nav");
+      if (cartNav && !cartNav.contains(event.target)) {
+        closeCart();
+      }
+    }
+
     const qtyBtn = event.target.closest("[data-qty-action]");
     if (qtyBtn) {
       const picker = qtyBtn.closest(".qty-picker");
@@ -259,17 +303,34 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   document.addEventListener("input", (event) => {
-    const qtyInput = event.target.closest("[data-cart-qty]");
-    if (!qtyInput) return;
-    qtyInput.value = qtyInput.value.replace(/[^\d]/g, "");
-    resizeQtyInput(qtyInput);
+    // Product card qty pickers
+    const cardQtyInput = event.target.closest("[data-cart-qty]");
+    if (cardQtyInput) {
+      cardQtyInput.value = cardQtyInput.value.replace(/[^\d]/g, "");
+      resizeQtyInput(cardQtyInput);
+      return;
+    }
+
+    // Cart item qty inputs — sanitize to digits only
+    if (event.target.dataset.cartQtyInput !== undefined) {
+      event.target.value = event.target.value.replace(/[^\d]/g, "");
+    }
   });
 
   document.addEventListener("change", (event) => {
-    const qtyInput = event.target.closest("[data-cart-qty]");
-    if (!qtyInput) return;
-    qtyInput.value = String(clampQty(qtyInput.value));
-    resizeQtyInput(qtyInput);
+    // Product card qty pickers
+    const cardQtyInput = event.target.closest("[data-cart-qty]");
+    if (cardQtyInput) {
+      cardQtyInput.value = String(clampQty(cardQtyInput.value));
+      resizeQtyInput(cardQtyInput);
+      return;
+    }
+
+    // Cart item qty direct input
+    if (event.target.dataset.cartQtyInput !== undefined) {
+      const sku = event.target.dataset.cartQtyInput;
+      setQty(sku, event.target.value);
+    }
   });
 
   document.querySelectorAll("[data-cart-qty]").forEach((qtyInput) => {

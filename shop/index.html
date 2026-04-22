@@ -27,12 +27,40 @@
           </div>
       </div>
 
+      <div class="header-right">
       <nav aria-label="Main navigation">
         <a href="../">Home</a>
         <a href="../shop/" aria-current="page">Store</a>
         <a href="../trade/">Trade</a>
         <a href="../about/">About</a>
       </nav>
+
+      <div class="cart-nav" id="cart-nav">
+        <button
+          type="button"
+          class="cart-nav-btn"
+          id="cart-toggle"
+          aria-expanded="false"
+          aria-controls="cart-dropdown"
+          aria-label="Cart, 0 items"
+        >
+          <svg class="cart-nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+            <circle cx="9" cy="21" r="1"></circle>
+            <circle cx="20" cy="21" r="1"></circle>
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+          </svg>
+          <span class="cart-nav-badge" id="cart-count">0</span>
+        </button>
+        <div class="cart-dropdown" id="cart-dropdown" hidden>
+          <div class="cart-panel-header">
+            <span class="cart-dropdown-title">Cart</span>
+            <button type="button" class="cart-clear" id="cart-clear">Clear</button>
+          </div>
+          <ul class="cart-items" id="cart-items" aria-live="polite" aria-label="Cart items"></ul>
+          <p class="cart-total">Total: <span id="cart-total">0</span></p>
+        </div>
+      </div>
+      </div>
     </header>
 
     <main>
@@ -61,7 +89,7 @@
       </div>
 
   <!-- Left column: filters -->
-  <aside class="filter" aria-label="Filters and cart">
+  <aside class="filter" aria-label="Filters">
 
     <h3>Sort By</h3>
     <select id="display-sort" class="filter-select sort-select" aria-label="Sort store items">
@@ -154,14 +182,6 @@
       </div>
     </form>
 
-    <section class="cart-panel" aria-labelledby="cart-title">
-      <div class="cart-panel-header">
-        <h3 id="cart-title">Cart (<span id="cart-count">0</span>)</h3>
-        <button type="button" class="cart-clear" id="cart-clear">Clear</button>
-      </div>
-      <ul class="cart-items" id="cart-items" aria-live="polite" aria-label="Cart items"></ul>
-      <p class="cart-total">Total: <span id="cart-total">0</span></p>
-    </section>
   </aside>
 
   <!-- Right column: main display / products -->
