@@ -20,14 +20,14 @@
 <body data-stock-endpoint="https://script.google.com/macros/s/AKfycbzIxmvQ33URNZGRkHX-v-j34SdEVkh4d5lPf4PQlqHFT5xWV73oOeaBDJi0Tw5N1fwe/exec">
     <header>
       <div class="container-logo">
-        <img src="../assets/images/icons/itss.png" alt="CorpLogo">
+        <img src="../assets/images/icons/itss.png" alt="Interstellar Systems logo">
           <div class="container-logo-name-motto">
             <h2>Interstellar Systems</h2>
             <p>Organically grown space boats!</p>
           </div>
       </div>
 
-      <nav>
+      <nav aria-label="Main navigation">
         <a href="../">Home</a>
         <a href="../shop/" aria-current="page">Store</a>
         <a href="../trade/">Trade</a>
@@ -35,7 +35,9 @@
       </nav>
     </header>
 
+    <main>
     <div class="grid-container">
+      <h1 class="page-title">Store</h1>
 
       <!-- Top bar spanning full width -->
       <div class="top-bar">
@@ -48,7 +50,7 @@
               <p>10% off all cruisers this week.</p>
             </div>
           </div>
-        
+
 
           <div class="top-bar-panel-section">
             <h2>Trade</h2>
@@ -59,7 +61,7 @@
       </div>
 
   <!-- Left column: filters -->
-  <aside class="filter">
+  <aside class="filter" aria-label="Filters and cart">
 
     <h3>Sort By</h3>
     <select id="display-sort" class="filter-select sort-select" aria-label="Sort store items">
@@ -163,21 +165,21 @@
   </aside>
 
   <!-- Right column: main display / products -->
-  <section class="display">
+  <section class="display" aria-label="Products">
     <article class="item-card" data-sku="zirnitra" data-price="4400000000" data-category="ship">
       <h2>Zirnitra</h2>
       <p>Ship</p>
-      <img src="../assets/images/items/ships/zirnitra-render-128.avif" alt="zirnitra image">
+      <img src="../assets/images/items/ships/zirnitra-render-128.avif" alt="Zirnitra ship render">
       <div class="text">
         <div class="item-card-footer">
           <p><strong>Price:</strong></p>
           <div class="stock-state">
-            <img src="../assets/images/icons/stock.png" alt="stock icon" aria-hidden="true">
-            <p class="stock-state-count" aria-hidden="true"></p>
+            <img src="../assets/images/icons/stock.png" alt="" aria-hidden="true">
+            <p class="stock-state-count"></p>
           </div>
         </div>
         <div class="item-buy-controls">
-          <button type="button" class="buy-button" data-cart-add>Add to Cart</button>
+          <button type="button" class="buy-button" data-cart-add aria-label="Add Zirnitra to cart">Add to Cart</button>
         </div>
       </div>
     </article>
@@ -185,17 +187,17 @@
     <article class="item-card" data-sku="sylramic-fibers" data-price="8750000" data-category="materials" data-sub="reaction">
       <h2>Sylramic Fibers</h2>
       <p>Reaction Material</p>
-      <img src="../assets/images/items/materials/reaction/sylramic_fibers.avif" alt="Sylramic Fibers image">
+      <img src="../assets/images/items/materials/reaction/sylramic_fibers.avif" alt="Sylramic Fibers">
       <div class="text">
         <div class="item-card-footer">
           <p><strong>Price:</strong></p>
           <div class="stock-state">
-            <img src="../assets/images/icons/stock.png" alt="stock icon" aria-hidden="true">
-            <p class="stock-state-count" aria-hidden="true"></p>
+            <img src="../assets/images/icons/stock.png" alt="" aria-hidden="true">
+            <p class="stock-state-count"></p>
           </div>
         </div>
         <div class="item-buy-controls">
-          <button type="button" class="buy-button" data-cart-add>Add to Cart</button>
+          <button type="button" class="buy-button" data-cart-add aria-label="Add Sylramic Fibers to cart">Add to Cart</button>
         </div>
       </div>
     </article>
@@ -203,17 +205,17 @@
     <article class="item-card" data-sku="reinforced-carbon-fiber" data-price="12300000" data-category="materials" data-sub="reaction">
       <h2>Reinforced Carbon Fiber</h2>
       <p>Reaction Material</p>
-      <img src="../assets/images/items/materials/reaction/reinforced_carbon_fiber.avif" alt="Reinforced Carbon Fiber image">
+      <img src="../assets/images/items/materials/reaction/reinforced_carbon_fiber.avif" alt="Reinforced Carbon Fiber">
       <div class="text">
         <div class="item-card-footer">
           <p><strong>Price:</strong></p>
           <div class="stock-state">
-            <img src="../assets/images/icons/stock.png" alt="stock icon" aria-hidden="true">
-            <p class="stock-state-count" aria-hidden="true"></p>
+            <img src="../assets/images/icons/stock.png" alt="" aria-hidden="true">
+            <p class="stock-state-count"></p>
           </div>
         </div>
         <div class="item-buy-controls">
-          <button type="button" class="buy-button" data-cart-add>Add to Cart</button>
+          <button type="button" class="buy-button" data-cart-add aria-label="Add Reinforced Carbon Fiber to cart">Add to Cart</button>
         </div>
       </div>
     </article>
@@ -221,17 +223,17 @@
     <article class="item-card" data-sku="titanium-carbide" data-price="9600000" data-category="materials" data-sub="reaction">
       <h2>Titanium Carbide</h2>
       <p>Reaction Material</p>
-      <img src="../assets/images/items/materials/reaction/titanium_carbide.avif" alt="Titanium Carbide image">
+      <img src="../assets/images/items/materials/reaction/titanium_carbide.avif" alt="Titanium Carbide">
       <div class="text">
         <div class="item-card-footer">
           <p><strong>Price:</strong></p>
           <div class="stock-state">
-            <img src="../assets/images/icons/stock.png" alt="stock icon" aria-hidden="true">
-            <p class="stock-state-count" aria-hidden="true"></p>
+            <img src="../assets/images/icons/stock.png" alt="" aria-hidden="true">
+            <p class="stock-state-count"></p>
           </div>
         </div>
         <div class="item-buy-controls">
-          <button type="button" class="buy-button" data-cart-add>Add to Cart</button>
+          <button type="button" class="buy-button" data-cart-add aria-label="Add Titanium Carbide to cart">Add to Cart</button>
         </div>
       </div>
     </article>
@@ -239,17 +241,17 @@
     <article class="item-card" data-sku="tungsten-carbide" data-price="10100000" data-category="materials" data-sub="reaction">
       <h2>Tungsten Carbide</h2>
       <p>Reaction Material</p>
-      <img src="../assets/images/items/materials/reaction/tungsten_carbide.avif" alt="Tungsten Carbide image">
+      <img src="../assets/images/items/materials/reaction/tungsten_carbide.avif" alt="Tungsten Carbide">
       <div class="text">
         <div class="item-card-footer">
           <p><strong>Price:</strong></p>
           <div class="stock-state">
-            <img src="../assets/images/icons/stock.png" alt="stock icon" aria-hidden="true">
-            <p class="stock-state-count" aria-hidden="true"></p>
+            <img src="../assets/images/icons/stock.png" alt="" aria-hidden="true">
+            <p class="stock-state-count"></p>
           </div>
         </div>
         <div class="item-buy-controls">
-          <button type="button" class="buy-button" data-cart-add>Add to Cart</button>
+          <button type="button" class="buy-button" data-cart-add aria-label="Add Tungsten Carbide to cart">Add to Cart</button>
         </div>
       </div>
     </article>
@@ -257,17 +259,17 @@
     <article class="item-card" data-sku="pressurized-oxidizers" data-price="7800000" data-category="materials" data-sub="reaction">
       <h2>Pressurized Oxidizers</h2>
       <p>Reaction Material</p>
-      <img src="../assets/images/items/materials/reaction/pressurized_oxidizers.avif" alt="Pressurized Oxidizers image">
+      <img src="../assets/images/items/materials/reaction/pressurized_oxidizers.avif" alt="Pressurized Oxidizers">
       <div class="text">
         <div class="item-card-footer">
           <p><strong>Price:</strong></p>
           <div class="stock-state">
-            <img src="../assets/images/icons/stock.png" alt="stock icon" aria-hidden="true">
-            <p class="stock-state-count" aria-hidden="true"></p>
+            <img src="../assets/images/icons/stock.png" alt="" aria-hidden="true">
+            <p class="stock-state-count"></p>
           </div>
         </div>
         <div class="item-buy-controls">
-          <button type="button" class="buy-button" data-cart-add>Add to Cart</button>
+          <button type="button" class="buy-button" data-cart-add aria-label="Add Pressurized Oxidizers to cart">Add to Cart</button>
         </div>
       </div>
     </article>
@@ -275,17 +277,17 @@
     <article class="item-card" data-sku="ferrogel" data-price="15800000" data-category="materials" data-sub="reaction">
       <h2>Ferrogel</h2>
       <p>Reaction Material</p>
-      <img src="../assets/images/items/materials/reaction/ferrogel.avif" alt="Ferrogel image">
+      <img src="../assets/images/items/materials/reaction/ferrogel.avif" alt="Ferrogel">
       <div class="text">
         <div class="item-card-footer">
           <p><strong>Price:</strong></p>
           <div class="stock-state">
-            <img src="../assets/images/icons/stock.png" alt="stock icon" aria-hidden="true">
-            <p class="stock-state-count" aria-hidden="true"></p>
+            <img src="../assets/images/icons/stock.png" alt="" aria-hidden="true">
+            <p class="stock-state-count"></p>
           </div>
         </div>
         <div class="item-buy-controls">
-          <button type="button" class="buy-button" data-cart-add>Add to Cart</button>
+          <button type="button" class="buy-button" data-cart-add aria-label="Add Ferrogel to cart">Add to Cart</button>
         </div>
       </div>
     </article>
@@ -293,17 +295,17 @@
     <article class="item-card" data-sku="fernite-carbide" data-price="11200000" data-category="materials" data-sub="reaction">
       <h2>Fernite Carbide</h2>
       <p>Reaction Material</p>
-      <img src="../assets/images/items/materials/reaction/fernite_carbide.avif" alt="Fernite Carbide image">
+      <img src="../assets/images/items/materials/reaction/fernite_carbide.avif" alt="Fernite Carbide">
       <div class="text">
         <div class="item-card-footer">
           <p><strong>Price:</strong></p>
           <div class="stock-state">
-            <img src="../assets/images/icons/stock.png" alt="stock icon" aria-hidden="true">
-            <p class="stock-state-count" aria-hidden="true"></p>
+            <img src="../assets/images/icons/stock.png" alt="" aria-hidden="true">
+            <p class="stock-state-count"></p>
           </div>
         </div>
         <div class="item-buy-controls">
-          <button type="button" class="buy-button" data-cart-add>Add to Cart</button>
+          <button type="button" class="buy-button" data-cart-add aria-label="Add Fernite Carbide to cart">Add to Cart</button>
         </div>
       </div>
     </article>
@@ -311,17 +313,17 @@
     <article class="item-card" data-sku="broadcast-node" data-price="5200000" data-category="materials" data-sub="planetary">
       <h2>Broadcast Node</h2>
       <p>Planetary Material</p>
-      <img src="../assets/images/items/materials/planetary/broadcast_node.avif" alt="Broadcast Node image">
+      <img src="../assets/images/items/materials/planetary/broadcast_node.avif" alt="Broadcast Node">
       <div class="text">
         <div class="item-card-footer">
           <p><strong>Price:</strong></p>
           <div class="stock-state">
-            <img src="../assets/images/icons/stock.png" alt="stock icon" aria-hidden="true">
-            <p class="stock-state-count" aria-hidden="true"></p>
+            <img src="../assets/images/icons/stock.png" alt="" aria-hidden="true">
+            <p class="stock-state-count"></p>
           </div>
         </div>
         <div class="item-buy-controls">
-          <button type="button" class="buy-button" data-cart-add>Add to Cart</button>
+          <button type="button" class="buy-button" data-cart-add aria-label="Add Broadcast Node to cart">Add to Cart</button>
         </div>
       </div>
     </article>
@@ -329,17 +331,17 @@
     <article class="item-card" data-sku="integrity-response-drones" data-price="6100000" data-category="materials" data-sub="planetary">
       <h2>Integrity Response Drones</h2>
       <p>Planetary Material</p>
-      <img src="../assets/images/items/materials/planetary/integrity_response_drones.avif" alt="Integrity Response Drones image">
+      <img src="../assets/images/items/materials/planetary/integrity_response_drones.avif" alt="Integrity Response Drones">
       <div class="text">
         <div class="item-card-footer">
           <p><strong>Price:</strong></p>
           <div class="stock-state">
-            <img src="../assets/images/icons/stock.png" alt="stock icon" aria-hidden="true">
-            <p class="stock-state-count" aria-hidden="true"></p>
+            <img src="../assets/images/icons/stock.png" alt="" aria-hidden="true">
+            <p class="stock-state-count"></p>
           </div>
         </div>
         <div class="item-buy-controls">
-          <button type="button" class="buy-button" data-cart-add>Add to Cart</button>
+          <button type="button" class="buy-button" data-cart-add aria-label="Add Integrity Response Drones to cart">Add to Cart</button>
         </div>
       </div>
     </article>
@@ -347,17 +349,17 @@
     <article class="item-card" data-sku="sterile-conduits" data-price="4700000" data-category="materials" data-sub="planetary">
       <h2>Sterile Conduits</h2>
       <p>Planetary Material</p>
-      <img src="../assets/images/items/materials/planetary/sterile_conduits.avif" alt="Sterile Conduits image">
+      <img src="../assets/images/items/materials/planetary/sterile_conduits.avif" alt="Sterile Conduits">
       <div class="text">
         <div class="item-card-footer">
           <p><strong>Price:</strong></p>
           <div class="stock-state">
-            <img src="../assets/images/icons/stock.png" alt="stock icon" aria-hidden="true">
-            <p class="stock-state-count" aria-hidden="true"></p>
+            <img src="../assets/images/icons/stock.png" alt="" aria-hidden="true">
+            <p class="stock-state-count"></p>
           </div>
         </div>
         <div class="item-buy-controls">
-          <button type="button" class="buy-button" data-cart-add>Add to Cart</button>
+          <button type="button" class="buy-button" data-cart-add aria-label="Add Sterile Conduits to cart">Add to Cart</button>
         </div>
       </div>
     </article>
@@ -365,17 +367,17 @@
     <article class="item-card" data-sku="wetware-mainframe" data-price="9300000" data-category="materials" data-sub="planetary">
       <h2>Wetware Mainframe</h2>
       <p>Planetary Material</p>
-      <img src="../assets/images/items/materials/planetary/wetware_mainframe.avif" alt="Wetware Mainframe image">
+      <img src="../assets/images/items/materials/planetary/wetware_mainframe.avif" alt="Wetware Mainframe">
       <div class="text">
         <div class="item-card-footer">
           <p><strong>Price:</strong></p>
           <div class="stock-state">
-            <img src="../assets/images/icons/stock.png" alt="stock icon" aria-hidden="true">
-            <p class="stock-state-count" aria-hidden="true"></p>
+            <img src="../assets/images/icons/stock.png" alt="" aria-hidden="true">
+            <p class="stock-state-count"></p>
           </div>
         </div>
         <div class="item-buy-controls">
-          <button type="button" class="buy-button" data-cart-add>Add to Cart</button>
+          <button type="button" class="buy-button" data-cart-add aria-label="Add Wetware Mainframe to cart">Add to Cart</button>
         </div>
       </div>
     </article>
@@ -383,17 +385,17 @@
     <article class="item-card" data-sku="capital-armor-plates" data-price="68000000" data-category="materials" data-sub="component">
       <h2>Capital Armor Plates</h2>
       <p>Component</p>
-      <img src="../assets/images/items/ships/zirnitra-render-128.avif" alt="Capital Armor Plates image">
+      <img src="../assets/images/items/ships/zirnitra-render-128.avif" alt="Capital Armor Plates">
       <div class="text">
         <div class="item-card-footer">
           <p><strong>Price:</strong></p>
           <div class="stock-state">
-            <img src="../assets/images/icons/stock.png" alt="stock icon" aria-hidden="true">
-            <p class="stock-state-count" aria-hidden="true"></p>
+            <img src="../assets/images/icons/stock.png" alt="" aria-hidden="true">
+            <p class="stock-state-count"></p>
           </div>
         </div>
         <div class="item-buy-controls">
-          <button type="button" class="buy-button" data-cart-add>Add to Cart</button>
+          <button type="button" class="buy-button" data-cart-add aria-label="Add Capital Armor Plates to cart">Add to Cart</button>
         </div>
       </div>
     </article>
@@ -401,17 +403,17 @@
     <article class="item-card" data-sku="capital-capacitor-battery" data-price="75000000" data-category="materials" data-sub="component">
       <h2>Capital Capacitor Battery</h2>
       <p>Component</p>
-      <img src="../assets/images/items/ships/zirnitra-render-128.avif" alt="Capital Capacitor Battery image">
+      <img src="../assets/images/items/ships/zirnitra-render-128.avif" alt="Capital Capacitor Battery">
       <div class="text">
         <div class="item-card-footer">
           <p><strong>Price:</strong></p>
           <div class="stock-state">
-            <img src="../assets/images/icons/stock.png" alt="stock icon" aria-hidden="true">
-            <p class="stock-state-count" aria-hidden="true"></p>
+            <img src="../assets/images/icons/stock.png" alt="" aria-hidden="true">
+            <p class="stock-state-count"></p>
           </div>
         </div>
         <div class="item-buy-controls">
-          <button type="button" class="buy-button" data-cart-add>Add to Cart</button>
+          <button type="button" class="buy-button" data-cart-add aria-label="Add Capital Capacitor Battery to cart">Add to Cart</button>
         </div>
       </div>
     </article>
@@ -419,23 +421,24 @@
     <article class="item-card" data-sku="capital-cargo-bay" data-price="59000000" data-category="materials" data-sub="component">
       <h2>Capital Cargo Bay</h2>
       <p>Component</p>
-      <img src="../assets/images/items/ships/zirnitra-render-128.avif" alt="Capital Cargo Bay image">
+      <img src="../assets/images/items/ships/zirnitra-render-128.avif" alt="Capital Cargo Bay">
       <div class="text">
         <div class="item-card-footer">
           <p><strong>Price:</strong></p>
           <div class="stock-state">
-            <img src="../assets/images/icons/stock.png" alt="stock icon" aria-hidden="true">
-            <p class="stock-state-count" aria-hidden="true"></p>
+            <img src="../assets/images/icons/stock.png" alt="" aria-hidden="true">
+            <p class="stock-state-count"></p>
           </div>
         </div>
         <div class="item-buy-controls">
-          <button type="button" class="buy-button" data-cart-add>Add to Cart</button>
+          <button type="button" class="buy-button" data-cart-add aria-label="Add Capital Cargo Bay to cart">Add to Cart</button>
         </div>
       </div>
     </article>
   </section>
 
 </div>
+    </main>
 
     <footer>
       <p>
@@ -456,21 +459,20 @@
 
       <!-- Tooltip bubble -->
       <div id="ccp-legal-tooltip" class="ccp-legal-tooltip" role="tooltip">
-        EVE Online and the EVE logo are the registered trademarks of CCP hf. 
-        All rights are reserved worldwide. 
-        All other trademarks are the property of their respective owners. 
-        EVE Online, the EVE logo, EVE and all associated logos and designs 
-        are the intellectual property of CCP hf. All artwork, screenshots, 
-        characters, vehicles, storylines, world facts or other recognizable 
-        features of the intellectual property relating to these trademarks 
-        are likewise the intellectual property of CCP hf. CCP hf. has granted 
-        permission to Interstellar Systems to use EVE Online and all associated logos 
-        and designs for promotional and information purposes on its website 
-        but does not endorse, and is not in any way affiliated with, Interstellar Systems. 
-        CCP is in no way responsible for the content on or functioning of this website, 
+        EVE Online and the EVE logo are the registered trademarks of CCP hf.
+        All rights are reserved worldwide.
+        All other trademarks are the property of their respective owners.
+        EVE Online, the EVE logo, EVE and all associated logos and designs
+        are the intellectual property of CCP hf. All artwork, screenshots,
+        characters, vehicles, storylines, world facts or other recognizable
+        features of the intellectual property relating to these trademarks
+        are likewise the intellectual property of CCP hf. CCP hf. has granted
+        permission to Interstellar Systems to use EVE Online and all associated logos
+        and designs for promotional and information purposes on its website
+        but does not endorse, and is not in any way affiliated with, Interstellar Systems.
+        CCP is in no way responsible for the content on or functioning of this website,
         nor can it be liable for any damage arising from the use of this website.
       </div>
     </footer>
 </body>
 </html>
-
