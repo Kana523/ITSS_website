@@ -8,7 +8,14 @@
 @font-face {
   font-family: 'Roboto';
   src: url(../../styling/fonts/roboto/Roboto-Regular.woff2);
-  font-weight: normal;
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Roboto';
+  src: url(../../styling/fonts/roboto/Roboto-Bold.woff2);
+  font-weight: 700;
   font-style: normal;
 }
 /* TODO delete unused font files before deployment */
@@ -125,6 +132,7 @@ nav {
 footer {
   text-align: center;
   margin-top: auto;
+  padding-top: 20px;
   font-size: var(--font-small);
 }
 

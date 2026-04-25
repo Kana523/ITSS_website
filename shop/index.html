@@ -41,7 +41,7 @@
           class="cart-nav-btn"
           id="cart-toggle"
           aria-expanded="false"
-          aria-controls="cart-dropdown"
+          aria-controls="cart-drawer"
           aria-label="Cart, 0 items"
         >
           <svg class="cart-nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
@@ -51,14 +51,7 @@
           </svg>
           <span class="cart-nav-badge" id="cart-count">0</span>
         </button>
-        <div class="cart-dropdown" id="cart-dropdown" hidden>
-          <div class="cart-panel-header">
-            <span class="cart-dropdown-title">Cart</span>
-            <button type="button" class="cart-clear" id="cart-clear">Clear</button>
-          </div>
-          <ul class="cart-items" id="cart-items" aria-live="polite" aria-label="Cart items"></ul>
-          <p class="cart-total">Total: <span id="cart-total">0</span></p>
-        </div>
+
       </div>
       </div>
     </header>
@@ -494,5 +487,53 @@
         nor can it be liable for any damage arising from the use of this website.
       </div>
     </footer>
+
+  <!-- Cart backdrop -->
+  <div class="cart-backdrop" id="cart-backdrop" hidden></div>
+
+  <!-- Cart side drawer -->
+  <aside class="cart-drawer" id="cart-drawer" hidden aria-label="Shopping cart">
+    <div class="cart-drawer-header">
+      <button type="button" class="cart-drawer-close" id="cart-drawer-close" aria-label="Close cart">‹</button>
+      <span class="cart-drawer-title">Your Cart</span>
+      <span class="cart-drawer-count" id="cart-item-count">0 items</span>
+    </div>
+
+    <ul class="cart-items" id="cart-items" aria-live="polite" aria-label="Cart items"></ul>
+
+    <div class="cart-drawer-footer">
+      <div class="cart-total-row">
+        <span class="cart-total-label">Total ISK</span>
+        <span class="cart-total-value" id="cart-total">0</span>
+      </div>
+
+      <div class="cart-identity">
+        <div class="cart-identity-tabs">
+          <button type="button" class="cart-identity-tab cart-identity-tab--active" data-tab="name">Character Name</button>
+          <button type="button" class="cart-identity-tab" data-tab="orderid">Order ID</button>
+        </div>
+
+        <div class="cart-identity-panel" data-panel="name">
+          <input type="text" id="cart-char-name" class="cart-identity-input" placeholder="Your character name…" autocomplete="off">
+          <p class="cart-identity-note">We'll reach out in-game shortly to confirm your order.</p>
+          <p class="cart-identity-sub">No prepayment required — payment on delivery.</p>
+        </div>
+
+        <div class="cart-identity-panel" data-panel="orderid" hidden>
+          <div class="cart-orderid-box">
+            <p>EVEmail your order to <strong>Neo Achasse</strong> with your Order ID as the subject.</p>
+            <p class="cart-orderid-expiry">Order will be cancelled if not confirmed within <strong>3 days</strong>.</p>
+          </div>
+          <p class="cart-identity-sub">No prepayment required — payment on delivery.</p>
+        </div>
+      </div>
+
+      <div class="cart-footer-actions">
+        <button type="button" class="buy-button cart-checkout" id="cart-checkout">Checkout</button>
+        <button type="button" class="cart-clear" id="cart-clear" disabled>Clear All</button>
+      </div>
+    </div>
+  </aside>
+
 </body>
 </html>
