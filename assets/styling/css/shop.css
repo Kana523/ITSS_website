@@ -95,6 +95,36 @@
   font-size: var(--font-small);
 }
 
+/* Keep static shop/cart copy from showing the text-selection cursor. */
+:where(
+  .top-bar-panel-section h2,
+  .top-bar-panel-section p,
+  .display .item-card > h2,
+  .display .item-card > p,
+  .item-card-footer > p,
+  .stock-state-count,
+  .display-meta p,
+  .cart-nav-badge,
+  .cart-drawer-title,
+  .cart-drawer-count,
+  .cart-empty,
+  .cart-item-name,
+  .cart-item-price,
+  .cart-price-label,
+  .cart-extra-name,
+  .cart-extra-price,
+  .cart-item-total-label,
+  .cart-item-total-value,
+  .cart-total-label,
+  .cart-total-value,
+  .cart-identity-note,
+  .cart-identity-sub,
+  .cart-orderid-box p,
+  .cart-orderid-box strong
+) {
+  cursor: default;
+}
+
 
 /* Filtering related CSS */
 .filter {
