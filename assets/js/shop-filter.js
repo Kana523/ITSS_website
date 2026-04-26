@@ -128,26 +128,6 @@ document.addEventListener("DOMContentLoaded", () => {
     return Math.max(0, parsed);
   }
 
-  function formatStockCount(value) {
-    const amount = Number(value);
-    if (!Number.isFinite(amount) || amount <= 0) return "0";
-
-    function formatUnit(divisor, suffix) {
-      const unitValue = amount / divisor;
-      const trimmed = unitValue
-        .toFixed(1)
-        .replace(/(\.\d*?[1-9])0+$/, "$1")
-        .replace(/\.0+$/, "");
-      return `${trimmed}${suffix}`;
-    }
-
-    if (amount >= 1000000000000) return formatUnit(1000000000000, "t");
-    if (amount >= 1000000000) return formatUnit(1000000000, "b");
-    if (amount >= 1000000) return formatUnit(1000000, "m");
-    if (amount >= 1000) return formatUnit(1000, "k");
-    return String(Math.round(amount));
-  }
-
   function updatePriceEl(el, price) {
     if (!el) return;
     const label = formatPrice(price);
@@ -379,7 +359,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (stockCountEl) {
       stockCountEl.dataset.stockRaw = String(stockCount);
-      stockCountEl.textContent = formatStockCount(stockCount);
+      stockCountEl.textContent = formatPrice(stockCount);
     }
 
     stockState.setAttribute("aria-label", `In stock: ${stockCount}`);
@@ -395,24 +375,11 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function inferCategory(card) {
-    const explicit = (card.dataset.category || "").trim().toLowerCase();
-    if (explicit) return explicit;
-
-    // Fallback (helps if you forget data-category while prototyping)
-    const typeText = (card.querySelector(".type")?.textContent || "").toLowerCase();
-    if (typeText.includes("blueprint")) return "blueprints";
-
-    const imgSrc = (card.querySelector("img")?.getAttribute("src") || "").toLowerCase();
-    if (imgSrc.includes("/ships/")) return "boats";
-    if (imgSrc.includes("/modules/")) return "modules";
-    if (imgSrc.includes("/materials/")) return "materials";
-    if (imgSrc.includes("/blueprints/")) return "blueprints";
-    return "other";
+    return (card.dataset.category || "").trim().toLowerCase();
   }
 
   function inferSub(card) {
-    const explicit = (card.dataset.sub || "").trim().toLowerCase();
-    return explicit || ""; // only needed for sub-filters (moon/ore/planetary)
+    return (card.dataset.sub || "").trim().toLowerCase();
   }
 
   function createCardMeta(card, index) {
@@ -422,7 +389,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const sub = inferSub(card);
     const sku = normalizeSku(card.dataset.sku);
 
-    const priceEl = card.querySelector(".item-price") || card.querySelector(".item-card-footer p");
+    const priceEl = card.querySelector(".item-card-footer p");
 
     // Use parsePriceToIsk so formatted strings like "1.5 mil ISK" in HTML are handled correctly.
     // Normalize the attribute to a plain number so subsequent reads (cart, sorting) are consistent.

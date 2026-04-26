@@ -12,6 +12,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (!cartItemsEl || !cartTotalEl) return;
 
+  if (!window.ShopUtils) {
+    console.error("shop-cart.js: window.ShopUtils missing — shop-filter.js failed to load.");
+    return;
+  }
   const { formatPrice, parsePriceToIsk } = window.ShopUtils;
   const CART_STORAGE_KEY = "itss_shop_cart_v1";
 
@@ -216,6 +220,14 @@ document.addEventListener("DOMContentLoaded", () => {
     renderCart();
   }
 
+  function setExtraQty(sku, idx, qty) {
+    const ex = cart[sku]?.extras?.[idx];
+    if (!ex) return;
+    ex.qty = clampQty(qty);
+    saveCart();
+    renderCart();
+  }
+
   function removeExtra(sku, idx) {
     if (!cart[sku]?.extras) return;
     cart[sku].extras.splice(idx, 1);
@@ -377,6 +389,8 @@ document.addEventListener("DOMContentLoaded", () => {
             exInput.className = "cart-item-qty cart-item-qty--sm";
             exInput.value = formatQty(ex.qty);
             exInput.setAttribute("aria-label", `Quantity of ${ex.name}`);
+            exInput.dataset.cartExtraQtyInput = item.sku;
+            exInput.dataset.extraIdx = j;
             exControls.appendChild(exInput);
             exControls.appendChild(makeBtn("+", { cartAction: "extra-increase", sku: item.sku, extraIdx: j }, "cart-action-btn cart-action-btn--sm"));
             exControls.appendChild(makeBtn("✕", { cartAction: "extra-remove", sku: item.sku, extraIdx: j }, "cart-extra-remove"));
@@ -454,25 +468,11 @@ document.addEventListener("DOMContentLoaded", () => {
   cartBackdrop?.addEventListener("click", closeCart);
 
   document.addEventListener("click", (e) => {
-    // Product card qty pickers
-    const qtyBtn = e.target.closest("[data-qty-action]");
-    if (qtyBtn) {
-      const input = qtyBtn.closest(".qty-picker")?.querySelector("[data-cart-qty]");
-      if (!input) return;
-      const cur = clampQty(input.value);
-      input.value = String(qtyBtn.dataset.qtyAction === "decrease" ? Math.max(1, cur - 1) : cur + 1);
-      resizeQtyInput(input);
-      return;
-    }
-
     // Add to cart buttons on product cards
     const addBtn = e.target.closest("[data-cart-add]");
     if (addBtn) {
-      const card     = addBtn.closest(".item-card");
-      const qtyInput = card?.querySelector("[data-cart-qty]");
-      const qty      = clampQty(qtyInput?.value ?? 1);
-      if (qtyInput) { qtyInput.value = String(qty); resizeQtyInput(qtyInput); }
-      addToCart(getProductData(card), qty);
+      const card = addBtn.closest(".item-card");
+      addToCart(getProductData(card), 1);
       openCart();
       return;
     }
@@ -493,9 +493,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   document.addEventListener("input", (e) => {
-    const cardQty = e.target.closest("[data-cart-qty]");
-    if (cardQty) { cardQty.value = parseQtyDigits(cardQty.value); resizeQtyInput(cardQty); return; }
-    if (e.target.dataset.cartQtyInput !== undefined) {
+    if (e.target.dataset.cartQtyInput !== undefined || e.target.dataset.cartExtraQtyInput !== undefined) {
       const digits = parseQtyDigits(e.target.value).slice(0, 8);
       e.target.value = digits ? formatQty(Number.parseInt(digits, 10)) : "";
       resizeQtyInput(e.target);
@@ -503,10 +501,12 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   document.addEventListener("change", (e) => {
-    const cardQty = e.target.closest("[data-cart-qty]");
-    if (cardQty) { cardQty.value = String(clampQty(cardQty.value)); resizeQtyInput(cardQty); return; }
     if (e.target.dataset.cartQtyInput !== undefined) {
       setQty(e.target.dataset.cartQtyInput, e.target.value);
+      return;
+    }
+    if (e.target.dataset.cartExtraQtyInput !== undefined) {
+      setExtraQty(e.target.dataset.cartExtraQtyInput, Number(e.target.dataset.extraIdx), e.target.value);
       return;
     }
     if (e.target.dataset.fittingSelect) {
@@ -566,7 +566,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 0);
     const text = `${header}\n\n${lines.join("\n")}\n\nTotal: ${formatPrice(totalValue)} ISK`;
 
-    navigator.clipboard?.writeText(text).catch(() => {});
+    navigator.clipboard?.writeText(text)?.catch(() => {});
     cartCheckoutBtn.textContent = "Copied!";
     setTimeout(() => { cartCheckoutBtn.textContent = "Checkout"; }, 2200);
   });
@@ -577,11 +577,6 @@ document.addEventListener("DOMContentLoaded", () => {
   document.addEventListener("shop:product-data-updated", syncCartPricesFromProducts);
 
   // ── Init ──────────────────────────────────────────────────────────────────────
-
-  document.querySelectorAll("[data-cart-qty]").forEach((input) => {
-    input.value = String(clampQty(input.value));
-    resizeQtyInput(input);
-  });
 
   syncCartPricesFromProducts();
   renderCart();
