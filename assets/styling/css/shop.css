@@ -281,7 +281,7 @@
 .cart-drawer-close:hover { color: var(--text-gold-top); }
 .cart-drawer-title {
   font-family: var(--font-title);
-  font-size: 17px;
+  font-size: 18px;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -293,7 +293,7 @@
 }
 .cart-drawer-count {
   font-family: var(--font-text);
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 700;
   background: var(--text-gold-mid);
   color: #0a0c12;
@@ -321,7 +321,7 @@
   text-align: center;
   color: var(--text-gold-bottom);
   font-family: var(--font-text);
-  font-size: 17px;
+  font-size: 18px;
   font-style: italic;
   opacity: 0.7;
 }
@@ -370,13 +370,12 @@
 }
 .cart-item-name {
   font-family: var(--font-title);
-  font-size: 20px;
+  font-size: 23px;
   font-weight: 400;
   color: var(--text-gold-top);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  line-height: 1.2;
 }
 
 /* red X remove button */
@@ -390,7 +389,7 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 15px;
   flex-shrink: 0;
   border-radius: 3px;
   padding: 0;
@@ -418,14 +417,14 @@
 /* price */
 .cart-item-price {
   font-family: var(--font-text);
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 700;
   color: var(--text-gold-top);
   line-height: 1;
 }
-.cart-item--ship .cart-item-price { font-size: 16px; }
+.cart-item--ship .cart-item-price { font-size: 17px; }
 .cart-price-label {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 400;
   color: var(--text-gold-bottom);
 }
@@ -447,7 +446,7 @@
   color: var(--text-gold-mid);
   cursor: pointer;
   font-family: var(--font-text);
-  font-size: 19px;
+  font-size: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -460,7 +459,7 @@
 .cart-action-btn--sm {
   width: 22px;
   height: 22px;
-  font-size: 15px;
+  font-size: 16px;
 }
 
 /* qty number input */
@@ -472,7 +471,7 @@
   border: 1px solid var(--gold-border-alternate);
   color: var(--text-gold-mid);
   font-family: var(--font-text);
-  font-size: 16px;
+  font-size: 17px;
   padding: 3px 4px;
   box-sizing: border-box;
   appearance: textfield;
@@ -482,7 +481,7 @@
 .cart-item-qty--sm {
   min-width: 34px;
   width: auto;
-  font-size: 15px;
+  font-size: 16px;
   padding: 1px 3px;
 }
 .cart-item-qty::-webkit-inner-spin-button,
@@ -514,7 +513,7 @@
 }
 .cart-extra-name {
   font-family: var(--font-text);
-  font-size: 15px;
+  font-size: 16px;
   color: var(--text-gold-bottom);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -524,7 +523,7 @@
   display: inline-flex;
   align-items: baseline;
   font-family: var(--font-text);
-  font-size: 12px;
+  font-size: 13px;
   color: var(--text-gold-bottom);
   line-height: 1;
 }
@@ -547,7 +546,7 @@
   border: none;
   color: rgba(229, 115, 115, 0.5);
   cursor: pointer;
-  font-size: 14px;
+  font-size: 15px;
   padding: 0;
   margin-left: 4px;
   line-height: 1;
@@ -568,7 +567,7 @@
   border: 1px dashed var(--gold-border-alternate);
   color: var(--text-gold-bottom);
   font-family: var(--font-text);
-  font-size: 14px;
+  font-size: 15px;
   padding: 3px 10px;
   cursor: pointer;
   border-radius: 3px;
@@ -596,14 +595,14 @@
 }
 .cart-item-total-label {
   font-family: var(--font-text);
-  font-size: 14px;
+  font-size: 15px;
   color: var(--text-gold-bottom);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 .cart-item-total-value {
   font-family: var(--font-title);
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 700;
   color: var(--text-gold-top);
 }
@@ -625,12 +624,12 @@
 }
 .cart-total-label {
   font-family: var(--font-text);
-  font-size: 16px;
+  font-size: 17px;
   color: var(--text-gold-bottom);
 }
 .cart-total-value {
   font-family: var(--font-title);
-  font-size: 22px;
+  font-size: 23px;
   font-weight: 700;
   background: var(--text-gradient-gold);
   background-clip: text;
@@ -656,7 +655,7 @@
   border: none;
   color: var(--text-gold-bottom);
   font-family: var(--font-text);
-  font-size: 15px;
+  font-size: 16px;
   padding: 6px 0;
   cursor: pointer;
   letter-spacing: 0.02em;
@@ -677,7 +676,7 @@
   border: 1px solid var(--gold-border-alternate);
   color: var(--text-gold-mid);
   font-family: var(--font-text);
-  font-size: 16px;
+  font-size: 17px;
   padding: 6px 10px;
   width: 100%;
   box-sizing: border-box;
@@ -689,13 +688,13 @@
 }
 .cart-identity-note {
   font-family: var(--font-text);
-  font-size: 14px;
+  font-size: 15px;
   color: var(--text-gold-bottom);
   line-height: 1.45;
 }
 .cart-identity-sub {
   font-family: var(--font-text);
-  font-size: 14px;
+  font-size: 15px;
   color: rgba(255, 215, 138, 0.3);
   line-height: 1.45;
 }
@@ -710,7 +709,7 @@
 }
 .cart-orderid-box p {
   font-family: var(--font-text);
-  font-size: 15px;
+  font-size: 16px;
   color: var(--text-gold-bottom);
   line-height: 1.4;
 }
@@ -719,7 +718,7 @@
   font-weight: 700;
 }
 .cart-orderid-expiry {
-  font-size: 14px !important;
+  font-size: 15px !important;
   opacity: 0.65;
 }
 
@@ -737,7 +736,7 @@
   color: rgba(229, 115, 115, 0.8);
   cursor: pointer;
   font-family: var(--font-text);
-  font-size: 16px;
+  font-size: 17px;
   padding: 6px 13px;
   border-radius: var(--radius-pill);
   white-space: nowrap;
