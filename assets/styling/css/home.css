@@ -15,3 +15,98 @@ section{
   margin-top: 15px;
   font-size: var(--font-medium);
 }
+
+/* "Store has more" highlight card. */
+.store-more-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  text-align: center;
+  text-decoration: none;
+  min-width: 280px;
+  max-width: 280px;
+  padding: 14px 18px;
+  border: var(--border-md) solid transparent;
+  border-image: var(--gold-border-gradient) 1;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(216, 176, 101, 0.18), transparent 65%),
+    linear-gradient(180deg, rgba(34, 27, 12, 0.55), rgba(8, 11, 18, 0.9));
+  box-shadow:
+    0 10px 24px rgba(0, 0, 0, 0.35),
+    0 0 20px rgba(216, 176, 101, 0.06);
+  transition: box-shadow var(--transition-fast), transform var(--transition-fast);
+}
+
+.store-more-card:hover,
+.store-more-card:focus-visible {
+  transform: translateY(-4px);
+  box-shadow:
+    0 16px 32px rgba(0, 0, 0, 0.5),
+    0 0 28px rgba(255, 221, 156, 0.18);
+}
+
+.store-more-card:focus-visible {
+  outline: var(--border-md) solid var(--text-gold-top);
+  outline-offset: 4px;
+}
+
+.store-more-card h2 {
+  font-size: var(--font-large);
+  margin-bottom: 10px;
+}
+
+.store-more-body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: stretch;
+  gap: 10px;
+  margin-top: auto;
+  margin-bottom: auto;
+}
+
+.store-more-body p {
+  flex: 1;
+  min-width: 0;
+}
+
+.store-more-card p {
+  font-size: var(--font-small);
+  color: var(--text-gold-mid);
+  text-align: left;
+  margin: 0;
+}
+
+.store-more-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 22px;
+  border: var(--border-sm) solid var(--text-gold-top);
+  border-radius: var(--radius-pill);
+  background: var(--button-background);
+  color: var(--text-gold-top);
+  font-family: var(--font-text);
+  font-size: var(--font-small);
+  font-weight: bold;
+  letter-spacing: 1px;
+  transition: background-color var(--transition-fast);
+  margin-top: auto;
+  margin-bottom: auto;
+}
+
+.store-more-arrow {
+  display: inline-block;
+  transition: transform var(--transition-fast);
+}
+
+.store-more-card:hover .store-more-cta,
+.store-more-card:focus-visible .store-more-cta {
+  background: var(--surface-hover);
+}
+
+.store-more-card:hover .store-more-arrow,
+.store-more-card:focus-visible .store-more-arrow {
+  transform: translateX(6px);
+}

@@ -95,6 +95,21 @@
   font-size: var(--font-small);
 }
 
+.product-data-status {
+  min-height: 1.2em;
+  font-size: 12px;
+  text-align: center;
+  color: var(--text-gold-bottom);
+}
+
+.product-data-status[data-state="warning"] {
+  color: var(--text-gold-mid);
+}
+
+.product-data-status[data-state="live"] {
+  color: var(--text-gold-top);
+}
+
 /* Keep static shop/cart copy from showing the text-selection cursor. */
 :where(
   .top-bar-panel-section h2,

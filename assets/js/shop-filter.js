@@ -64,7 +64,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const display = document.querySelector(".display");
   const stockEndpoint = (document.body?.dataset.stockEndpoint || "").trim();
   const STOCK_CACHE_KEY = "itss_shop_stock_cache_v1";
-  const STOCK_CACHE_MAX_AGE_MS = 15 * 60 * 1000;
+  const STOCK_CACHE_FRESH_AGE_MS = 15 * 60 * 1000;
+  const STOCK_CACHE_FALLBACK_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 
   const parentCbs = Array.from(document.querySelectorAll(".filter input[data-parent]"));
   const childCbs  = Array.from(document.querySelectorAll(".filter input[data-child]"));
@@ -73,7 +74,18 @@ document.addEventListener("DOMContentLoaded", () => {
   const searchInput = document.getElementById("filter-search");
   const sortSelect = document.getElementById("display-sort");
   const resultsCountEl = document.getElementById("results-count");
+  const productDataStatusEl = document.getElementById("product-data-status");
   const cardMeta = new Map();
+
+  function setProductDataStatus(message, state = "") {
+    if (!productDataStatusEl) return;
+    productDataStatusEl.textContent = message;
+    if (state) {
+      productDataStatusEl.dataset.state = state;
+      return;
+    }
+    delete productDataStatusEl.dataset.state;
+  }
 
   function stockCountFor(card) {
     const meta = cardMeta.get(card);
@@ -192,7 +204,9 @@ document.addEventListener("DOMContentLoaded", () => {
     return serialized;
   }
 
-  function loadCachedStockMap() {
+  function loadCachedStockSnapshot(options = {}) {
+    const allowStale = options.allowStale !== false;
+
     try {
       const rawCache = localStorage.getItem(STOCK_CACHE_KEY);
       if (!rawCache) return null;
@@ -203,12 +217,22 @@ document.addEventListener("DOMContentLoaded", () => {
       const cachedAt = Number(parsedCache.cachedAt);
       if (!Number.isFinite(cachedAt)) return null;
 
-      if (Date.now() - cachedAt > STOCK_CACHE_MAX_AGE_MS) {
+      const ageMs = Date.now() - cachedAt;
+      if (ageMs > STOCK_CACHE_FALLBACK_AGE_MS) {
         return null;
       }
 
+      const isFresh = ageMs <= STOCK_CACHE_FRESH_AGE_MS;
+      if (!allowStale && !isFresh) return null;
+
       const normalized = normalizeStockFeed(parsedCache.records);
-      return normalized.size > 0 ? normalized : null;
+      if (normalized.size === 0) return null;
+
+      return {
+        cachedAt,
+        isFresh,
+        records: normalized
+      };
     } catch {
       return null;
     }
@@ -272,13 +296,20 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function loadRemoteStock() {
-    const cachedStockMap = loadCachedStockMap();
+    const cachedSnapshot = loadCachedStockSnapshot({ allowStale: true });
+    const cachedStockMap = cachedSnapshot?.records || null;
     const hasCachedStock = cachedStockMap instanceof Map && cachedStockMap.size > 0;
 
     if (hasCachedStock) {
       applyStockMapToCards(cachedStockMap);
       document.dispatchEvent(new CustomEvent("shop:product-data-updated"));
       applyFilters();
+      setProductDataStatus(
+        cachedSnapshot.isFresh
+          ? "Showing saved prices and stock while live data refreshes."
+          : "Showing last known prices and stock while live data refreshes.",
+        cachedSnapshot.isFresh ? "" : "warning"
+      );
     }
 
     if (!stockEndpoint || stockEndpoint.includes("PASTE_YOUR_GOOGLE_APPS_SCRIPT")) {
@@ -286,7 +317,16 @@ document.addEventListener("DOMContentLoaded", () => {
         cards.forEach(syncStockState);
         applyFilters();
       }
+      setProductDataStatus(
+        hasCachedStock
+          ? "Showing saved prices and stock."
+          : "Showing built-in prices. Live inventory feed is disabled."
+      );
       return;
+    }
+
+    if (!hasCachedStock) {
+      setProductDataStatus("Showing built-in prices while live data loads.");
     }
 
     try {
@@ -311,10 +351,14 @@ document.addEventListener("DOMContentLoaded", () => {
       applyStockMapToCards(stockMap);
 
       document.dispatchEvent(new CustomEvent("shop:product-data-updated"));
+      setProductDataStatus("Live prices and stock updated.", "live");
     } catch (error) {
       console.error("Unable to load remote stock feed.", error);
       if (!hasCachedStock) {
         cards.forEach(syncStockState);
+        setProductDataStatus("Showing built-in prices. Live refresh unavailable.", "warning");
+      } else {
+        setProductDataStatus("Showing last known prices and stock. Live refresh unavailable.", "warning");
       }
     }
 
