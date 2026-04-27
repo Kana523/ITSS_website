@@ -1,17 +1,40 @@
-What is ITS-S?
-ITS-S, Interstellar Systems, is my eve online corporation for small scale industry, planetary interaction and running reactions.
+# ITSS Website
 
-What is ITSS_website repo?
-This is the repository hosting the website for the corporation. It contains a handful of pages addressing the most important parts of the corporation.
+ITS-S (Interstellar Systems) is my EVE Online corporation focused on small-scale industry, planetary interaction, and reactions. This repo hosts the corporation website.
 
-Pages?
-Home - landing page, contains basic information about the corp and a handful of store and trade highlights.
-Store - majority of the website. A store for ingame trading of items.
-About - more in depth description of the website, corporation and their longterm goals.
-Legal - contains legal disclaimers, notices and other rules and regulations.
+## Pages
 
-How to run?
-Simply open the index.html in the root folder.
+- **Home** — Landing page with core corporate info and select merchandise highlights
+- **Shop** — Marketplace for in-game item transactions
+- **Trade** — Trade-related tooling and listings
+- **About** — Extended overview of the corporation and its goals
+- **Legal** — Disclaimers and compliance documentation
 
-Structure?
-Folders are structured by type.
+## Project Structure
+
+```
+ITSS_Website/
+├── index.html
+├── shop/
+├── trade/
+├── about/
+├── legal/
+└── assets/
+    ├── images/
+    │   ├── backgrounds/
+    │   ├── icons/
+    │   └── items/
+    ├── js/
+    └── styling/
+        ├── css/        # Per-page stylesheets + base.css (CSS variables)
+        └── fonts/
+```
+
+## Tech Stack
+
+- Plain HTML, CSS, and JavaScript — no framework, no build step
+- CSS custom properties defined in `assets/styling/css/base.css`
+
+## Getting Started
+
+Open `index.html` in a browser, or use VS Code Live Server for local development.

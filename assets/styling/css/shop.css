@@ -1,6 +1,5 @@
 ﻿.grid-container {
     display: grid;
-    flex: 1;
     grid-template-rows: auto 1fr;
     grid-template-columns: 200px minmax(0, 1fr);
     grid-template-areas:
@@ -40,10 +39,6 @@
   justify-content: center;
   align-content: flex-start;
   gap: 40px;
-}
-
-.display .item-card {
-  transition: opacity 0.2s ease;
 }
 
 /* Keep out-of-stock cards visually muted without fading tooltip content. */
@@ -150,7 +145,7 @@
   align-items: center;
 }
 
-/* ===== Filter dropdown (Materials -> Moon/Ore/Planetary) ===== */
+/* ===== Filter dropdown (Materials -> Planetary/Reaction/Component) ===== */
 .filter-form {
   display: flex;
   flex-direction: column;
@@ -255,7 +250,7 @@
   position: fixed;
   top: 0;
   right: 0;
-  width: 460px;
+  width: min(460px, 100vw);
   height: 100dvh;
   background: linear-gradient(160deg, rgba(8,11,18,0.99) 0%, rgba(17,23,43,0.99) 100%);
   border-left: 2px solid transparent;
@@ -489,8 +484,6 @@
   font-size: 17px;
   padding: 3px 4px;
   box-sizing: border-box;
-  appearance: textfield;
-  -moz-appearance: textfield;
   border-radius: 2px;
 }
 .cart-item-qty--sm {
@@ -498,11 +491,6 @@
   width: auto;
   font-size: 16px;
   padding: 1px 3px;
-}
-.cart-item-qty::-webkit-inner-spin-button,
-.cart-item-qty::-webkit-outer-spin-button {
-  appearance: none;
-  -webkit-appearance: none;
 }
 
 /* ── Extras (ships only) ───────────────────────────────── */
