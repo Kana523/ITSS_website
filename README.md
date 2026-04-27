@@ -4,11 +4,11 @@ ITS-S (Interstellar Systems) is my EVE Online corporation focused on small-scale
 
 ## Pages
 
-- **Home** — Landing page with core corporate info and select merchandise highlights
-- **Shop** — Marketplace for in-game item transactions
-- **Trade** — Trade-related tooling and listings
-- **About** — Extended overview of the corporation and its goals
-- **Legal** — Disclaimers and compliance documentation
+- **Home** - Landing page with core corporate info and select merchandise highlights
+- **Shop** - Marketplace for in-game item transactions
+- **Trade** - Trade-related tooling and listings
+- **About** - Extended overview of the corporation and its goals
+- **Legal** - Disclaimers and compliance documentation
 
 ## Project Structure
 
