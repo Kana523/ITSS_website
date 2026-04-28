@@ -140,10 +140,42 @@
     return stockMap;
   }
 
+  // Apps Script web apps reject custom Content-Type from browsers (CORS preflight),
+  // so the body is sent as text/plain and the script JSON.parses it server-side.
+  async function submitOrder(endpoint, orderId, items, turnstileToken) {
+    if (!isEndpointConfigured(endpoint)) {
+      throw new Error("Order endpoint is not configured.");
+    }
+
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ action: "order", orderId, items, turnstileToken })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Order request failed with ${response.status}`);
+    }
+
+    let payload;
+    try {
+      payload = await response.json();
+    } catch {
+      throw new Error("Server returned an invalid response.");
+    }
+
+    if (!payload || payload.ok !== true) {
+      throw new Error(payload?.error || "Server rejected the order.");
+    }
+
+    return payload;
+  }
+
   window.ShopStockFeed = {
     loadCachedSnapshot,
     saveCache,
     fetchRemote,
+    submitOrder,
     isEndpointConfigured
   };
 })();

@@ -9,6 +9,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const cartBackdrop     = document.getElementById("cart-backdrop");
   const cartDrawerClose  = document.getElementById("cart-drawer-close");
   const cartCheckoutBtn  = document.getElementById("cart-checkout");
+  const orderIdGeneratedLabel = document.querySelector(".cart-orderid-generated-label");
+  const orderIdGeneratedEl    = document.getElementById("cart-orderid-generated");
+  const orderIdHintEl         = document.getElementById("cart-orderid-hint");
+  const orderIdErrorEl        = document.getElementById("cart-orderid-error");
+  const orderEndpoint = (document.body?.dataset.stockEndpoint || "").trim();
 
   if (!cartItemsEl || !cartTotalEl) return;
 
@@ -16,8 +21,31 @@ document.addEventListener("DOMContentLoaded", () => {
     console.error("shop-cart.js: window.ShopUtils missing — shop-filter.js failed to load.");
     return;
   }
+  if (!window.ShopStockFeed) {
+    console.error("shop-cart.js: window.ShopStockFeed missing — shop-stock-feed.js failed to load.");
+    return;
+  }
   const { formatPrice, parsePriceToIsk } = window.ShopUtils;
   const CART_STORAGE_KEY = "itss_shop_cart_v1";
+  const ORDER_ID_LENGTH = 20;
+  const ORDER_ID_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
+  function generateOrderId() {
+    const out = new Array(ORDER_ID_LENGTH);
+    const cryptoObj = window.crypto || window.msCrypto;
+    if (cryptoObj?.getRandomValues) {
+      const buf = new Uint32Array(ORDER_ID_LENGTH);
+      cryptoObj.getRandomValues(buf);
+      for (let i = 0; i < ORDER_ID_LENGTH; i++) {
+        out[i] = ORDER_ID_ALPHABET[buf[i] % ORDER_ID_ALPHABET.length];
+      }
+    } else {
+      for (let i = 0; i < ORDER_ID_LENGTH; i++) {
+        out[i] = ORDER_ID_ALPHABET[Math.floor(Math.random() * ORDER_ID_ALPHABET.length)];
+      }
+    }
+    return out.join("");
+  }
 
   const FITTINGS = [
     { name: "Bork 1", price:  50000000 },
@@ -521,32 +549,119 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ── Identity tabs ─────────────────────────────────────────────────────────────
 
+  function activeIdentityTab() {
+    return document.querySelector(".cart-identity-tab--active")?.dataset.tab || "name";
+  }
+
+  function syncCheckoutButtonLabel() {
+    if (!cartCheckoutBtn) return;
+    cartCheckoutBtn.textContent = activeIdentityTab() === "orderid" ? "Generate ID" : "Checkout";
+  }
+
+  function resetOrderIdPanel() {
+    if (orderIdGeneratedEl) {
+      orderIdGeneratedEl.textContent = "";
+      orderIdGeneratedEl.hidden = true;
+    }
+    if (orderIdGeneratedLabel) orderIdGeneratedLabel.hidden = true;
+    if (orderIdErrorEl) {
+      orderIdErrorEl.textContent = "";
+      orderIdErrorEl.hidden = true;
+    }
+    if (orderIdHintEl) orderIdHintEl.hidden = false;
+  }
+
   document.querySelectorAll(".cart-identity-tab").forEach((tab) => {
     tab.addEventListener("click", () => {
       document.querySelectorAll(".cart-identity-tab").forEach(t => t.classList.remove("cart-identity-tab--active"));
       tab.classList.add("cart-identity-tab--active");
       const target = tab.dataset.tab;
       document.querySelectorAll(".cart-identity-panel").forEach(p => { p.hidden = p.dataset.panel !== target; });
+      resetOrderIdPanel();
+      syncCheckoutButtonLabel();
     });
   });
 
+  syncCheckoutButtonLabel();
+
   // ── Checkout ──────────────────────────────────────────────────────────────────
 
-  cartCheckoutBtn?.addEventListener("click", () => {
+  function buildOrderItems() {
+    return Object.values(cart).map((item) => ({
+      sku: item.sku,
+      name: item.name,
+      category: item.category || "",
+      qty: item.qty,
+      price: item.price,
+      extras: (item.extras || []).map((ex) => ({
+        name: ex.name,
+        price: Number.isFinite(ex.price) ? ex.price : 0,
+        qty: ex.qty
+      }))
+    }));
+  }
+
+  function showOrderIdError(message) {
+    if (!orderIdErrorEl) return;
+    orderIdErrorEl.textContent = message;
+    orderIdErrorEl.hidden = false;
+  }
+
+  function showGeneratedOrderId(orderId) {
+    if (orderIdGeneratedEl) {
+      orderIdGeneratedEl.textContent = orderId;
+      orderIdGeneratedEl.hidden = false;
+    }
+    if (orderIdGeneratedLabel) orderIdGeneratedLabel.hidden = false;
+    if (orderIdHintEl) orderIdHintEl.hidden = true;
+    if (orderIdErrorEl) {
+      orderIdErrorEl.textContent = "";
+      orderIdErrorEl.hidden = true;
+    }
+  }
+
+  async function handleOrderIdCheckout() {
+    if (!cartCheckoutBtn) return;
+    if (orderIdErrorEl) {
+      orderIdErrorEl.textContent = "";
+      orderIdErrorEl.hidden = true;
+    }
+
+    const items = buildOrderItems();
+    if (!items.length) return;
+
+    const turnstileToken = window.turnstile?.getResponse?.() || "";
+    if (!turnstileToken) {
+      showOrderIdError("Please complete the verification challenge above, then try again.");
+      return;
+    }
+
+    const orderId = generateOrderId();
+
+    cartCheckoutBtn.disabled = true;
+    cartCheckoutBtn.textContent = "Sending…";
+
+    try {
+      await ShopStockFeed.submitOrder(orderEndpoint, orderId, items, turnstileToken);
+      showGeneratedOrderId(orderId);
+      cartCheckoutBtn.textContent = "Generate ID";
+    } catch (error) {
+      console.error("Order submission failed.", error);
+      showOrderIdError("Couldn't reach the order server. Please retry.");
+      cartCheckoutBtn.textContent = "Retry";
+    } finally {
+      window.turnstile?.reset?.();
+      cartCheckoutBtn.disabled = false;
+    }
+  }
+
+  function handleNameCheckout() {
     const items = Object.values(cart);
     if (!items.length) return;
 
-    const activeTab = document.querySelector(".cart-identity-tab--active")?.dataset.tab;
-    let header = "";
-
-    if (activeTab === "name") {
-      const charName = document.getElementById("cart-char-name")?.value.trim();
-      if (!charName) { document.getElementById("cart-char-name")?.focus(); return; }
-      header = `Order for: ${charName}`;
-    } else {
-      const orderId = `ITSS-${Date.now().toString(36).toUpperCase()}`;
-      header = `Order ID: ${orderId}`;
-    }
+    const charName = document.getElementById("cart-char-name")?.value.trim();
+    if (!charName) { document.getElementById("cart-char-name")?.focus(); return; }
+    const header = `Order for: ${charName}`;
 
     const lines = items.map((item) => {
       let line = `${item.qty}x ${item.name} @ ${formatPrice(item.price)} ISK`;
@@ -568,7 +683,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
     navigator.clipboard?.writeText(text)?.catch(() => {});
     cartCheckoutBtn.textContent = "Copied!";
-    setTimeout(() => { cartCheckoutBtn.textContent = "Checkout"; }, 2200);
+    setTimeout(syncCheckoutButtonLabel, 2200);
+  }
+
+  cartCheckoutBtn?.addEventListener("click", () => {
+    if (activeIdentityTab() === "orderid") {
+      handleOrderIdCheckout();
+    } else {
+      handleNameCheckout();
+    }
   });
 
   // ── Clear ─────────────────────────────────────────────────────────────────────
