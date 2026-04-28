@@ -7,7 +7,9 @@
   <link rel="stylesheet" href="../assets/styling/css/base.css">
   <link rel="stylesheet" href="../assets/styling/css/shop.css">
 
+  <!-- shop-stock-feed.js must load before shop-filter.js: filter calls window.ShopStockFeed -->
   <!-- shop-filter.js must load before shop-cart.js: filter fires shop:product-data-updated which cart listens to -->
+  <script src="../assets/js/shop-stock-feed.js" defer></script>
   <script src="../assets/js/shop-filter.js" defer></script>
   <script src="../assets/js/shop-cart.js" defer></script>
   <script src="../assets/js/legal-notice.js" defer></script>
