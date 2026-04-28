@@ -3,3 +3,4 @@ Thumbs.db
 .DS_Store
 desktop.ini
 *.log
+.claude/settings.local.json
