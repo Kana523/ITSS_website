@@ -521,27 +521,28 @@
           <input type="text" id="cart-char-name" class="cart-identity-input" placeholder="Your character name…" autocomplete="off">
           <p class="cart-identity-note">We'll reach out in-game shortly to confirm your order.</p>
           <p class="cart-identity-sub">No prepayment required — payment on delivery.</p>
+          <div class="cart-footer-actions">
+            <button type="button" class="buy-button cart-checkout" id="cart-checkout-name">Checkout</button>
+            <button type="button" class="cart-clear" id="cart-clear-name" disabled>Clear All</button>
+          </div>
         </div>
 
         <div class="cart-identity-panel" data-panel="orderid" hidden>
-          <div class="cart-orderid-generate-box" id="cart-orderid-generate-box">
+          <div class="cart-footer-actions">
+            <button type="button" class="buy-button cart-checkout" id="cart-checkout">Generate ID</button>
+            <button type="button" class="cart-clear" id="cart-clear" disabled>Clear All</button>
+          </div>
+          <p class="cart-orderid-generate-error" id="cart-orderid-error" hidden></p>
+          <div class="cart-orderid-generate-box" id="cart-orderid-generate-box" hidden>
             <p class="cart-orderid-generated-label" hidden>Your Order ID:</p>
             <p class="cart-orderid-generated-value" id="cart-orderid-generated" hidden></p>
-            <p class="cart-orderid-generate-hint" id="cart-orderid-hint">Click <strong>Generate ID</strong> below to create your Order ID.</p>
-            <div class="cf-turnstile cart-turnstile" id="cart-turnstile" data-sitekey="0x4AAAAAADFK_LmTLxebflbr" data-size="flexible" data-theme="dark"></div>
-            <p class="cart-orderid-generate-error" id="cart-orderid-error" hidden></p>
           </div>
           <div class="cart-orderid-box">
             <p>EVEmail your order to <strong>Neo Achasse</strong> with your Order ID as the subject.</p>
             <p class="cart-orderid-expiry">Order will be cancelled if not confirmed within <strong>3 days</strong>.</p>
           </div>
-          <p class="cart-identity-sub">No prepayment required — payment on delivery.</p>
+          <div class="cf-turnstile cart-turnstile" id="cart-turnstile" data-sitekey="0x4AAAAAADFK_LmTLxebflbr" data-size="flexible" data-theme="dark" style="display:none"></div>
         </div>
-      </div>
-
-      <div class="cart-footer-actions">
-        <button type="button" class="buy-button cart-checkout" id="cart-checkout">Checkout</button>
-        <button type="button" class="cart-clear" id="cart-clear" disabled>Clear All</button>
       </div>
     </div>
   </aside>

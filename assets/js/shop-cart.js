@@ -4,13 +4,16 @@ document.addEventListener("DOMContentLoaded", () => {
   const cartItemsEl      = document.getElementById("cart-items");
   const cartTotalEl      = document.getElementById("cart-total");
   const cartClearBtn     = document.getElementById("cart-clear");
+  const cartClearNameBtn = document.getElementById("cart-clear-name");
   const cartToggleBtn    = document.getElementById("cart-toggle");
   const cartDrawer       = document.getElementById("cart-drawer");
   const cartBackdrop     = document.getElementById("cart-backdrop");
   const cartDrawerClose  = document.getElementById("cart-drawer-close");
   const cartCheckoutBtn  = document.getElementById("cart-checkout");
+  const cartCheckoutNameBtn = document.getElementById("cart-checkout-name");
   const orderIdGeneratedLabel = document.querySelector(".cart-orderid-generated-label");
   const orderIdGeneratedEl    = document.getElementById("cart-orderid-generated");
+  const orderIdGenerateBox    = document.getElementById("cart-orderid-generate-box");
   const orderIdHintEl         = document.getElementById("cart-orderid-hint");
   const orderIdErrorEl        = document.getElementById("cart-orderid-error");
   const orderEndpoint = (document.body?.dataset.stockEndpoint || "").trim();
@@ -321,6 +324,7 @@ document.addEventListener("DOMContentLoaded", () => {
       empty.textContent = "Your cart is empty.";
       cartItemsEl.appendChild(empty);
       if (cartClearBtn) cartClearBtn.disabled = true;
+      if (cartClearNameBtn) cartClearNameBtn.disabled = true;
       return;
     }
 
@@ -483,6 +487,7 @@ document.addEventListener("DOMContentLoaded", () => {
     cartItemsEl.querySelectorAll(".cart-item-qty").forEach(resizeQtyInput);
 
     if (cartClearBtn) cartClearBtn.disabled = false;
+    if (cartClearNameBtn) cartClearNameBtn.disabled = false;
   }
 
   // ── Event delegation ─────────────────────────────────────────────────────────
@@ -554,8 +559,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function syncCheckoutButtonLabel() {
-    if (!cartCheckoutBtn) return;
-    cartCheckoutBtn.textContent = activeIdentityTab() === "orderid" ? "Generate ID" : "Checkout";
+    if (cartCheckoutNameBtn) cartCheckoutNameBtn.textContent = "Checkout";
   }
 
   function resetOrderIdPanel() {
@@ -564,6 +568,7 @@ document.addEventListener("DOMContentLoaded", () => {
       orderIdGeneratedEl.hidden = true;
     }
     if (orderIdGeneratedLabel) orderIdGeneratedLabel.hidden = true;
+    if (orderIdGenerateBox) orderIdGenerateBox.hidden = true;
     if (orderIdErrorEl) {
       orderIdErrorEl.textContent = "";
       orderIdErrorEl.hidden = true;
@@ -613,6 +618,7 @@ document.addEventListener("DOMContentLoaded", () => {
       orderIdGeneratedEl.hidden = false;
     }
     if (orderIdGeneratedLabel) orderIdGeneratedLabel.hidden = false;
+    if (orderIdGenerateBox) orderIdGenerateBox.hidden = false;
     if (orderIdHintEl) orderIdHintEl.hidden = true;
     if (orderIdErrorEl) {
       orderIdErrorEl.textContent = "";
@@ -682,21 +688,19 @@ document.addEventListener("DOMContentLoaded", () => {
     const text = `${header}\n\n${lines.join("\n")}\n\nTotal: ${formatPrice(totalValue)} ISK`;
 
     navigator.clipboard?.writeText(text)?.catch(() => {});
-    cartCheckoutBtn.textContent = "Copied!";
-    setTimeout(syncCheckoutButtonLabel, 2200);
+    if (cartCheckoutNameBtn) {
+      cartCheckoutNameBtn.textContent = "Copied!";
+      setTimeout(syncCheckoutButtonLabel, 2200);
+    }
   }
 
-  cartCheckoutBtn?.addEventListener("click", () => {
-    if (activeIdentityTab() === "orderid") {
-      handleOrderIdCheckout();
-    } else {
-      handleNameCheckout();
-    }
-  });
+  cartCheckoutBtn?.addEventListener("click", handleOrderIdCheckout);
+  cartCheckoutNameBtn?.addEventListener("click", handleNameCheckout);
 
   // ── Clear ─────────────────────────────────────────────────────────────────────
 
   cartClearBtn?.addEventListener("click", clearCart);
+  cartClearNameBtn?.addEventListener("click", clearCart);
   document.addEventListener("shop:product-data-updated", syncCartPricesFromProducts);
 
   // ── Init ──────────────────────────────────────────────────────────────────────
