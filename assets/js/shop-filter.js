@@ -56,7 +56,13 @@ function parsePriceToIsk(rawValue, fallbackLabel = "") {
   return 0;
 }
 
-window.ShopUtils = { formatPrice, parsePriceToIsk };
+function formatPriceLong(value) {
+  const amount = Number(value);
+  if (!Number.isFinite(amount) || amount <= 0) return "0";
+  return Math.round(amount).toLocaleString("en-US");
+}
+
+window.ShopUtils = { formatPrice, formatPriceLong, parsePriceToIsk };
 
 document.addEventListener("DOMContentLoaded", () => {
   if (!window.ShopStockFeed) {

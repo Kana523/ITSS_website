@@ -30,7 +30,10 @@ function doGet() {
 }
 
 // Frontend posts as text/plain (to avoid the CORS preflight Apps Script can't answer)
-// with a JSON body: { action: "order", orderId, turnstileToken, items: [{ sku, name, category, qty, price, extras: [{ name, price, qty }] }] }
+// with a JSON body: { action: "order", turnstileToken, items, and ONE of:
+//   - orderId: 20-char [A-Z0-9] string (Order ID flow), OR
+//   - charName: free-form string (Character Name flow).
+// Whichever is provided is written into the first column of each row.
 function doPost(e) {
   let body;
   try {
@@ -51,9 +54,19 @@ function doPost(e) {
     return jsonResponse({ ok: false, error: "Verification failed." });
   }
 
-  const orderId = String(body.orderId || "").trim();
-  if (!/^[A-Z0-9]{20}$/.test(orderId)) {
-    return jsonResponse({ ok: false, error: "Invalid Order ID." });
+  const rawOrderId = String(body.orderId || "").trim();
+  const charName = String(body.charName || "").trim().slice(0, 100);
+
+  let identifier;
+  if (rawOrderId) {
+    if (!/^[A-Z0-9]{20}$/.test(rawOrderId)) {
+      return jsonResponse({ ok: false, error: "Invalid Order ID." });
+    }
+    identifier = rawOrderId;
+  } else if (charName) {
+    identifier = charName;
+  } else {
+    return jsonResponse({ ok: false, error: "Missing Order ID or character name." });
   }
 
   const items = Array.isArray(body.items) ? body.items : [];
@@ -90,14 +103,14 @@ function doPost(e) {
     const lineTotal = unitPrice * qty;
 
     rows.push([
-      orderId, timestamp, sku, name, category, qty, unitPrice, lineTotal, orderTotal, "item"
+      identifier, timestamp, sku, name, category, qty, unitPrice, lineTotal, orderTotal, "item"
     ]);
 
     (Array.isArray(item.extras) ? item.extras : []).forEach((ex) => {
       const exQty = toInt(ex.qty);
       const exPrice = toNumber(ex.price) || 0;
       rows.push([
-        orderId, timestamp, sku, String(ex.name || "").trim(), category, exQty, exPrice, exPrice * exQty, orderTotal, "extra"
+        identifier, timestamp, sku, String(ex.name || "").trim(), category, exQty, exPrice, exPrice * exQty, orderTotal, "extra"
       ]);
     });
   });
@@ -108,7 +121,7 @@ function doPost(e) {
 
   sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, rows[0].length).setValues(rows);
 
-  return jsonResponse({ ok: true, orderId, total: orderTotal, rowsWritten: rows.length });
+  return jsonResponse({ ok: true, identifier, total: orderTotal, rowsWritten: rows.length });
 }
 
 // Verifies a Cloudflare Turnstile token. Secret comes from Script Properties (TURNSTILE_SECRET).

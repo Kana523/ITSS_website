@@ -11,12 +11,83 @@ document.addEventListener("DOMContentLoaded", () => {
   const cartDrawerClose  = document.getElementById("cart-drawer-close");
   const cartCheckoutBtn  = document.getElementById("cart-checkout");
   const cartCheckoutNameBtn = document.getElementById("cart-checkout-name");
-  const orderIdGeneratedLabel = document.querySelector(".cart-orderid-generated-label");
   const orderIdGeneratedEl    = document.getElementById("cart-orderid-generated");
-  const orderIdGenerateBox    = document.getElementById("cart-orderid-generate-box");
-  const orderIdHintEl         = document.getElementById("cart-orderid-hint");
+  const orderIdCopyBtn        = document.getElementById("cart-orderid-copy");
+  const nameErrorEl           = document.getElementById("cart-name-error");
   const orderIdErrorEl        = document.getElementById("cart-orderid-error");
   const orderEndpoint = (document.body?.dataset.stockEndpoint || "").trim();
+
+  const TURNSTILE_CONTAINER = "#cart-turnstile";
+  const TURNSTILE_SITEKEY = document.getElementById("cart-turnstile")?.dataset.sitekey || "";
+  let turnstileWidgetId = null;
+  let turnstilePending = null;
+
+  function ensureTurnstileRendered() {
+    if (turnstileWidgetId !== null) return Promise.resolve();
+    if (!document.getElementById("cart-turnstile") || !TURNSTILE_SITEKEY) {
+      return Promise.reject(new Error("Turnstile container missing"));
+    }
+    return new Promise((resolve, reject) => {
+      const start = Date.now();
+      const tick = () => {
+        if (window.turnstile?.render) {
+          try {
+            turnstileWidgetId = window.turnstile.render(TURNSTILE_CONTAINER, {
+              sitekey: TURNSTILE_SITEKEY,
+              size: "invisible",
+              theme: "dark",
+              callback: (token) => {
+                if (turnstilePending) {
+                  turnstilePending.resolve(token);
+                  turnstilePending = null;
+                }
+              },
+              "error-callback": () => {
+                if (turnstilePending) {
+                  turnstilePending.reject(new Error("Turnstile challenge failed"));
+                  turnstilePending = null;
+                }
+              },
+              "timeout-callback": () => {
+                if (turnstilePending) {
+                  turnstilePending.reject(new Error("Turnstile timed out"));
+                  turnstilePending = null;
+                }
+              },
+            });
+            resolve();
+          } catch (e) {
+            reject(e);
+          }
+          return;
+        }
+        if (Date.now() - start > 8000) {
+          reject(new Error("Turnstile script never loaded"));
+          return;
+        }
+        setTimeout(tick, 120);
+      };
+      tick();
+    });
+  }
+
+  async function getTurnstileToken() {
+    await ensureTurnstileRendered();
+    if (turnstilePending) {
+      turnstilePending.reject(new Error("Turnstile superseded"));
+      turnstilePending = null;
+    }
+    return new Promise((resolve, reject) => {
+      turnstilePending = { resolve, reject };
+      try {
+        window.turnstile.reset(turnstileWidgetId);
+        window.turnstile.execute(turnstileWidgetId);
+      } catch (e) {
+        turnstilePending = null;
+        reject(e);
+      }
+    });
+  }
 
   if (!cartItemsEl || !cartTotalEl) return;
 
@@ -28,7 +99,7 @@ document.addEventListener("DOMContentLoaded", () => {
     console.error("shop-cart.js: window.ShopStockFeed missing — shop-stock-feed.js failed to load.");
     return;
   }
-  const { formatPrice, parsePriceToIsk } = window.ShopUtils;
+  const { formatPrice, formatPriceLong, parsePriceToIsk } = window.ShopUtils;
   const CART_STORAGE_KEY = "itss_shop_cart_v1";
   const ORDER_ID_LENGTH = 20;
   const ORDER_ID_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -315,7 +386,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (cartCountEl) cartCountEl.textContent = formatQty(totalItems);
     if (cartItemCountEl) cartItemCountEl.textContent = `${formatQty(totalItems)} item${totalItems !== 1 ? "s" : ""}`;
     cartToggleBtn?.setAttribute("aria-label", `Cart, ${formatQty(totalItems)} item${totalItems !== 1 ? "s" : ""}`);
-    cartTotalEl.textContent = formatPrice(totalValue);
+    cartTotalEl.textContent = formatPriceLong(totalValue);
     cartItemsEl.innerHTML = "";
 
     if (items.length === 0) {
@@ -473,7 +544,7 @@ document.addEventListener("DOMContentLoaded", () => {
       item.extras?.forEach((ex) => {
         if (Number.isFinite(ex.price)) itemLineTotal += ex.price * ex.qty;
       });
-      totalVal.textContent = formatPrice(itemLineTotal);
+      totalVal.textContent = formatPriceLong(itemLineTotal);
       totalRow.appendChild(totalLabel);
       totalRow.appendChild(totalVal);
       stack.appendChild(totalRow);
@@ -559,7 +630,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function syncCheckoutButtonLabel() {
-    if (cartCheckoutNameBtn) cartCheckoutNameBtn.textContent = "Checkout";
+    if (cartCheckoutNameBtn) cartCheckoutNameBtn.textContent = "Place Order";
   }
 
   function resetOrderIdPanel() {
@@ -567,13 +638,18 @@ document.addEventListener("DOMContentLoaded", () => {
       orderIdGeneratedEl.textContent = "";
       orderIdGeneratedEl.hidden = true;
     }
-    if (orderIdGeneratedLabel) orderIdGeneratedLabel.hidden = true;
-    if (orderIdGenerateBox) orderIdGenerateBox.hidden = true;
+    if (orderIdCopyBtn) {
+      orderIdCopyBtn.hidden = true;
+      orderIdCopyBtn.classList.remove("cart-orderid-copy--copied");
+    }
     if (orderIdErrorEl) {
       orderIdErrorEl.textContent = "";
       orderIdErrorEl.hidden = true;
     }
-    if (orderIdHintEl) orderIdHintEl.hidden = false;
+    if (nameErrorEl) {
+      nameErrorEl.textContent = "";
+      nameErrorEl.hidden = true;
+    }
   }
 
   document.querySelectorAll(".cart-identity-tab").forEach((tab) => {
@@ -588,6 +664,32 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   syncCheckoutButtonLabel();
+
+  if (orderIdCopyBtn) {
+    orderIdCopyBtn.addEventListener("click", async () => {
+      const value = orderIdGeneratedEl?.textContent?.trim();
+      if (!value) return;
+      try {
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(value);
+        } else {
+          const ta = document.createElement("textarea");
+          ta.value = value;
+          ta.setAttribute("readonly", "");
+          ta.style.position = "absolute";
+          ta.style.left = "-9999px";
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand("copy");
+          document.body.removeChild(ta);
+        }
+        orderIdCopyBtn.classList.add("cart-orderid-copy--copied");
+        setTimeout(() => orderIdCopyBtn.classList.remove("cart-orderid-copy--copied"), 1400);
+      } catch (err) {
+        console.error("Order ID copy failed", err);
+      }
+    });
+  }
 
   // ── Checkout ──────────────────────────────────────────────────────────────────
 
@@ -617,9 +719,10 @@ document.addEventListener("DOMContentLoaded", () => {
       orderIdGeneratedEl.textContent = orderId;
       orderIdGeneratedEl.hidden = false;
     }
-    if (orderIdGeneratedLabel) orderIdGeneratedLabel.hidden = false;
-    if (orderIdGenerateBox) orderIdGenerateBox.hidden = false;
-    if (orderIdHintEl) orderIdHintEl.hidden = true;
+    if (orderIdCopyBtn) {
+      orderIdCopyBtn.hidden = false;
+      orderIdCopyBtn.classList.remove("cart-orderid-copy--copied");
+    }
     if (orderIdErrorEl) {
       orderIdErrorEl.textContent = "";
       orderIdErrorEl.hidden = true;
@@ -634,63 +737,108 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const items = buildOrderItems();
-    if (!items.length) return;
-
-    const turnstileToken = window.turnstile?.getResponse?.() || "";
-    if (!turnstileToken) {
-      showOrderIdError("Please complete the verification challenge above, then try again.");
+    if (!items.length) {
+      showOrderIdError("Cart is empty, please add items");
       return;
     }
+
+    const isDevHost =
+      location.protocol === "file:" ||
+      ["localhost", "127.0.0.1", "0.0.0.0", "::1"].includes(location.hostname) ||
+      location.hostname.endsWith(".local");
 
     const orderId = generateOrderId();
 
     cartCheckoutBtn.disabled = true;
-    cartCheckoutBtn.textContent = "Sending…";
+    cartCheckoutBtn.textContent = "Verifying…";
 
     try {
-      await ShopStockFeed.submitOrder(orderEndpoint, orderId, items, turnstileToken);
+      if (isDevHost) {
+        console.info("[dev] Skipping Turnstile + server submit. Order ID:", orderId);
+      } else {
+        let turnstileToken;
+        try {
+          turnstileToken = await getTurnstileToken();
+        } catch (verifyErr) {
+          console.error("Turnstile verification failed.", verifyErr);
+          showOrderIdError("Verification failed. Please try again.");
+          cartCheckoutBtn.textContent = "Place Order";
+          return;
+        }
+        cartCheckoutBtn.textContent = "Sending…";
+        await ShopStockFeed.submitOrder(orderEndpoint, { orderId, items, turnstileToken });
+      }
       showGeneratedOrderId(orderId);
-      cartCheckoutBtn.textContent = "Generate ID";
+      cartCheckoutBtn.textContent = "Place Order";
     } catch (error) {
       console.error("Order submission failed.", error);
       showOrderIdError("Couldn't reach the order server. Please retry.");
       cartCheckoutBtn.textContent = "Retry";
     } finally {
-      window.turnstile?.reset?.();
+      try { if (turnstileWidgetId !== null) window.turnstile?.reset?.(turnstileWidgetId); } catch (_) {}
       cartCheckoutBtn.disabled = false;
     }
   }
 
-  function handleNameCheckout() {
-    const items = Object.values(cart);
-    if (!items.length) return;
+  async function handleNameCheckout() {
+    if (!cartCheckoutNameBtn) return;
+    if (nameErrorEl) {
+      nameErrorEl.textContent = "";
+      nameErrorEl.hidden = true;
+    }
 
-    const charName = document.getElementById("cart-char-name")?.value.trim();
-    if (!charName) { document.getElementById("cart-char-name")?.focus(); return; }
-    const header = `Order for: ${charName}`;
+    const items = buildOrderItems();
+    if (!items.length) {
+      if (nameErrorEl) {
+        nameErrorEl.textContent = "Cart is empty, please add items";
+        nameErrorEl.hidden = false;
+      }
+      return;
+    }
 
-    const lines = items.map((item) => {
-      let line = `${item.qty}x ${item.name} @ ${formatPrice(item.price)} ISK`;
-      item.extras?.forEach((ex) => {
-        const priceStr = Number.isFinite(ex.price) ? ` @ ${formatPrice(ex.price)} ISK` : "";
-        line += `\n  + ${ex.name} ×${ex.qty}${priceStr}`;
-      });
-      return line;
-    });
+    const charNameInput = document.getElementById("cart-char-name");
+    const charName = charNameInput?.value.trim() || "";
+    if (!charName) { charNameInput?.focus(); return; }
 
-    const totalValue = items.reduce((s, i) => {
-      let sum = s + i.price * i.qty;
-      i.extras?.forEach((ex) => {
-        if (Number.isFinite(ex.price)) sum += ex.price * ex.qty;
-      });
-      return sum;
-    }, 0);
-    const text = `${header}\n\n${lines.join("\n")}\n\nTotal: ${formatPrice(totalValue)} ISK`;
+    const isDevHost =
+      location.protocol === "file:" ||
+      ["localhost", "127.0.0.1", "0.0.0.0", "::1"].includes(location.hostname) ||
+      location.hostname.endsWith(".local");
 
-    navigator.clipboard?.writeText(text)?.catch(() => {});
-    if (cartCheckoutNameBtn) {
-      cartCheckoutNameBtn.textContent = "Copied!";
+    cartCheckoutNameBtn.disabled = true;
+    cartCheckoutNameBtn.textContent = "Verifying…";
+
+    try {
+      if (isDevHost) {
+        console.info("[dev] Skipping Turnstile + server submit. Name order:", charName);
+      } else {
+        let turnstileToken;
+        try {
+          turnstileToken = await getTurnstileToken();
+        } catch (verifyErr) {
+          console.error("Turnstile verification failed.", verifyErr);
+          if (nameErrorEl) {
+            nameErrorEl.textContent = "Verification failed. Please try again.";
+            nameErrorEl.hidden = false;
+          }
+          syncCheckoutButtonLabel();
+          return;
+        }
+        cartCheckoutNameBtn.textContent = "Sending…";
+        await ShopStockFeed.submitOrder(orderEndpoint, { charName, items, turnstileToken });
+      }
+      cartCheckoutNameBtn.textContent = "Placed!";
       setTimeout(syncCheckoutButtonLabel, 2200);
+    } catch (error) {
+      console.error("Order submission failed.", error);
+      if (nameErrorEl) {
+        nameErrorEl.textContent = "Couldn't reach the order server. Please retry.";
+        nameErrorEl.hidden = false;
+      }
+      cartCheckoutNameBtn.textContent = "Retry";
+    } finally {
+      try { if (turnstileWidgetId !== null) window.turnstile?.reset?.(turnstileWidgetId); } catch (_) {}
+      cartCheckoutNameBtn.disabled = false;
     }
   }
 
