@@ -114,7 +114,6 @@
   .item-card-footer > p,
   .stock-state-count,
   .display-meta p,
-  .cart-nav-badge,
   .cart-drawer-title,
   .cart-drawer-count,
   .cart-empty,
@@ -279,10 +278,15 @@
   border: none;
   color: var(--text-gold-mid);
   font-size: 30px;
+  line-height: 1;
   cursor: pointer;
   padding: 0;
   font-family: var(--font-title);
   flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transform: translateY(-2px);
   transition: color var(--transition-fast);
 }
 .cart-drawer-close:hover { color: var(--text-gold-top); }
@@ -665,7 +669,7 @@
 .cart-identity-panel {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 7px;
 }
 .cart-identity-panel[hidden] { display: none !important; }
 .cart-identity-input {
@@ -862,11 +866,11 @@
   height: 5px;
   border-right: var(--border-md) solid var(--text-gold-top);
   border-bottom: var(--border-md) solid var(--text-gold-top);
-  transform: rotate(45deg);
+  transform: translateY(-2px) rotate(45deg);
 }
 
 .filter-toggle.open::before{
-  transform: rotate(-135deg);
+  transform: translateY(1px) rotate(-135deg);
 }
 
 .filter-sub{
