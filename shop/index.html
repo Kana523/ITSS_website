@@ -86,7 +86,7 @@
   <!-- Left column: filters -->
   <aside class="filter" aria-label="Filters">
 
-    <h3>Sort By</h3>
+    <h2>Sort By</h2>
     <select id="display-sort" class="filter-select sort-select" aria-label="Sort store items">
       <option value="default">Default Order</option>
       <option value="stock-desc">Stock: High to Low</option>
@@ -97,7 +97,7 @@
       <option value="price-asc">Price: Low to High</option>
     </select>
 
-    <h3>Filters</h3>
+    <h2>Filters</h2>
 
     <form class="filter-form" autocomplete="off">
 
@@ -116,29 +116,26 @@
         In Stock
       </label>
 
-      <label>
-        <input type="checkbox" data-parent value="ship">
-        Ships
-      </label>
-
       <div class="filter-group">
         <div class="filter-row">
-          <input id="filter-materials" type="checkbox" value="materials" data-parent>
-          <label for="filter-materials" class="filter-label">Materials</label>
+          <input id="filter-ships" type="checkbox" value="ship" data-parent>
+          <label for="filter-ships" class="filter-label">Ships</label>
 
           <button
             type="button"
             class="filter-toggle"
-            aria-controls="materials-sub"
+            aria-controls="ships-sub"
             aria-expanded="false"
-            aria-label="Toggle Materials sub-filters"
+            aria-label="Toggle Ships sub-filters"
           ></button>
         </div>
 
-        <div id="materials-sub" class="filter-sub" hidden>
-          <label><input type="checkbox" value="materials:planetary" data-child> Planetary</label>
-          <label><input type="checkbox" value="materials:reaction" data-child> Reaction</label>
-          <label><input type="checkbox" value="materials:component" data-child> Component</label>
+        <div id="ships-sub" class="filter-sub" hidden>
+          <label><input type="checkbox" value="ship:dreadnought" data-child> Dreadnoughts</label>
+          <label><input type="checkbox" value="ship:fax" data-child> FAX-es</label>
+          <label><input type="checkbox" value="ship:carrier" data-child> Carriers</label>
+          <label><input type="checkbox" value="ship:jump-freighter" data-child> Jump Freighters</label>
+          <label><input type="checkbox" value="ship:industrial" data-child> Industrial</label>
         </div>
       </div>
 
@@ -164,10 +161,69 @@
         </div>
       </div>
 
-      <label>
-        <input type="checkbox" data-parent value="Miscellaneous">
-        Miscellaneous
-      </label>
+      <div class="filter-group">
+        <div class="filter-row">
+          <input id="filter-structures" type="checkbox" value="structures" data-parent>
+          <label for="filter-structures" class="filter-label">Structures</label>
+
+          <button
+            type="button"
+            class="filter-toggle"
+            aria-controls="structures-sub"
+            aria-expanded="false"
+            aria-label="Toggle Structures sub-filters"
+          ></button>
+        </div>
+
+        <div id="structures-sub" class="filter-sub" hidden>
+          <label><input type="checkbox" value="structures:medium" data-child> Medium</label>
+          <label><input type="checkbox" value="structures:large" data-child> Large</label>
+          <label><input type="checkbox" value="structures:x-large" data-child> X-Large</label>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <div class="filter-row">
+          <input id="filter-materials" type="checkbox" value="materials" data-parent>
+          <label for="filter-materials" class="filter-label">Materials</label>
+
+          <button
+            type="button"
+            class="filter-toggle"
+            aria-controls="materials-sub"
+            aria-expanded="false"
+            aria-label="Toggle Materials sub-filters"
+          ></button>
+        </div>
+
+        <div id="materials-sub" class="filter-sub" hidden>
+          <label><input type="checkbox" value="materials:planetary" data-child> Planetary</label>
+          <label><input type="checkbox" value="materials:reaction" data-child> Reaction</label>
+          <label><input type="checkbox" value="materials:component" data-child> Component</label>
+          <label><input type="checkbox" value="materials:fuel-block" data-child> Fuel Blocks</label>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <div class="filter-row">
+          <input id="filter-misc" type="checkbox" value="misc" data-parent>
+          <label for="filter-misc" class="filter-label">Misc</label>
+
+          <button
+            type="button"
+            class="filter-toggle"
+            aria-controls="misc-sub"
+            aria-expanded="false"
+            aria-label="Toggle Misc sub-filters"
+          ></button>
+        </div>
+
+        <div id="misc-sub" class="filter-sub" hidden>
+          <label><input type="checkbox" value="misc:ammo" data-child> Ammo</label>
+          <label><input type="checkbox" value="misc:drones" data-child> Drones</label>
+          <label><input type="checkbox" value="misc:boosters" data-child> Boosters</label>
+        </div>
+      </div>
 
       <button type="button" class="buy-button" id="filter-clear">Clear</button>
 

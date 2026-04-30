@@ -1,11 +1,11 @@
 ﻿.grid-container {
     display: grid;
     grid-template-rows: auto 1fr;
-    grid-template-columns: 200px minmax(0, 1fr);
+    grid-template-columns: 290px minmax(0, 1fr);
     grid-template-areas:
-        "empty top-bar"
+        "top-bar top-bar"
         "filter display";
-    gap: 10px;
+    gap: 10px 4px;
     overflow: visible;
 }
 
@@ -36,9 +36,10 @@
   grid-area: display;
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
+  justify-content: flex-start;
   align-content: flex-start;
   gap: 40px;
+  margin-left: 15px;
 }
 
 /* Keep out-of-stock cards visually muted without fading tooltip content. */
@@ -71,11 +72,7 @@
 
 .sort-select {
   width: 100%;
-  margin-bottom: 10px;
-}
-
-.filter > h3:first-of-type {
-  margin-bottom: 5px;
+  margin: 5px 0 10px 0;
 }
 
 .display-meta {
@@ -83,18 +80,7 @@
   flex-direction: column;
   align-items: center;
   margin-top: 5px;
-  gap: 2px;
-}
-
-.currency-note {
-  font-size: var(--font-small);
-}
-
-.product-data-status {
-  min-height: 1.2em;
-  font-size: 12px;
-  text-align: center;
-  color: var(--text-gold-bottom);
+  gap: 5px;
 }
 
 .product-data-status[data-state="warning"] {
@@ -105,31 +91,35 @@
   color: var(--text-gold-top);
 }
 
-/* Keep static shop/cart copy from showing the text-selection cursor. */
-:where(
-  .top-bar-panel-section h2,
-  .top-bar-panel-section p,
-  .display .item-card > h2,
-  .display .item-card > p,
-  .item-card-footer > p,
-  .stock-state-count,
-  .display-meta p,
-  .cart-drawer-title,
-  .cart-drawer-count,
-  .cart-empty,
-  .cart-item-name,
-  .cart-item-price,
-  .cart-price-label,
-  .cart-extra-name,
-  .cart-extra-price,
-  .cart-item-total-label,
-  .cart-item-total-value,
-  .cart-total-label,
-  .cart-total-value,
-  .cart-orderid-box p,
-  .cart-orderid-box strong
-) {
+/* Page-wide cursor policy: default arrow everywhere; pointer for actionable
+   controls; text I-beam for typeable inputs. Overrides per-element rules. */
+body {
   cursor: default;
+}
+
+button,
+a,
+label,
+select,
+summary,
+[role="button"],
+input[type="checkbox"],
+input[type="radio"],
+input[type="submit"],
+input[type="button"],
+input[type="reset"] {
+  cursor: pointer;
+}
+
+input[type="text"],
+input[type="search"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="tel"],
+input[type="url"],
+textarea {
+  cursor: text;
 }
 
 
@@ -138,40 +128,37 @@
   display: flex;
   flex-direction: column;
   grid-area: filter;
-  padding: 10px;
-  align-items: center;
+  margin-left: 10px;
 }
 
 /* ===== Filter dropdown (Materials -> Planetary/Reaction/Component) ===== */
 .filter-form {
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  padding: 5px;
-  width: 100%;
-  box-sizing: border-box;
+  gap: clamp(2px, 0.6vw, 6px);
+  font-size: clamp(14px, 1.15vw, 20px);
 }
 
 .filter-search {
   display: flex;
   flex-direction: column;
-  gap: 5px;
 }
-
 
 #filter-search {
   border: var(--border-sm) solid var(--gold-border-alternate);
   background: var(--button-background);
   color: var(--text-gold-mid);
-  padding: 6px 8px;
+  padding: clamp(5px, 0.5vw, 10px) clamp(8px, 0.8vw, 14px);
+  font-size: clamp(14px, 1.15vw, 20px);
 }
 
 .filter-select {
   border: var(--border-sm) solid var(--gold-border-alternate);
   background: var(--button-background);
   color: var(--text-gold-mid);
-  padding: 6px 8px;
+  padding: clamp(8px, 0.85vw, 14px) clamp(10px, 1vw, 16px);
   font: inherit;
+  font-size: clamp(14px, 1.15vw, 20px);
 }
 
 #filter-search::placeholder {
@@ -181,8 +168,7 @@
 
 .header-right {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  gap: 5px;
 }
 
 /* Cart nav widget in header */
@@ -195,7 +181,6 @@
 .cart-nav-btn {
   background: transparent;
   border: none;
-  cursor: pointer;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -398,7 +383,6 @@
   color: var(--text-gold-mid);
   font-size: 30px;
   line-height: 1;
-  cursor: pointer;
   padding: 0;
   font-family: var(--font-title);
   flex-shrink: 0;
@@ -518,7 +502,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
   font-size: 15px;
   flex-shrink: 0;
   border-radius: 3px;
@@ -573,7 +556,6 @@
   border: 1px solid var(--text-gold-top);
   background: var(--button-background);
   color: var(--text-gold-mid);
-  cursor: pointer;
   font-family: var(--font-text);
   font-size: 20px;
   display: flex;
@@ -666,7 +648,6 @@
   background: none;
   border: none;
   color: rgba(229, 115, 115, 0.5);
-  cursor: pointer;
   font-size: 15px;
   padding: 0;
   margin-left: 4px;
@@ -689,7 +670,6 @@
   font-family: var(--font-text);
   font-size: 15px;
   padding: 3px 10px;
-  cursor: pointer;
   border-radius: 3px;
   align-self: flex-start;
   transition: border-color var(--transition-fast), color var(--transition-fast);
@@ -777,7 +757,6 @@
   font-family: var(--font-text);
   font-size: 16px;
   padding: 6px 0;
-  cursor: pointer;
   letter-spacing: 0.02em;
   transition: background var(--transition-fast), color var(--transition-fast);
 }
@@ -900,7 +879,6 @@
   border: 1px solid var(--gold-border-alternate);
   border-radius: 3px;
   color: var(--text-gold-mid);
-  cursor: pointer;
   transition: background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
 }
 .cart-orderid-copy:hover {
@@ -936,7 +914,6 @@
   border: 1px solid rgba(192, 57, 43, 0.55);
   background: var(--button-background);
   color: rgba(229, 115, 115, 0.8);
-  cursor: pointer;
   font-family: var(--font-text);
   font-size: 20px;
   padding: 9px 15px;
@@ -949,7 +926,16 @@
 
 .filter label {
   user-select: none;
-  cursor: pointer;
+  font-size: clamp(14px, 1.2vw, 21px);
+  display: flex;
+  align-items: center;
+  gap: clamp(6px, 0.55vw, 12px);
+}
+
+.filter input[type="checkbox"] {
+  width: clamp(14px, 1.2vw, 22px);
+  height: clamp(14px, 1.2vw, 22px);
+  flex-shrink: 0;
 }
 
 .filter-group{
@@ -960,42 +946,43 @@
 .filter-row{
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: clamp(6px, 0.55vw, 12px);
 }
 
 /* the arrow button */
 .filter-toggle{
   margin-left: auto;
-  width: 20px;
-  height: 20px;
+  width: clamp(22px, 1.8vw, 34px);
+  height: clamp(22px, 1.8vw, 34px);
   border-radius: 4px;
   border: var(--border-sm) solid var(--gold-border-alternate);
   background: var(--button-background);
-  cursor: pointer;
   position: relative;
+  flex-shrink: 0;
 }
 
 /* chevron */
 .filter-toggle::before{
   content: "";
   position: absolute;
-  inset: 0;
-  margin: auto;
-  width: 5px;
-  height: 5px;
+  top: 50%;
+  left: 50%;
+  width: clamp(5px, 0.45vw, 9px);
+  height: clamp(5px, 0.45vw, 9px);
   border-right: var(--border-md) solid var(--text-gold-top);
   border-bottom: var(--border-md) solid var(--text-gold-top);
-  transform: translateY(-2px) rotate(45deg);
+  transform: translate(-50%, -75%) rotate(45deg);
 }
 
 .filter-toggle.open::before{
-  transform: translateY(1px) rotate(-135deg);
+  transform: translate(-50%, -25%) rotate(-135deg);
 }
 
 .filter-sub{
-  margin-left: 28px; /* lines up under the label (adjust if needed) */
+  margin-left: clamp(26px, 2.2vw, 42px);
   display: grid;
-  gap: 2px;
+  gap: clamp(4px, 0.4vw, 9px);
+  margin-top: 4px;
 }
 
 /* Ensure hidden actually hides even if .filter-sub sets display */
