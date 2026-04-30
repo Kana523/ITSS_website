@@ -118,6 +118,7 @@ nav {
 .container-logo  {
     display: flex;
     align-items: center;
+    font-weight: normal;
 }
 
 .container-logo-name-motto {
