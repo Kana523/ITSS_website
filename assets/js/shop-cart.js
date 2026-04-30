@@ -232,6 +232,139 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 300);
   }
 
+  // ── Add-to-cart toast ───────────────────────────────────────────────────────
+  const TOAST_HOLD_MS    = 1700;
+  const TOAST_VANISH_MS  = 450;
+  const activeToasts = new Map();
+
+  function ensureToastContainer() {
+    let container = document.getElementById("cart-toast-container");
+    if (!container) {
+      container = document.createElement("div");
+      container.id = "cart-toast-container";
+      container.className = "cart-toast-container";
+      container.setAttribute("aria-live", "polite");
+      container.setAttribute("aria-atomic", "false");
+      document.body.appendChild(container);
+    }
+    positionToastContainer(container);
+    return container;
+  }
+
+  function positionToastContainer(container) {
+    if (!container || !cartToggleBtn) return;
+    const rect = cartToggleBtn.getBoundingClientRect();
+    container.style.top   = `${Math.max(8, rect.bottom + 8)}px`;
+    container.style.right = `${Math.max(8, window.innerWidth - rect.right - 2)}px`;
+  }
+
+  window.addEventListener("resize", () => {
+    const c = document.getElementById("cart-toast-container");
+    if (c) positionToastContainer(c);
+  });
+
+  function buildToastEl(product) {
+    const el = document.createElement("div");
+    el.className = "cart-toast";
+    el.setAttribute("role", "status");
+
+    const imgWrap = document.createElement("div");
+    imgWrap.className = "cart-toast-img";
+    if (product.img) {
+      const img = document.createElement("img");
+      img.src = product.img;
+      img.alt = "";
+      imgWrap.appendChild(img);
+    }
+
+    const info = document.createElement("div");
+    info.className = "cart-toast-info";
+    const nameEl = document.createElement("span");
+    nameEl.className = "cart-toast-name";
+    nameEl.textContent = product.name;
+    const qtyEl = document.createElement("span");
+    qtyEl.className = "cart-toast-qty";
+    info.appendChild(nameEl);
+    info.appendChild(qtyEl);
+
+    const NS = "http://www.w3.org/2000/svg";
+    const check = document.createElementNS(NS, "svg");
+    check.setAttribute("class", "cart-toast-check");
+    check.setAttribute("viewBox", "0 0 24 24");
+    check.setAttribute("fill", "none");
+    check.setAttribute("stroke", "currentColor");
+    check.setAttribute("stroke-width", "2.6");
+    check.setAttribute("stroke-linecap", "round");
+    check.setAttribute("stroke-linejoin", "round");
+    check.setAttribute("aria-hidden", "true");
+    const path = document.createElementNS(NS, "path");
+    path.setAttribute("d", "M5 13l4 4L19 7");
+    check.appendChild(path);
+
+    el.appendChild(imgWrap);
+    el.appendChild(info);
+    el.appendChild(check);
+    return { el, qtyEl };
+  }
+
+  function scheduleToastVanish(entry, sku) {
+    entry.vanishTimeout = setTimeout(() => {
+      if (cartToggleBtn) {
+        const fromRect = entry.el.getBoundingClientRect();
+        const cartRect = cartToggleBtn.getBoundingClientRect();
+        const dx = (cartRect.left + cartRect.width  / 2) - (fromRect.left + fromRect.width  / 2);
+        const dy = (cartRect.top  + cartRect.height / 2) - (fromRect.top  + fromRect.height / 2);
+        entry.el.style.setProperty("--toast-tx", `${dx}px`);
+        entry.el.style.setProperty("--toast-ty", `${dy}px`);
+      }
+      entry.el.classList.remove("cart-toast--bump");
+      entry.el.classList.add("cart-toast--vanishing");
+      entry.removeTimeout = setTimeout(() => {
+        entry.el.remove();
+        if (activeToasts.get(sku) === entry) activeToasts.delete(sku);
+      }, TOAST_VANISH_MS);
+    }, TOAST_HOLD_MS);
+  }
+
+  function showAddToCartToast(product) {
+    if (!product?.sku) return;
+    const container = ensureToastContainer();
+    const totalQty  = cart[product.sku]?.qty ?? 0;
+    const qtyText   = `×${formatQty(totalQty)} in cart`;
+
+    const existing = activeToasts.get(product.sku);
+    if (existing) {
+      clearTimeout(existing.vanishTimeout);
+      clearTimeout(existing.removeTimeout);
+      const wasVanishing = existing.el.classList.contains("cart-toast--vanishing");
+      existing.el.classList.remove("cart-toast--vanishing");
+      existing.el.style.removeProperty("--toast-tx");
+      existing.el.style.removeProperty("--toast-ty");
+      existing.el.classList.add("cart-toast--visible");
+      existing.qtyEl.textContent = qtyText;
+      if (!wasVanishing) {
+        existing.el.classList.remove("cart-toast--bump");
+        void existing.el.offsetWidth;
+        existing.el.classList.add("cart-toast--bump");
+      }
+      scheduleToastVanish(existing, product.sku);
+      return;
+    }
+
+    const built = buildToastEl(product);
+    built.qtyEl.textContent = qtyText;
+    container.appendChild(built.el);
+
+    const entry = { el: built.el, qtyEl: built.qtyEl };
+    activeToasts.set(product.sku, entry);
+
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      built.el.classList.add("cart-toast--visible");
+    }));
+
+    scheduleToastVanish(entry, product.sku);
+  }
+
   // ── Cart mutations ───────────────────────────────────────────────────────────
 
   function addToCart(product, qtyToAdd = 1) {
@@ -576,8 +709,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const addBtn = e.target.closest("[data-cart-add]");
     if (addBtn) {
       const card = addBtn.closest(".item-card");
-      addToCart(getProductData(card), 1);
-      openCart();
+      const product = getProductData(card);
+      if (product) {
+        addToCart(product, 1);
+        showAddToCartToast(product);
+      }
       return;
     }
 
@@ -798,7 +934,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const charNameInput = document.getElementById("cart-char-name");
     const charName = charNameInput?.value.trim() || "";
-    if (!charName) { charNameInput?.focus(); return; }
+    if (!charName) {
+      if (nameErrorEl) {
+        nameErrorEl.textContent = "Please type your character name";
+        nameErrorEl.hidden = false;
+      }
+      charNameInput?.focus();
+      return;
+    }
 
     const isDevHost =
       location.protocol === "file:" ||

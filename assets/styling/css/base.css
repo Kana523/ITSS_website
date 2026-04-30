@@ -139,33 +139,20 @@ footer {
 
 footer a {
   font-weight: normal;
-}
-
-/* === CCP legal notice tooltip === */
-
-.ccp-legal-trigger {
-  background: none;
-  border: none;
-  color: inherit;
+  color: var(--text-gold-mid);
   text-decoration: underline;
-  cursor: pointer;
-  padding: 0;
+  text-underline-offset: 2px;
+  transition: color var(--transition-fast);
 }
 
-/* Tooltip bubble */
+footer a:hover,
+footer a:focus-visible {
+  color: var(--text-gold-top);
+}
+
 nav a[aria-current="page"] {
   color: var(--text-gold-top);
   text-decoration: underline;
-}
-
-.ccp-legal-tooltip {
-  display: none; /* shown by JS on hover/focus */
-  position: fixed; /* positioned by JS near pointer */
-  max-width: min(450px, calc(100vw - 20px));
-  font-size: var(--font-medium);
-  background: var(--surface-850);
-  color: var(--text-gold-top);
-  pointer-events: none; /* prevents hover flicker */
 }
 
 .buy-button {
