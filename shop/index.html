@@ -7,17 +7,20 @@
   <link rel="stylesheet" href="../assets/styling/css/base.css">
   <link rel="stylesheet" href="../assets/styling/css/shop.css">
 
+  <!-- shop-stock-feed.js must load before shop-filter.js: filter calls window.ShopStockFeed -->
   <!-- shop-filter.js must load before shop-cart.js: filter fires shop:product-data-updated which cart listens to -->
+  <script src="../assets/js/shop-stock-feed.js" defer></script>
   <script src="../assets/js/shop-filter.js" defer></script>
   <script src="../assets/js/shop-cart.js" defer></script>
   <script src="../assets/js/legal-notice.js" defer></script>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 
   <meta name="description" content="Browse and buy ships, reaction materials, planetary materials, components and blueprints from Interstellar Systems in EVE Online.">
   <meta name="keywords" content="EVE Online store, buy ships, blueprints, reaction materials, planetary materials, components, ISK, Interstellar Systems">
   <title>ITS-S Store</title>
 </head>
 
-<body data-stock-endpoint="https://script.google.com/macros/s/AKfycbzIxmvQ33URNZGRkHX-v-j34SdEVkh4d5lPf4PQlqHFT5xWV73oOeaBDJi0Tw5N1fwe/exec">
+<body data-stock-endpoint="https://script.google.com/macros/s/AKfycbwReHMN95k4jSmcnqHL1EV86tZOFyxw7wgCOdkr57jnWEp0LvOrrXOxUHcU8aFPO-im/exec">
     <header>
       <div class="container-logo">
         <img src="../assets/images/icons/itss.png" alt="Interstellar Systems logo">
@@ -515,23 +518,54 @@
         </div>
 
         <div class="cart-identity-panel" data-panel="name">
+          <div class="cart-orderid-box">
+            <svg class="cart-orderid-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            <div class="cart-orderid-box-text">
+              <p>We'll contact you in-game to confirm your order.</p>
+              <p class="cart-orderid-expiry">Orders not confirmed within <strong>7 days</strong> will be cancelled.</p>
+            </div>
+          </div>
           <input type="text" id="cart-char-name" class="cart-identity-input" placeholder="Your character name…" autocomplete="off">
-          <p class="cart-identity-note">We'll reach out in-game shortly to confirm your order.</p>
-          <p class="cart-identity-sub">No prepayment required — payment on delivery.</p>
+          <p class="cart-orderid-generate-error" id="cart-name-error" hidden></p>
+          <div class="cart-footer-actions">
+            <button type="button" class="buy-button cart-checkout" id="cart-checkout-name">Place Order</button>
+            <button type="button" class="cart-clear" id="cart-clear-name" disabled>Clear All</button>
+          </div>
         </div>
 
         <div class="cart-identity-panel" data-panel="orderid" hidden>
           <div class="cart-orderid-box">
-            <p>EVEmail your order to <strong>Neo Achasse</strong> with your Order ID as the subject.</p>
-            <p class="cart-orderid-expiry">Order will be cancelled if not confirmed within <strong>3 days</strong>.</p>
+            <svg class="cart-orderid-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+              <rect x="3" y="5" width="18" height="14" rx="2"></rect>
+              <path d="m3 7 9 6 9-6"></path>
+            </svg>
+            <div class="cart-orderid-box-text">
+              <p>EVEmail your order ID to <strong>Neo Achasse</strong>.</p>
+              <p class="cart-orderid-expiry">Orders not confirmed within <strong>7 days</strong> will be cancelled.</p>
+            </div>
           </div>
-          <p class="cart-identity-sub">No prepayment required — payment on delivery.</p>
+          <div class="cart-orderid-generate-box" id="cart-orderid-generate-box">
+            <p class="cart-orderid-generated-label">Your Order ID:</p>
+            <div class="cart-orderid-generated-row">
+              <p class="cart-orderid-generated-value" id="cart-orderid-generated" hidden></p>
+              <button type="button" class="cart-orderid-copy" id="cart-orderid-copy" aria-label="Copy Order ID to clipboard" title="Copy to clipboard" hidden>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                  <rect x="9" y="9" width="11" height="11" rx="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <p class="cart-orderid-generate-error" id="cart-orderid-error" hidden></p>
+          <div class="cart-footer-actions">
+            <button type="button" class="buy-button cart-checkout" id="cart-checkout">Place Order</button>
+            <button type="button" class="cart-clear" id="cart-clear" disabled>Clear All</button>
+          </div>
+          <div id="cart-turnstile" data-sitekey="0x4AAAAAADFK_LmTLxebflbr"></div>
         </div>
-      </div>
-
-      <div class="cart-footer-actions">
-        <button type="button" class="buy-button cart-checkout" id="cart-checkout">Checkout</button>
-        <button type="button" class="cart-clear" id="cart-clear" disabled>Clear All</button>
       </div>
     </div>
   </aside>

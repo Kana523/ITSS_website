@@ -56,16 +56,24 @@ function parsePriceToIsk(rawValue, fallbackLabel = "") {
   return 0;
 }
 
-window.ShopUtils = { formatPrice, parsePriceToIsk };
+function formatPriceLong(value) {
+  const amount = Number(value);
+  if (!Number.isFinite(amount) || amount <= 0) return "0";
+  return Math.round(amount).toLocaleString("en-US");
+}
+
+window.ShopUtils = { formatPrice, formatPriceLong, parsePriceToIsk };
 
 document.addEventListener("DOMContentLoaded", () => {
+  if (!window.ShopStockFeed) {
+    console.error("shop-filter.js: window.ShopStockFeed missing — shop-stock-feed.js failed to load.");
+    return;
+  }
+
   // Only filter cards in the product display area
   const cards = Array.from(document.querySelectorAll(".display .item-card"));
   const display = document.querySelector(".display");
   const stockEndpoint = (document.body?.dataset.stockEndpoint || "").trim();
-  const STOCK_CACHE_KEY = "itss_shop_stock_cache_v1";
-  const STOCK_CACHE_FRESH_AGE_MS = 15 * 60 * 1000;
-  const STOCK_CACHE_FALLBACK_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 
   const parentCbs = Array.from(document.querySelectorAll(".filter input[data-parent]"));
   const childCbs  = Array.from(document.querySelectorAll(".filter input[data-child]"));
@@ -116,18 +124,6 @@ document.addEventListener("DOMContentLoaded", () => {
     return String(value || "").trim().toLowerCase();
   }
 
-  function parseStockValue(value) {
-    const parsed = Number.parseInt(String(value ?? "").trim(), 10);
-    if (!Number.isFinite(parsed)) return null;
-    return Math.max(0, parsed);
-  }
-
-  function parsePriceValue(value) {
-    const parsed = Number(String(value ?? "").trim().replace(/,/g, ""));
-    if (!Number.isFinite(parsed)) return null;
-    return Math.max(0, parsed);
-  }
-
   function updatePriceEl(el, price) {
     if (!el) return;
     const label = formatPrice(price);
@@ -137,97 +133,6 @@ document.addEventListener("DOMContentLoaded", () => {
       el.innerHTML = `<b>Price:</b> ${label}`;
     } else {
       el.textContent = `Price: ${label}`;
-    }
-  }
-
-  function normalizeStockFeed(payload) {
-    const normalized = new Map();
-    if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
-      return normalized;
-    }
-
-    Object.entries(payload).forEach(([sku, value]) => {
-      if (!value || typeof value !== "object") {
-        console.warn(`Stock feed: skipping entry "${sku}" — expected object, got ${typeof value}`);
-        return;
-      }
-
-      const normalizedSku = normalizeSku(sku);
-      const stock = parseStockValue(value.stock);
-      if (!normalizedSku || stock === null) {
-        console.warn(`Stock feed: skipping entry "${sku}" — missing or invalid sku/stock`);
-        return;
-      }
-
-      normalized.set(normalizedSku, {
-        sku: normalizedSku,
-        stock,
-        price: parsePriceValue(value.price),
-        nextStock: String(value.next_stock || "").trim()
-      });
-    });
-
-    return normalized;
-  }
-
-  function serializeStockMap(stockMap) {
-    const serialized = {};
-
-    stockMap.forEach((record, sku) => {
-      serialized[sku] = {
-        stock: record.stock,
-        price: record.price,
-        next_stock: record.nextStock || ""
-      };
-    });
-
-    return serialized;
-  }
-
-  function loadCachedStockSnapshot(options = {}) {
-    const allowStale = options.allowStale !== false;
-
-    try {
-      const rawCache = localStorage.getItem(STOCK_CACHE_KEY);
-      if (!rawCache) return null;
-
-      const parsedCache = JSON.parse(rawCache);
-      if (!parsedCache || typeof parsedCache !== "object") return null;
-
-      const cachedAt = Number(parsedCache.cachedAt);
-      if (!Number.isFinite(cachedAt)) return null;
-
-      const ageMs = Date.now() - cachedAt;
-      if (ageMs > STOCK_CACHE_FALLBACK_AGE_MS) {
-        return null;
-      }
-
-      const isFresh = ageMs <= STOCK_CACHE_FRESH_AGE_MS;
-      if (!allowStale && !isFresh) return null;
-
-      const normalized = normalizeStockFeed(parsedCache.records);
-      if (normalized.size === 0) return null;
-
-      return {
-        cachedAt,
-        isFresh,
-        records: normalized
-      };
-    } catch {
-      return null;
-    }
-  }
-
-  function saveCachedStockMap(stockMap) {
-    if (!(stockMap instanceof Map) || stockMap.size === 0) return;
-
-    try {
-      localStorage.setItem(STOCK_CACHE_KEY, JSON.stringify({
-        cachedAt: Date.now(),
-        records: serializeStockMap(stockMap)
-      }));
-    } catch {
-      // Ignore storage failures so the live feed still works normally.
     }
   }
 
@@ -276,7 +181,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function loadRemoteStock() {
-    const cachedSnapshot = loadCachedStockSnapshot({ allowStale: true });
+    const cachedSnapshot = ShopStockFeed.loadCachedSnapshot({ allowStale: true });
     const cachedStockMap = cachedSnapshot?.records || null;
     const hasCachedStock = cachedStockMap instanceof Map && cachedStockMap.size > 0;
 
@@ -292,7 +197,7 @@ document.addEventListener("DOMContentLoaded", () => {
       );
     }
 
-    if (!stockEndpoint || stockEndpoint.includes("PASTE_YOUR_GOOGLE_APPS_SCRIPT")) {
+    if (!ShopStockFeed.isEndpointConfigured(stockEndpoint)) {
       if (!hasCachedStock) {
         cards.forEach(syncStockState);
         applyFilters();
@@ -310,24 +215,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     try {
-      const response = await fetch(stockEndpoint, {
-        headers: {
-          Accept: "application/json"
-        }
-      });
+      const stockMap = await ShopStockFeed.fetchRemote(stockEndpoint);
 
-      if (!response.ok) {
-        throw new Error(`Stock request failed with ${response.status}`);
-      }
-
-      const payload = await response.json();
-      const stockMap = normalizeStockFeed(payload);
-
-      if (stockMap.size === 0) {
-        console.warn("Stock feed loaded but did not contain any usable rows.");
-      }
-
-      saveCachedStockMap(stockMap);
+      ShopStockFeed.saveCache(stockMap);
       applyStockMapToCards(stockMap);
 
       document.dispatchEvent(new CustomEvent("shop:product-data-updated"));
