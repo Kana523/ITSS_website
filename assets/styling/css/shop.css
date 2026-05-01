@@ -13,33 +13,203 @@
   grid-area: top-bar;
   display: flex;
   flex-direction: column;
+  margin: 15px 15px 15px 15px;
 }
 
-.top-bar-promo-trade {
+.top-bar-sections {
   display: flex;
+  align-items: stretch;
+  justify-content: center;
+  gap: 20px;
 }
 
 .top-bar-panel-section {
-  flex: 1 1;
+  flex: 1 1 0;
+  min-width: 0;
   display: flex;
   align-items: center;
   flex-direction: column;
   justify-content: center;
-  gap: 3px;
+  gap: 6px;
+  padding: 14px 18px;
+  box-sizing: border-box;
+  background:
+    linear-gradient(180deg, rgba(22, 28, 48, 0.55) 0%, rgba(8, 11, 18, 0.65) 100%);
+  border: var(--border-sm) solid transparent;
+  border-image: var(--gold-border-gradient) 1;
+  box-shadow:
+    0 6px 20px rgba(0, 0, 0, 0.45),
+    inset 0 0 24px rgba(255, 215, 138, 0.04);
+}
+
+.top-bar-panel-section h2 {
+  font-size: var(--font-medium);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .top-bar-panel-section--promo {
   flex-direction: row;
+  gap: 12px;
+}
+
+.top-bar-panel-section--promo h2 {
+  text-align: left;
+  align-self: flex-start;
+}
+
+.top-bar-panel-section--promo p {
+  font-size: var(--font-small);
+}
+
+/* Perks */
+.perks-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.perks-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.perks-list li span {
+  font-family: var(--font-title);
+  font-size: var(--font-medium);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: var(--text-gradient-gold);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  line-height: 1.25;
+}
+
+.perks-check {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  color: #8fd6a3;
+  filter: drop-shadow(0 0 5px rgba(143, 214, 163, 0.6));
+}
+
+/* Trade */
+.top-bar-panel-section--trade {
+  flex-direction: row;
+  gap: 12px;
+}
+
+.trade-icon {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  color: var(--text-gold-mid);
+  opacity: 0.9;
+}
+
+.trade-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+/* Market feed */
+.top-bar-panel-section--last-update {
+  flex-direction: row;
+  gap: 12px;
+}
+
+.last-update-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.market-graph {
+  position: relative;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  color: #8fd6a3;
+  filter: drop-shadow(0 0 5px rgba(143, 214, 163, 0.55));
+}
+
+.market-graph-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.market-graph-ring {
+  opacity: 0.55;
+}
+
+.market-graph-line {
+  stroke-width: 1.4;
+}
+
+.market-graph-dot {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  animation: live-blink 1.4s ease-in-out infinite;
+}
+
+@keyframes live-blink {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.2; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .market-graph-dot { animation: none; }
+}
+
+.live-indicator {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #8fd6a3;
+  box-shadow:
+    0 0 8px rgba(143, 214, 163, 0.85),
+    0 0 0 2px rgba(143, 214, 163, 0.18);
+  animation: live-pulse 2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.55; transform: scale(0.8); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-indicator,
+  .market-graph-line { animation: none; }
+  .market-graph-line { stroke-dashoffset: 0; }
+}
+
+.top-bar-panel-section--last-update .product-data-status {
+  font-family: var(--font-text);
+  font-size: var(--font-small);
+  letter-spacing: 0.04em;
+  text-align: center;
 }
 
 .display {
   grid-area: display;
   display: flex;
   flex-wrap: wrap;
-  justify-content: flex-start;
+  justify-content: center;
   align-content: flex-start;
-  gap: 40px;
-  margin-left: 15px;
+  gap: 30px;
+  margin: 0 15px 0 15px;
 }
 
 /* Keep out-of-stock cards visually muted without fading tooltip content. */

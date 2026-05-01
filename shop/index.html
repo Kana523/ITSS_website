@@ -65,7 +65,8 @@
       <!-- Top bar spanning full width -->
       <div class="top-bar">
 
-        <div class="top-bar-promo-trade">
+        <div class="top-bar-sections">
+
           <div class="top-bar-panel-section top-bar-panel-section--promo">
             <img src="../assets/images/icons/discount.png" alt="discounts icon" aria-hidden="true">
             <div>
@@ -74,11 +75,49 @@
             </div>
           </div>
 
+          <div class="top-bar-panel-section top-bar-panel-section--perks">
+            <ul class="perks-list">
+              <li>
+                <svg class="perks-check" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <p>No pre-payment, pay on delivery</p>
+              </li>
+              <li>
+                <svg class="perks-check" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <p>Trades accepted</p>
+              </li>
+            </ul>
+          </div>
 
-          <div class="top-bar-panel-section">
-            <h2>Trade</h2>
-            <p>Bring Materials!</p>
-            <a href="../trade/" class="buy-button">TAKE COIN</a>
+          <div class="top-bar-panel-section top-bar-panel-section--trade">
+            <svg class="trade-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+              <polyline points="17 1 21 5 17 9"></polyline>
+              <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+              <polyline points="7 23 3 19 7 15"></polyline>
+              <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+            </svg>
+            <div class="trade-text">
+              <h2>Trade</h2>
+              <p>Bring Materials!</p>
+            </div>
+            <a href="../trade/" class="buy-button">GET PAID!</a>
+          </div>
+
+          <div class="top-bar-panel-section top-bar-panel-section--last-update">
+            <div class="market-graph" aria-hidden="true">
+              <svg class="market-graph-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 44" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" focusable="false">
+                <circle class="market-graph-ring" cx="22" cy="22" r="20"></circle>
+                <polyline class="market-graph-line" points="10,28 15,18 20,26 25,18 30,24 34,16"></polyline>
+              </svg>
+              <span class="live-indicator market-graph-dot"></span>
+            </div>
+            <div class="last-update-text">
+              <h2>Market Feed</h2>
+              <p class="product-data-status" id="product-data-status" aria-live="polite"></p>
+            </div>
           </div>
         </div>
       </div>
@@ -230,7 +269,6 @@
       <div class="display-meta">
         <p id="results-count" aria-live="polite">Showing 0 items</p>
         <p class="currency-note">All prices are in ISK.</p>
-        <p class="product-data-status" id="product-data-status" aria-live="polite"></p>
       </div>
     </form>
 

@@ -182,7 +182,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function formatLastUpdate(date) {
     const pad = (n) => String(n).padStart(2, "0");
-    return `Last update: ${pad(date.getHours())}:${pad(date.getMinutes())}, ${pad(date.getDate())}/${pad(date.getMonth() + 1)}`;
+    return `Updated: ${pad(date.getHours())}:${pad(date.getMinutes())}, ${pad(date.getDate())}/${pad(date.getMonth() + 1)}`;
   }
 
   const REFRESH_MIN_INTERVAL_MS = 60 * 60 * 1000;
@@ -466,7 +466,50 @@ document.addEventListener("DOMContentLoaded", () => {
       resultsCountEl.textContent = `Showing ${shownCount} ${noun}`;
     }
 
+    balanceCardRows();
   }
+
+  function balanceCardRows() {
+    if (!display) return;
+
+    display.querySelectorAll(".row-break").forEach((el) => el.remove());
+
+    const visibleCards = cards.filter((c) => c.style.display !== "none");
+    const n = visibleCards.length;
+    if (n <= 1) return;
+
+    const cardWidth = visibleCards[0].getBoundingClientRect().width;
+    if (!cardWidth) return;
+
+    const styles = getComputedStyle(display);
+    const gap = parseFloat(styles.columnGap || styles.gap) || 0;
+    const padX =
+      (parseFloat(styles.paddingLeft) || 0) +
+      (parseFloat(styles.paddingRight) || 0);
+    const innerWidth = display.clientWidth - padX;
+
+    const maxPerRow = Math.max(
+      1,
+      Math.floor((innerWidth + gap) / (cardWidth + gap))
+    );
+    if (n <= maxPerRow) return;
+
+    const rows = Math.ceil(n / maxPerRow);
+    const perRow = Math.ceil(n / rows);
+
+    for (let i = perRow; i < n; i += perRow) {
+      const breaker = document.createElement("div");
+      breaker.className = "row-break";
+      breaker.setAttribute("aria-hidden", "true");
+      visibleCards[i].before(breaker);
+    }
+  }
+
+  let resizeFrame = 0;
+  window.addEventListener("resize", () => {
+    if (resizeFrame) cancelAnimationFrame(resizeFrame);
+    resizeFrame = requestAnimationFrame(balanceCardRows);
+  });
 
   // --- Filter dropdown toggles (arrow only) ---
   const toggleBtns = Array.from(document.querySelectorAll(".filter-toggle"));
