@@ -1169,3 +1169,67 @@ textarea {
       "display";
   }
 }
+
+/* ── Item card category badge ─────────────────────────── */
+.item-card {
+  position: relative;
+  --cat: var(--text-gold-mid);
+  box-shadow:
+    inset 0 16px 24px -10px color-mix(in oklch, var(--cat) 80%, transparent),
+    inset 0 -10px 16px -10px color-mix(in oklch, var(--cat) 50%, transparent),
+    inset 10px 0 16px -10px color-mix(in oklch, var(--cat) 5%, transparent),
+    inset -10px 0 16px -10px color-mix(in oklch, var(--cat) 5%, transparent);
+}
+
+.item-card::before {
+  content: "";
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  height: 2px;
+  background: var(--cat);
+  box-shadow: 0 0 8px color-mix(in oklch, var(--cat) 70%, transparent);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.item-card > img { order: 1; }
+.item-card > h2  { order: 2; }
+.item-card > .text { order: 3; }
+
+.item-card[data-category="ship"]                            { --cat: oklch(72% 0.15 193); }
+.item-card[data-category="materials"][data-sub="reaction"]  { --cat: oklch(74% 0.16 50);  }
+.item-card[data-category="materials"][data-sub="planetary"] { --cat: oklch(70% 0.16 148); }
+.item-card[data-category="materials"][data-sub="component"] { --cat: oklch(70% 0.14 286); }
+.item-card[data-category="blueprints"]                      { --cat: oklch(70% 0.14 230); }
+
+.item-card.item-card--out-of-stock { border-color: var(--text-gold-dark); }
+.item-card.item-card--out-of-stock[data-category="ship"]                            { --cat: oklch(40% 0.05 193); }
+.item-card.item-card--out-of-stock[data-category="materials"][data-sub="reaction"]  { --cat: oklch(42% 0.06 50);  }
+.item-card.item-card--out-of-stock[data-category="materials"][data-sub="planetary"] { --cat: oklch(40% 0.05 148); }
+.item-card.item-card--out-of-stock[data-category="materials"][data-sub="component"] { --cat: oklch(40% 0.05 286); }
+.item-card.item-card--out-of-stock[data-category="blueprints"]                      { --cat: oklch(40% 0.05 230); }
+
+.item-card > p {
+  display: none;
+}
+
+.card-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 2;
+  padding: 4px 9px;
+  font-family: var(--font-title);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--cat);
+  background: color-mix(in oklch, var(--cat) 14%, var(--surface-850));
+  border-left: 1px solid color-mix(in oklch, var(--cat) 40%, transparent);
+  border-bottom: 1px solid color-mix(in oklch, var(--cat) 40%, transparent);
+  text-shadow: 0 0 6px color-mix(in oklch, var(--cat) 75%, transparent);
+  box-shadow: 0 0 10px color-mix(in oklch, var(--cat) 25%, transparent);
+}

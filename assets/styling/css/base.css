@@ -29,6 +29,7 @@
   --text-gold-top: #ffdd9c;
   --text-gold-mid: #d8b065;
   --text-gold-bottom: #ae8538;
+  --text-gold-dark: #6e4e10;
   --text-gradient-gold: linear-gradient(to bottom, var(--text-gold-top), var(--text-gold-bottom));
 
   /* Border colours */
@@ -182,9 +183,8 @@ nav a[aria-current="page"] {
   justify-content: space-between;
   min-width: 220px;
   max-width: 220px;
-  border: var(--border-md) solid transparent;
+  border: var(--border-md) solid var(--text-gold-bottom);
   padding: 5px 0;
-  border-image: var(--gold-border-gradient) 1;
 }
 
 .item-card h2 {
