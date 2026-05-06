@@ -98,15 +98,10 @@ section{
 
 .store-more-arrow {
   display: inline-block;
-  transition: transform var(--transition-fast);
+  transform: translateX(6px);
 }
 
 .store-more-card:hover .store-more-cta,
 .store-more-card:focus-visible .store-more-cta {
   background: var(--surface-hover);
-}
-
-.store-more-card:hover .store-more-arrow,
-.store-more-card:focus-visible .store-more-arrow {
-  transform: translateX(6px);
 }

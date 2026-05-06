@@ -56,7 +56,13 @@ function parsePriceToIsk(rawValue, fallbackLabel = "") {
   return 0;
 }
 
-window.ShopUtils = { formatPrice, parsePriceToIsk };
+function formatPriceLong(value) {
+  const amount = Number(value);
+  if (!Number.isFinite(amount) || amount <= 0) return "0";
+  return Math.round(amount).toLocaleString("en-US");
+}
+
+window.ShopUtils = { formatPrice, formatPriceLong, parsePriceToIsk };
 
 document.addEventListener("DOMContentLoaded", () => {
   if (!window.ShopStockFeed) {
@@ -174,39 +180,35 @@ document.addEventListener("DOMContentLoaded", () => {
     syncStockState(card);
   }
 
+  function formatLastUpdate(date) {
+    const pad = (n) => String(n).padStart(2, "0");
+    return `Updated: ${pad(date.getHours())}:${pad(date.getMinutes())}, ${pad(date.getDate())}/${pad(date.getMonth() + 1)}`;
+  }
+
+  const REFRESH_MIN_INTERVAL_MS = 60 * 60 * 1000;
+
   async function loadRemoteStock() {
     const cachedSnapshot = ShopStockFeed.loadCachedSnapshot({ allowStale: true });
     const cachedStockMap = cachedSnapshot?.records || null;
     const hasCachedStock = cachedStockMap instanceof Map && cachedStockMap.size > 0;
+    const cachedAt = Number(cachedSnapshot?.cachedAt);
+    const hasFreshCache =
+      Number.isFinite(cachedAt) && Date.now() - cachedAt < REFRESH_MIN_INTERVAL_MS;
 
     if (hasCachedStock) {
       applyStockMapToCards(cachedStockMap);
       document.dispatchEvent(new CustomEvent("shop:product-data-updated"));
       applyFilters();
-      setProductDataStatus(
-        cachedSnapshot.isFresh
-          ? "Showing saved prices and stock while live data refreshes."
-          : "Showing last known prices and stock while live data refreshes.",
-        cachedSnapshot.isFresh ? "" : "warning"
-      );
     }
 
-    if (!ShopStockFeed.isEndpointConfigured(stockEndpoint)) {
-      if (!hasCachedStock) {
-        cards.forEach(syncStockState);
-        applyFilters();
-      }
-      setProductDataStatus(
-        hasCachedStock
-          ? "Showing saved prices and stock."
-          : "Showing built-in prices. Live inventory feed is disabled."
-      );
+    if (hasFreshCache) {
+      setProductDataStatus(formatLastUpdate(new Date(cachedAt)), "live");
       return;
     }
 
-    if (!hasCachedStock) {
-      setProductDataStatus("Showing built-in prices while live data loads.");
-    }
+    setProductDataStatus("Updating stock and prices");
+
+    if (!ShopStockFeed.isEndpointConfigured(stockEndpoint)) return;
 
     try {
       const stockMap = await ShopStockFeed.fetchRemote(stockEndpoint);
@@ -215,18 +217,16 @@ document.addEventListener("DOMContentLoaded", () => {
       applyStockMapToCards(stockMap);
 
       document.dispatchEvent(new CustomEvent("shop:product-data-updated"));
-      setProductDataStatus("Live prices and stock updated.", "live");
+      setProductDataStatus(formatLastUpdate(new Date()), "live");
+      applyFilters();
     } catch (error) {
       console.error("Unable to load remote stock feed.", error);
-      if (!hasCachedStock) {
-        cards.forEach(syncStockState);
-        setProductDataStatus("Showing built-in prices. Live refresh unavailable.", "warning");
+      if (Number.isFinite(cachedAt) && cachedAt > 0) {
+        setProductDataStatus(formatLastUpdate(new Date(cachedAt)), "live");
       } else {
-        setProductDataStatus("Showing last known prices and stock. Live refresh unavailable.", "warning");
+        setProductDataStatus("");
       }
     }
-
-    applyFilters();
   }
 
   function syncStockState(card) {
@@ -466,7 +466,50 @@ document.addEventListener("DOMContentLoaded", () => {
       resultsCountEl.textContent = `Showing ${shownCount} ${noun}`;
     }
 
+    balanceCardRows();
   }
+
+  function balanceCardRows() {
+    if (!display) return;
+
+    display.querySelectorAll(".row-break").forEach((el) => el.remove());
+
+    const visibleCards = cards.filter((c) => c.style.display !== "none");
+    const n = visibleCards.length;
+    if (n <= 1) return;
+
+    const cardWidth = visibleCards[0].getBoundingClientRect().width;
+    if (!cardWidth) return;
+
+    const styles = getComputedStyle(display);
+    const gap = parseFloat(styles.columnGap || styles.gap) || 0;
+    const padX =
+      (parseFloat(styles.paddingLeft) || 0) +
+      (parseFloat(styles.paddingRight) || 0);
+    const innerWidth = display.clientWidth - padX;
+
+    const maxPerRow = Math.max(
+      1,
+      Math.floor((innerWidth + gap) / (cardWidth + gap))
+    );
+    if (n <= maxPerRow) return;
+
+    const rows = Math.ceil(n / maxPerRow);
+    const perRow = Math.ceil(n / rows);
+
+    for (let i = perRow; i < n; i += perRow) {
+      const breaker = document.createElement("div");
+      breaker.className = "row-break";
+      breaker.setAttribute("aria-hidden", "true");
+      visibleCards[i].before(breaker);
+    }
+  }
+
+  let resizeFrame = 0;
+  window.addEventListener("resize", () => {
+    if (resizeFrame) cancelAnimationFrame(resizeFrame);
+    resizeFrame = requestAnimationFrame(balanceCardRows);
+  });
 
   // --- Filter dropdown toggles (arrow only) ---
   const toggleBtns = Array.from(document.querySelectorAll(".filter-toggle"));

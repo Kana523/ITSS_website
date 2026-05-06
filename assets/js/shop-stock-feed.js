@@ -142,15 +142,19 @@
 
   // Apps Script web apps reject custom Content-Type from browsers (CORS preflight),
   // so the body is sent as text/plain and the script JSON.parses it server-side.
-  async function submitOrder(endpoint, orderId, items, turnstileToken) {
+  async function submitOrder(endpoint, { orderId = "", charName = "", items, turnstileToken }) {
     if (!isEndpointConfigured(endpoint)) {
       throw new Error("Order endpoint is not configured.");
     }
 
+    const requestBody = { action: "order", items, turnstileToken };
+    if (orderId) requestBody.orderId = orderId;
+    if (charName) requestBody.charName = charName;
+
     const response = await fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({ action: "order", orderId, items, turnstileToken })
+      body: JSON.stringify(requestBody)
     });
 
     if (!response.ok) {
