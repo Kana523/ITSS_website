@@ -601,6 +601,7 @@
           <button type="button" class="cart-identity-tab" data-tab="orderid">Order ID</button>
         </div>
 
+        <div class="cart-identity-panels">
         <div class="cart-identity-panel" data-panel="name">
           <div class="cart-orderid-box">
             <svg class="cart-orderid-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
@@ -611,6 +612,10 @@
               <p>We'll contact you in-game to confirm your order.</p>
               <p class="cart-orderid-expiry">Orders not confirmed within <strong>7 days</strong> will be cancelled.</p>
             </div>
+          </div>
+          <div class="cart-char-name-warning">
+            <span class="cart-char-name-warning-icon" aria-hidden="true">!</span>
+            <p>Please verify your character name. Incorrect name might prevent us from delivering your order.</p>
           </div>
           <input type="text" id="cart-char-name" class="cart-identity-input" placeholder="Your character name…" autocomplete="off">
           <p class="cart-orderid-generate-error" id="cart-name-error" hidden></p>
@@ -653,6 +658,7 @@
           </div>
           <div id="cart-turnstile" data-sitekey="0x4AAAAAADFK_LmTLxebflbr"></div>
         </div>
+        </div><!-- /.cart-identity-panels -->
       </div>
     </div>
   </aside>

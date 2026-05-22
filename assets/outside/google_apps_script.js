@@ -1,6 +1,19 @@
 const STOCK_SHEET_NAME = "Stock";
 const ORDERS_SHEET_NAME = "WebOrders";
 
+
+function buildPriceMap(sheet) {
+  if (!sheet || sheet.getLastRow() < 2) return new Map();
+  const rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, 3).getValues();
+  const map = new Map();
+  for (const row of rows) {
+    const sku = String(row[0] || "").trim().toLowerCase();
+    const price = toNumber(row[2]);
+    if (sku && price !== null) map.set(sku, price);
+  }
+  return map;
+}
+
 function doGet() {
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(STOCK_SHEET_NAME);
   if (!sheet) {
@@ -74,6 +87,20 @@ function doPost(e) {
     return jsonResponse({ ok: false, error: "No items in order." });
   }
 
+  // Load authoritative prices — one batch read, same spreadsheet as doGet
+  const stockSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(STOCK_SHEET_NAME);
+  if (!stockSheet) {
+    return jsonResponse({ ok: false, error: 'Missing "Stock" sheet.' });
+  }
+  const priceMap = buildPriceMap(stockSheet);
+
+  for (const item of items) {
+    const sku = String(item.sku || "").trim().toLowerCase();
+    if (!priceMap.has(sku)) {
+      return jsonResponse({ ok: false, error: "Order contains an unrecognised item." });
+    }
+  }
+
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(ORDERS_SHEET_NAME);
   if (!sheet) {
     return jsonResponse({ ok: false, error: 'Missing "WebOrders" sheet.' });
@@ -83,23 +110,24 @@ function doPost(e) {
   const timestamp = Utilities.formatDate(new Date(), tz, "yyyy-MM-dd HH:mm:ss");
 
   const orderTotal = items.reduce((sum, item) => {
-    const itemPrice = toNumber(item.price) || 0;
+    const sku = String(item.sku || "").trim().toLowerCase();
+    const unitPrice = priceMap.get(sku) || 0;
     const itemQty = toInt(item.qty);
-    let line = itemPrice * itemQty;
+    let line = unitPrice * itemQty;
     (Array.isArray(item.extras) ? item.extras : []).forEach((ex) => {
-      const exPrice = toNumber(ex.price);
-      if (exPrice !== null) line += exPrice * toInt(ex.qty);
+      const exPrice = priceMap.get(String(ex.name || "").trim().toLowerCase()) || 0;
+      line += exPrice * toInt(ex.qty);
     });
     return sum + line;
   }, 0);
 
   const rows = [];
   items.forEach((item) => {
-    const sku = String(item.sku || "").trim();
+    const sku = String(item.sku || "").trim().toLowerCase();
     const name = String(item.name || "").trim();
     const category = String(item.category || "").trim();
     const qty = toInt(item.qty);
-    const unitPrice = toNumber(item.price) || 0;
+    const unitPrice = priceMap.get(sku) || 0;
     const lineTotal = unitPrice * qty;
 
     rows.push([
@@ -107,10 +135,11 @@ function doPost(e) {
     ]);
 
     (Array.isArray(item.extras) ? item.extras : []).forEach((ex) => {
+      const exName = String(ex.name || "").trim();
       const exQty = toInt(ex.qty);
-      const exPrice = toNumber(ex.price) || 0;
+      const exPrice = priceMap.get(exName.toLowerCase()) || 0;
       rows.push([
-        identifier, timestamp, sku, String(ex.name || "").trim(), category, exQty, exPrice, exPrice * exQty, orderTotal, "extra"
+        identifier, timestamp, sku, exName, category, exQty, exPrice, exPrice * exQty, orderTotal, "extra"
       ]);
     });
   });

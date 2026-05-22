@@ -21,6 +21,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const TURNSTILE_SITEKEY = document.getElementById("cart-turnstile")?.dataset.sitekey || "";
   let turnstileWidgetId = null;
   let turnstilePending = null;
+  let cachedTurnstileToken = null;
+  let cachedTurnstileTokenAt = 0;
+  const TURNSTILE_TOKEN_MAX_AGE_MS = 4 * 60 * 1000;
 
   function ensureTurnstileRendered() {
     if (turnstileWidgetId !== null) return Promise.resolve();
@@ -40,6 +43,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (turnstilePending) {
                   turnstilePending.resolve(token);
                   turnstilePending = null;
+                } else {
+                  cachedTurnstileToken = token;
+                  cachedTurnstileTokenAt = Date.now();
                 }
               },
               "error-callback": () => {
@@ -72,6 +78,11 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function getTurnstileToken() {
+    if (cachedTurnstileToken && Date.now() - cachedTurnstileTokenAt < TURNSTILE_TOKEN_MAX_AGE_MS) {
+      const token = cachedTurnstileToken;
+      cachedTurnstileToken = null;
+      return token;
+    }
     await ensureTurnstileRendered();
     if (turnstilePending) {
       turnstilePending.reject(new Error("Turnstile superseded"));
@@ -182,7 +193,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return { sku, name, price, category, img };
   }
 
-  const MAX_QTY = 99000000;
+  const MAX_QTY = 999000000;
 
   function parseQtyDigits(str) {
     return String(str ?? "").replace(/[^\d]/g, "");
@@ -209,6 +220,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ── Drawer open / close ──────────────────────────────────────────────────────
 
+  function prewarmCheckout() {
+    if (ShopStockFeed.isEndpointConfigured(orderEndpoint)) {
+      fetch(orderEndpoint).catch(() => {});
+    }
+    const tokenFresh = cachedTurnstileToken && Date.now() - cachedTurnstileTokenAt < TURNSTILE_TOKEN_MAX_AGE_MS;
+    if (TURNSTILE_SITEKEY && !turnstilePending && !tokenFresh) {
+      ensureTurnstileRendered().then(() => {
+        if (!turnstilePending) {
+          try { window.turnstile.execute(turnstileWidgetId); } catch (_) {}
+        }
+      }).catch(() => {});
+    }
+  }
+
   function openCart() {
     if (!cartDrawer) return;
     cartDrawer.hidden  = false;
@@ -219,6 +244,7 @@ document.addEventListener("DOMContentLoaded", () => {
       cartBackdrop?.classList.add("cart-backdrop--visible");
     }));
     cartToggleBtn?.setAttribute("aria-expanded", "true");
+    prewarmCheckout();
   }
 
   function closeCart() {
@@ -516,7 +542,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // badge + aria
-    if (cartCountEl) cartCountEl.textContent = formatQty(totalItems);
+    const badgeLabel = totalItems > 100 ? "100+" : formatQty(totalItems);
+    if (cartCountEl) cartCountEl.textContent = badgeLabel;
     if (cartItemCountEl) cartItemCountEl.textContent = `${formatQty(totalItems)} item${totalItems !== 1 ? "s" : ""}`;
     cartToggleBtn?.setAttribute("aria-label", `Cart, ${formatQty(totalItems)} item${totalItems !== 1 ? "s" : ""}`);
     cartTotalEl.textContent = formatPriceLong(totalValue);

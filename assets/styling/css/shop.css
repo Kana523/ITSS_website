@@ -138,8 +138,6 @@
   flex-shrink: 0;
   width: 44px;
   height: 44px;
-  color: #8fd6a3;
-  filter: drop-shadow(0 0 5px rgba(143, 214, 163, 0.55));
 }
 
 .market-graph-svg {
@@ -149,11 +147,15 @@
 }
 
 .market-graph-ring {
+  stroke: var(--text-gold-mid);
   opacity: 0.55;
+  filter: drop-shadow(0 0 4px rgba(216, 176, 101, 0.55));
 }
 
 .market-graph-line {
+  stroke: #8fd6a3;
   stroke-width: 1.4;
+  filter: drop-shadow(0 0 4px rgba(143, 214, 163, 0.55));
 }
 
 .market-graph-dot {
@@ -943,12 +945,20 @@ textarea {
   background: rgba(255, 215, 138, 0.1);
   color: var(--text-gold-top);
 }
+.cart-identity-panels {
+  display: grid;
+}
 .cart-identity-panel {
+  grid-area: 1 / 1;
   display: flex;
   flex-direction: column;
   gap: 7px;
 }
-.cart-identity-panel[hidden] { display: none !important; }
+.cart-identity-panel[hidden] {
+  display: flex !important;
+  visibility: hidden;
+  pointer-events: none;
+}
 .cart-identity-input {
   background: rgba(255, 215, 138, 0.07);
   border: 1px solid var(--text-gold-top);
@@ -975,6 +985,36 @@ textarea {
   opacity: 0.85;
   font-weight: 500;
   letter-spacing: 0.3px;
+}
+.cart-char-name-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: rgba(220, 50, 50, 0.1);
+  border: 1px solid rgba(220, 50, 50, 0.6);
+  border-radius: 3px;
+  padding: 8px 12px;
+}
+.cart-char-name-warning-icon {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid #e03232;
+  color: #e03232;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  margin-top: 1px;
+}
+.cart-char-name-warning p {
+  margin: 0;
+  font-family: var(--font-text);
+  font-size: 14px;
+  color: #e07070;
 }
 .cart-orderid-box {
   background: rgba(255, 215, 138, 0.04);
@@ -1013,6 +1053,7 @@ textarea {
   opacity: 0.65;
 }
 .cart-orderid-generate-box {
+  flex-grow: 1;
   background: rgba(255, 215, 138, 0.09);
   border: 1px solid var(--text-gold-top);
   border-radius: 3px;
@@ -1115,6 +1156,7 @@ textarea {
 .cart-footer-actions {
   display: flex;
   gap: 10px;
+  margin-top: auto;
 }
 .cart-checkout {
   flex: 1;

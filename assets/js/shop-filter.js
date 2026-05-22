@@ -360,7 +360,9 @@ document.addEventListener("DOMContentLoaded", () => {
         return priceFor(a) - priceFor(b) || nameComparison;
       }
 
-      return (cardMeta.get(a)?.index || 0) - (cardMeta.get(b)?.index || 0);
+      const aOut = stockCountFor(a) <= 0 ? 1 : 0;
+      const bOut = stockCountFor(b) <= 0 ? 1 : 0;
+      return aOut - bOut || (cardMeta.get(a)?.index || 0) - (cardMeta.get(b)?.index || 0);
     });
 
     return visibleCards;
@@ -474,7 +476,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     display.querySelectorAll(".row-break").forEach((el) => el.remove());
 
-    const visibleCards = cards.filter((c) => c.style.display !== "none");
+    const visibleCards = Array.from(display.querySelectorAll(".item-card")).filter((c) => c.style.display !== "none");
     const n = visibleCards.length;
     if (n <= 1) return;
 
