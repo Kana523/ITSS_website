@@ -179,6 +179,12 @@ document.addEventListener("DOMContentLoaded", () => {
       updatePriceEl(meta?.priceEl, record.price);
     }
 
+    if (Number.isFinite(record.weeks) && record.weeks > 0) {
+      card.dataset.weeks = String(record.weeks);
+    } else {
+      delete card.dataset.weeks;
+    }
+
     syncStockState(card);
   }
 
@@ -256,7 +262,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (actionButton) {
-      actionButton.textContent = outOfStock ? "RESERVE" : "ADD TO CART";
+      actionButton.textContent = outOfStock ? "PRE-ORDER" : "ADD TO CART";
     }
   }
 

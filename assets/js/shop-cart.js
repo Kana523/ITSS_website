@@ -440,9 +440,15 @@ document.addEventListener("DOMContentLoaded", () => {
         changed = true;
       }
     });
-    if (!changed) return;
-    saveCart();
+    if (changed) saveCart();
     renderCart();
+  }
+
+  function getPreorderInfo(sku) {
+    const card = document.querySelector(`.display .item-card[data-sku="${CSS.escape(sku)}"]`);
+    if (!card || !card.classList.contains("item-card--out-of-stock")) return null;
+    const weeks = Number.parseInt(card.dataset.weeks || "", 10);
+    return { weeks: Number.isFinite(weeks) && weeks > 0 ? weeks : null };
   }
 
   function changeQty(sku, delta) {
@@ -723,6 +729,28 @@ document.addEventListener("DOMContentLoaded", () => {
       totalRow.appendChild(totalLabel);
       totalRow.appendChild(totalVal);
       stack.appendChild(totalRow);
+
+      const preorder = getPreorderInfo(item.sku);
+      if (preorder) {
+        const preorderRow = document.createElement("div");
+        preorderRow.className = "cart-item-preorder";
+        const preorderIcon = document.createElement("span");
+        preorderIcon.className = "cart-item-preorder-icon";
+        preorderIcon.setAttribute("aria-hidden", "true");
+        preorderIcon.textContent = "!";
+        const preorderText = document.createElement("p");
+        const preorderLead = document.createElement("strong");
+        preorderLead.textContent = "Pre-order!";
+        preorderText.appendChild(preorderLead);
+        preorderText.appendChild(document.createTextNode(
+          preorder.weeks
+            ? ` Estimated delivery: ${preorder.weeks} week${preorder.weeks !== 1 ? "s" : ""}.`
+            : " Delivery estimate unavailable. We will get back to you!"
+        ));
+        preorderRow.appendChild(preorderIcon);
+        preorderRow.appendChild(preorderText);
+        stack.appendChild(preorderRow);
+      }
 
       content.appendChild(stack);
       li.appendChild(imgWrap);
