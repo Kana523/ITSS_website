@@ -84,6 +84,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const resultsCountEl = document.getElementById("results-count");
   const productDataStatusEl = document.getElementById("product-data-status");
   const cardMeta = new Map();
+  let stockDataLoaded = false;
 
   function setProductDataStatus(message, state = "") {
     if (!productDataStatusEl) return;
@@ -147,6 +148,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       syncStockState(card);
     });
+    stockDataLoaded = true;
   }
 
   function applyRemoteStock(card, record) {
@@ -436,11 +438,13 @@ document.addEventListener("DOMContentLoaded", () => {
         nothingSelected ||
         categoryParents.has(cat) ||
         (childKey && activeChildren.has(childKey));
+      const hiddenMaterial = stockDataLoaded && cat === "materials" && stockCount <= 0;
 
       const show =
         matchesSearch &&
         matchesStock &&
-        matchesCategory;
+        matchesCategory &&
+        !hiddenMaterial;
 
       card.style.display = show ? "" : "none";
       if (show) {

@@ -131,7 +131,7 @@ function doPost(e) {
     const lineTotal = unitPrice * qty;
 
     rows.push([
-      identifier, timestamp, sku, name, category, qty, unitPrice, lineTotal, orderTotal, "item"
+      identifier, timestamp, sku, name, category, qty, unitPrice, lineTotal, orderTotal
     ]);
 
     (Array.isArray(item.extras) ? item.extras : []).forEach((ex) => {
@@ -139,7 +139,7 @@ function doPost(e) {
       const exQty = toInt(ex.qty);
       const exPrice = priceMap.get(exName.toLowerCase()) || 0;
       rows.push([
-        identifier, timestamp, sku, exName, category, exQty, exPrice, exPrice * exQty, orderTotal, "extra"
+        identifier, timestamp, sku, exName, category, exQty, exPrice, exPrice * exQty, orderTotal
       ]);
     });
   });

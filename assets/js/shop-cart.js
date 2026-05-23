@@ -3,6 +3,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const cartItemCountEl  = document.getElementById("cart-item-count");
   const cartItemsEl      = document.getElementById("cart-items");
   const cartTotalEl      = document.getElementById("cart-total");
+  const cartTotalCompactEl = document.getElementById("cart-total-compact");
   const cartClearBtn     = document.getElementById("cart-clear");
   const cartClearNameBtn = document.getElementById("cart-clear-name");
   const cartToggleBtn    = document.getElementById("cart-toggle");
@@ -193,7 +194,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return { sku, name, price, category, img };
   }
 
-  const MAX_QTY = 999000000;
+  const MAX_QTY = 999999999;
 
   function parseQtyDigits(str) {
     return String(str ?? "").replace(/[^\d]/g, "");
@@ -203,6 +204,19 @@ document.addEventListener("DOMContentLoaded", () => {
     const num = Number(n);
     if (!Number.isFinite(num)) return "0";
     return num.toLocaleString("en-US");
+  }
+
+  function formatPriceCompact(value) {
+    const num = Number(value);
+    if (!Number.isFinite(num) || num === 0) return "";
+    const abs = Math.abs(num);
+    const sign = num < 0 ? "-" : "";
+    let scaled, suffix;
+    if (abs >= 1e12)      { scaled = abs / 1e12; suffix = "t"; }
+    else if (abs >= 1e9)  { scaled = abs / 1e9;  suffix = "b"; }
+    else                  { scaled = abs / 1e6;  suffix = "m"; }
+    const text = scaled.toFixed(2).replace(/\.?0+$/, "");
+    return `~${sign}${text}${suffix}`;
   }
 
   function clampQty(rawQty) {
@@ -547,6 +561,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (cartItemCountEl) cartItemCountEl.textContent = `${formatQty(totalItems)} item${totalItems !== 1 ? "s" : ""}`;
     cartToggleBtn?.setAttribute("aria-label", `Cart, ${formatQty(totalItems)} item${totalItems !== 1 ? "s" : ""}`);
     cartTotalEl.textContent = formatPriceLong(totalValue);
+    if (cartTotalCompactEl) cartTotalCompactEl.textContent = formatPriceCompact(totalValue);
     cartItemsEl.innerHTML = "";
 
     if (items.length === 0) {
@@ -604,7 +619,7 @@ document.addEventListener("DOMContentLoaded", () => {
       priceEl.innerHTML = `${formatPrice(item.price)}<span class="cart-price-label"> / item</span>`;
       const qtyWrap = makeQtyWrap(
         item.qty,
-        isShip ? "lg" : "sm",
+        "lg",
         { cartAction: "decrease", sku: item.sku },
         { cartAction: "increase", sku: item.sku },
         { cartQtyInput: item.sku }
@@ -761,7 +776,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.addEventListener("input", (e) => {
     if (e.target.dataset.cartQtyInput !== undefined || e.target.dataset.cartExtraQtyInput !== undefined) {
-      const digits = parseQtyDigits(e.target.value).slice(0, 8);
+      const digits = parseQtyDigits(e.target.value).slice(0, 9);
       e.target.value = digits ? formatQty(Number.parseInt(digits, 10)) : "";
       resizeQtyInput(e.target);
     }
