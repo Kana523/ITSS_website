@@ -25,7 +25,7 @@ function doGet() {
     return jsonResponse({});
   }
 
-  const rows = sheet.getRange(2, 1, lastRow - 1, 4).getValues();
+  const rows = sheet.getRange(2, 1, lastRow - 1, 5).getValues();
   const payload = {};
 
   for (const row of rows) {
@@ -35,7 +35,8 @@ function doGet() {
     payload[sku] = {
       stock: toInt(row[1]),
       price: toNumber(row[2]),
-      next_stock: toText(row[3])
+      next_stock: toText(row[3]),
+      weeks: toNumber(row[4])
     };
   }
 
