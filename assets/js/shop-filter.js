@@ -546,4 +546,15 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   void loadRemoteStock();
+
+  // External components (e.g. shop-cart after a successful order) can ask us
+  // to re-apply a freshly fetched stock map without redoing the cache logic.
+  document.addEventListener("shop:stock-refresh", (e) => {
+    const map = e.detail?.stockMap;
+    if (!(map instanceof Map) || map.size === 0) return;
+    applyStockMapToCards(map);
+    document.dispatchEvent(new CustomEvent("shop:product-data-updated"));
+    setProductDataStatus(formatLastUpdate(new Date()), "live");
+    applyFilters();
+  });
 });
