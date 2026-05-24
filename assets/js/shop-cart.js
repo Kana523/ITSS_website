@@ -518,12 +518,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ── DOM helpers ──────────────────────────────────────────────────────────────
 
+  const X_ICON_SVG = '<svg class="cart-x-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg>';
+
   function makeBtn(text, dataMap, cls) {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = cls;
     btn.textContent = text;
     Object.entries(dataMap).forEach(([k, v]) => { btn.dataset[k] = v; });
+    return btn;
+  }
+
+  function makeXBtn(dataMap, cls) {
+    const btn = makeBtn("", dataMap, cls);
+    btn.innerHTML = X_ICON_SVG;
     return btn;
   }
 
@@ -607,7 +615,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const nameEl = document.createElement("span");
       nameEl.className = "cart-item-name";
       nameEl.textContent = item.name;
-      const removeBtn = makeBtn("✕", { cartAction: "remove", sku: item.sku }, "cart-remove-btn");
+      const removeBtn = makeXBtn({ cartAction: "remove", sku: item.sku }, "cart-remove-btn");
       removeBtn.setAttribute("aria-label", `Remove ${item.name}`);
       header.appendChild(nameEl);
       header.appendChild(removeBtn);
@@ -677,7 +685,7 @@ document.addEventListener("DOMContentLoaded", () => {
             exInput.dataset.extraIdx = j;
             exControls.appendChild(exInput);
             exControls.appendChild(makeBtn("+", { cartAction: "extra-increase", sku: item.sku, extraIdx: j }, "cart-action-btn cart-action-btn--sm"));
-            exControls.appendChild(makeBtn("✕", { cartAction: "extra-remove", sku: item.sku, extraIdx: j }, "cart-extra-remove"));
+            exControls.appendChild(makeXBtn({ cartAction: "extra-remove", sku: item.sku, extraIdx: j }, "cart-extra-remove"));
 
             exRow.appendChild(exInfo);
             exRow.appendChild(exControls);
@@ -745,7 +753,7 @@ document.addEventListener("DOMContentLoaded", () => {
         preorderText.appendChild(document.createTextNode(
           preorder.weeks
             ? ` Estimated delivery: ${preorder.weeks} week${preorder.weeks !== 1 ? "s" : ""}.`
-            : " Delivery estimate unavailable. We will get back to you!"
+            : " Delivery estimate unavailable. We'll get started on it!"
         ));
         preorderRow.appendChild(preorderIcon);
         preorderRow.appendChild(preorderText);
