@@ -193,7 +193,14 @@ document.addEventListener("DOMContentLoaded", () => {
     return `Updated: ${pad(date.getHours())}:${pad(date.getMinutes())}, ${pad(date.getDate())}/${pad(date.getMonth() + 1)}`;
   }
 
-  const REFRESH_MIN_INTERVAL_MS = 60 * 60 * 1000;
+  const REFRESH_MIN_INTERVAL_MS = 5 * 60 * 1000;
+
+  // Local dev (file://, localhost, 127.0.0.1, *.local) bypasses the fresh-cache
+  // short-circuit so feed changes are visible on every reload.
+  const isLocalHost =
+    location.protocol === "file:" ||
+    /^(localhost|127\.0\.0\.1|\[::1\])$/i.test(location.hostname) ||
+    /\.local$/i.test(location.hostname);
 
   async function loadRemoteStock() {
     const cachedSnapshot = ShopStockFeed.loadCachedSnapshot({ allowStale: true });
@@ -201,6 +208,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const hasCachedStock = cachedStockMap instanceof Map && cachedStockMap.size > 0;
     const cachedAt = Number(cachedSnapshot?.cachedAt);
     const hasFreshCache =
+      !isLocalHost &&
       Number.isFinite(cachedAt) && Date.now() - cachedAt < REFRESH_MIN_INTERVAL_MS;
 
     if (hasCachedStock) {
@@ -276,7 +284,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function createCardMeta(card, index) {
     const name = String(card.querySelector("h2, h3")?.textContent || "").trim();
-    const subtitle = String(card.querySelector(":scope > p")?.textContent || "").trim();
     const category = inferCategory(card);
     const sub = inferSub(card);
     const sku = normalizeSku(card.dataset.sku);
@@ -293,10 +300,10 @@ document.addEventListener("DOMContentLoaded", () => {
       index,
       sku,
       name,
-      typeLabel: subtitle || (sub ? `${category} ${sub}` : category),
+      typeLabel: sub || category,
       category,
       sub,
-      searchText: `${name.toLowerCase()} ${subtitle.toLowerCase()} ${sku} ${category} ${sub}`.trim(),
+      searchText: `${name.toLowerCase()} ${sku} ${category} ${sub}`.trim(),
       stockStateEl: card.querySelector(".stock-state"),
       stockCountEl: card.querySelector(".stock-state-count"),
       actionButtonEl: card.querySelector("[data-cart-add]"),
@@ -479,6 +486,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     balanceCardRows();
+    display?.classList.add("is-ready");
   }
 
   function balanceCardRows() {
@@ -545,6 +553,9 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
+  // Initial paint: reveal cards before async stock work so we never leave
+  // them CSS-hidden when there is no cache or endpoint to drive applyFilters.
+  applyFilters();
   void loadRemoteStock();
 
   // External components (e.g. shop-cart after a successful order) can ask us
