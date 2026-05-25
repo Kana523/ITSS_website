@@ -19,7 +19,7 @@
   <title>ITS-S Store</title>
 </head>
 
-<body data-stock-endpoint="https://script.google.com/macros/s/AKfycbxrmwfpkLfcz4HiQ-7BJX4JjkiXJqTxU9RetvsDxz0rgEcIIH_231U8q37ofDtfCUst/exec">
+<body data-stock-endpoint="https://script.google.com/macros/s/AKfycbwPP0jU_4atc5YK8PndnhHf_vwDaG1IJHQVEoKMpsj1jC3PZ4vd5F_zl4VKc0qaS1bG/exec">
     <header>
       <a class="container-logo" href="../">
         <img src="../assets/images/icons/itss.png" alt="Interstellar Systems logo">
@@ -53,7 +53,6 @@
           </svg>
           <span class="cart-nav-badge" id="cart-count">0</span>
         </button>
-
       </div>
       </div>
     </header>
@@ -81,13 +80,25 @@
                 <svg class="perks-check" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
                   <polyline points="20 6 9 17 4 12"></polyline>
                 </svg>
-                <p>No pre-payment, pay on delivery</p>
+                <p>Pay on delivery</p>
               </li>
               <li>
                 <svg class="perks-check" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
                   <polyline points="20 6 9 17 4 12"></polyline>
                 </svg>
-                <p>Trades accepted</p>
+                <p>Trade in materials</p>
+              </li>
+              <li>
+                <svg class="perks-check" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <p>Delivery within Imperium space</p>
+              </li>
+              <li>
+                <svg class="perks-check" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <p>All prices are in ISK</p>
               </li>
             </ul>
           </div>
@@ -112,7 +123,6 @@
                 <circle class="market-graph-ring" cx="22" cy="22" r="20"></circle>
                 <polyline class="market-graph-line" points="10,28 15,18 20,26 25,18 30,24 34,16"></polyline>
               </svg>
-              <span class="live-indicator market-graph-dot"></span>
             </div>
             <div class="last-update-text">
               <h2>Market Feed</h2>
@@ -268,7 +278,6 @@
 
       <div class="display-meta">
         <p id="results-count" aria-live="polite">Showing 0 items</p>
-        <p class="currency-note">All prices are in ISK.</p>
       </div>
     </form>
 
@@ -276,10 +285,9 @@
 
   <!-- Right column: main display / products -->
   <section class="display" aria-label="Products">
-    <article class="item-card" data-sku="zirnitra" data-price="4400000000" data-category="ship">
-      <span class="card-badge">Ship</span>
+    <article class="item-card" data-sku="zirnitra" data-price="4400000000" data-category="ship" data-sub="dreadnought">
+      <span class="card-badge">Dreadnought</span>
       <h2>Zirnitra</h2>
-      <p>Ship</p>
       <img src="../assets/images/items/ships/zirnitra-render-128.avif" alt="Zirnitra ship render">
       <div class="text">
         <div class="item-card-footer">
@@ -298,7 +306,6 @@
     <article class="item-card" data-sku="sylramic-fibers" data-price="8750000" data-category="materials" data-sub="reaction">
       <span class="card-badge">Reaction</span>
       <h2>Sylramic Fibers</h2>
-      <p>Reaction Material</p>
       <img src="../assets/images/items/materials/reaction/sylramic_fibers.avif" alt="Sylramic Fibers">
       <div class="text">
         <div class="item-card-footer">
@@ -314,10 +321,9 @@
       </div>
     </article>
 
-    <article class="item-card" data-sku="reinforced-carbon-fiber" data-price="12300000" data-category="materials" data-sub="reaction">
-      <span class="card-badge">Reaction</span>
+    <article class="item-card" data-sku="reinforced-carbon-fiber" data-price="12300000" data-category="blueprints">
+      <span class="card-badge">Blueprints</span>
       <h2>Reinforced Carbon Fiber</h2>
-      <p>Reaction Material</p>
       <img src="../assets/images/items/materials/reaction/reinforced_carbon_fiber.avif" alt="Reinforced Carbon Fiber">
       <div class="text">
         <div class="item-card-footer">
@@ -333,10 +339,9 @@
       </div>
     </article>
 
-    <article class="item-card" data-sku="titanium-carbide" data-price="9600000" data-category="materials" data-sub="reaction">
-      <span class="card-badge">Reaction</span>
+    <article class="item-card" data-sku="titanium-carbide" data-price="9600000" data-category="structures">
+      <span class="card-badge">Structures</span>
       <h2>Titanium Carbide</h2>
-      <p>Reaction Material</p>
       <img src="../assets/images/items/materials/reaction/titanium_carbide.avif" alt="Titanium Carbide">
       <div class="text">
         <div class="item-card-footer">
@@ -352,10 +357,9 @@
       </div>
     </article>
 
-    <article class="item-card" data-sku="tungsten-carbide" data-price="10100000" data-category="materials" data-sub="reaction">
-      <span class="card-badge">Reaction</span>
+    <article class="item-card" data-sku="tungsten-carbide" data-price="10100000" data-category="misc">
+      <span class="card-badge">Misc</span>
       <h2>Tungsten Carbide</h2>
-      <p>Reaction Material</p>
       <img src="../assets/images/items/materials/reaction/tungsten_carbide.avif" alt="Tungsten Carbide">
       <div class="text">
         <div class="item-card-footer">
@@ -374,7 +378,6 @@
     <article class="item-card" data-sku="pressurized-oxidizers" data-price="7800000" data-category="materials" data-sub="reaction">
       <span class="card-badge">Reaction</span>
       <h2>Pressurized Oxidizers</h2>
-      <p>Reaction Material</p>
       <img src="../assets/images/items/materials/reaction/pressurized_oxidizers.avif" alt="Pressurized Oxidizers">
       <div class="text">
         <div class="item-card-footer">
@@ -393,7 +396,6 @@
     <article class="item-card" data-sku="ferrogel" data-price="15800000" data-category="materials" data-sub="reaction">
       <span class="card-badge">Reaction</span>
       <h2>Ferrogel</h2>
-      <p>Reaction Material</p>
       <img src="../assets/images/items/materials/reaction/ferrogel.avif" alt="Ferrogel">
       <div class="text">
         <div class="item-card-footer">
@@ -412,7 +414,6 @@
     <article class="item-card" data-sku="fernite-carbide" data-price="11200000" data-category="materials" data-sub="reaction">
       <span class="card-badge">Reaction</span>
       <h2>Fernite Carbide</h2>
-      <p>Reaction Material</p>
       <img src="../assets/images/items/materials/reaction/fernite_carbide.avif" alt="Fernite Carbide">
       <div class="text">
         <div class="item-card-footer">
@@ -431,7 +432,6 @@
     <article class="item-card" data-sku="broadcast-node" data-price="5200000" data-category="materials" data-sub="planetary">
       <span class="card-badge">Planetary</span>
       <h2>Broadcast Node</h2>
-      <p>Planetary Material</p>
       <img src="../assets/images/items/materials/planetary/broadcast_node.avif" alt="Broadcast Node">
       <div class="text">
         <div class="item-card-footer">
@@ -450,7 +450,6 @@
     <article class="item-card" data-sku="integrity-response-drones" data-price="6100000" data-category="materials" data-sub="planetary">
       <span class="card-badge">Planetary</span>
       <h2>Integrity Response Drones</h2>
-      <p>Planetary Material</p>
       <img src="../assets/images/items/materials/planetary/integrity_response_drones.avif" alt="Integrity Response Drones">
       <div class="text">
         <div class="item-card-footer">
@@ -469,7 +468,6 @@
     <article class="item-card" data-sku="sterile-conduits" data-price="4700000" data-category="materials" data-sub="planetary">
       <span class="card-badge">Planetary</span>
       <h2>Sterile Conduits</h2>
-      <p>Planetary Material</p>
       <img src="../assets/images/items/materials/planetary/sterile_conduits.avif" alt="Sterile Conduits">
       <div class="text">
         <div class="item-card-footer">
@@ -488,7 +486,6 @@
     <article class="item-card" data-sku="wetware-mainframe" data-price="9300000" data-category="materials" data-sub="planetary">
       <span class="card-badge">Planetary</span>
       <h2>Wetware Mainframe</h2>
-      <p>Planetary Material</p>
       <img src="../assets/images/items/materials/planetary/wetware_mainframe.avif" alt="Wetware Mainframe">
       <div class="text">
         <div class="item-card-footer">
@@ -507,7 +504,6 @@
     <article class="item-card" data-sku="capital-armor-plates" data-price="68000000" data-category="materials" data-sub="component">
       <span class="card-badge">Component</span>
       <h2>Capital Armor Plates</h2>
-      <p>Component</p>
       <img src="../assets/images/items/ships/zirnitra-render-128.avif" alt="Capital Armor Plates">
       <div class="text">
         <div class="item-card-footer">
@@ -526,7 +522,6 @@
     <article class="item-card" data-sku="capital-capacitor-battery" data-price="75000000" data-category="materials" data-sub="component">
       <span class="card-badge">Component</span>
       <h2>Capital Capacitor Battery</h2>
-      <p>Component</p>
       <img src="../assets/images/items/ships/zirnitra-render-128.avif" alt="Capital Capacitor Battery">
       <div class="text">
         <div class="item-card-footer">
@@ -545,7 +540,6 @@
     <article class="item-card" data-sku="capital-cargo-bay" data-price="59000000" data-category="materials" data-sub="component">
       <span class="card-badge">Component</span>
       <h2>Capital Cargo Bay</h2>
-      <p>Component</p>
       <img src="../assets/images/items/ships/zirnitra-render-128.avif" alt="Capital Cargo Bay">
       <div class="text">
         <div class="item-card-footer">
@@ -592,7 +586,10 @@
     <div class="cart-drawer-footer">
       <div class="cart-total-row">
         <span class="cart-total-label">Total ISK</span>
-        <span class="cart-total-value" id="cart-total">0</span>
+        <div class="cart-total-amounts">
+          <span class="cart-total-value" id="cart-total">0</span>
+          <span class="cart-total-compact" id="cart-total-compact"></span>
+        </div>
       </div>
 
       <div class="cart-identity">
@@ -601,6 +598,7 @@
           <button type="button" class="cart-identity-tab" data-tab="orderid">Order ID</button>
         </div>
 
+        <div class="cart-identity-panels">
         <div class="cart-identity-panel" data-panel="name">
           <div class="cart-orderid-box">
             <svg class="cart-orderid-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
@@ -611,6 +609,10 @@
               <p>We'll contact you in-game to confirm your order.</p>
               <p class="cart-orderid-expiry">Orders not confirmed within <strong>7 days</strong> will be cancelled.</p>
             </div>
+          </div>
+          <div class="cart-char-name-warning">
+            <span class="cart-char-name-warning-icon" aria-hidden="true">!</span>
+            <p>Please verify your character name. Incorrect name might prevent us from delivering your order.</p>
           </div>
           <input type="text" id="cart-char-name" class="cart-identity-input" placeholder="Your character name…" autocomplete="off">
           <p class="cart-orderid-generate-error" id="cart-name-error" hidden></p>
@@ -653,6 +655,7 @@
           </div>
           <div id="cart-turnstile" data-sitekey="0x4AAAAAADFK_LmTLxebflbr"></div>
         </div>
+        </div><!-- /.cart-identity-panels -->
       </div>
     </div>
   </aside>

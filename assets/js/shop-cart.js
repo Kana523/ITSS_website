@@ -3,6 +3,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const cartItemCountEl  = document.getElementById("cart-item-count");
   const cartItemsEl      = document.getElementById("cart-items");
   const cartTotalEl      = document.getElementById("cart-total");
+  const cartTotalCompactEl = document.getElementById("cart-total-compact");
   const cartClearBtn     = document.getElementById("cart-clear");
   const cartClearNameBtn = document.getElementById("cart-clear-name");
   const cartToggleBtn    = document.getElementById("cart-toggle");
@@ -21,6 +22,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const TURNSTILE_SITEKEY = document.getElementById("cart-turnstile")?.dataset.sitekey || "";
   let turnstileWidgetId = null;
   let turnstilePending = null;
+  let cachedTurnstileToken = null;
+  let cachedTurnstileTokenAt = 0;
+  const TURNSTILE_TOKEN_MAX_AGE_MS = 4 * 60 * 1000;
 
   function ensureTurnstileRendered() {
     if (turnstileWidgetId !== null) return Promise.resolve();
@@ -40,6 +44,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (turnstilePending) {
                   turnstilePending.resolve(token);
                   turnstilePending = null;
+                } else {
+                  cachedTurnstileToken = token;
+                  cachedTurnstileTokenAt = Date.now();
                 }
               },
               "error-callback": () => {
@@ -72,6 +79,11 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function getTurnstileToken() {
+    if (cachedTurnstileToken && Date.now() - cachedTurnstileTokenAt < TURNSTILE_TOKEN_MAX_AGE_MS) {
+      const token = cachedTurnstileToken;
+      cachedTurnstileToken = null;
+      return token;
+    }
     await ensureTurnstileRendered();
     if (turnstilePending) {
       turnstilePending.reject(new Error("Turnstile superseded"));
@@ -182,7 +194,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return { sku, name, price, category, img };
   }
 
-  const MAX_QTY = 99000000;
+  const MAX_QTY = 999999999;
 
   function parseQtyDigits(str) {
     return String(str ?? "").replace(/[^\d]/g, "");
@@ -192,6 +204,19 @@ document.addEventListener("DOMContentLoaded", () => {
     const num = Number(n);
     if (!Number.isFinite(num)) return "0";
     return num.toLocaleString("en-US");
+  }
+
+  function formatPriceCompact(value) {
+    const num = Number(value);
+    if (!Number.isFinite(num) || num === 0) return "";
+    const abs = Math.abs(num);
+    const sign = num < 0 ? "-" : "";
+    let scaled, suffix;
+    if (abs >= 1e12)      { scaled = abs / 1e12; suffix = "t"; }
+    else if (abs >= 1e9)  { scaled = abs / 1e9;  suffix = "b"; }
+    else                  { scaled = abs / 1e6;  suffix = "m"; }
+    const text = scaled.toFixed(2).replace(/\.?0+$/, "");
+    return `~${sign}${text}${suffix}`;
   }
 
   function clampQty(rawQty) {
@@ -209,6 +234,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ── Drawer open / close ──────────────────────────────────────────────────────
 
+  function prewarmCheckout() {
+    if (ShopStockFeed.isEndpointConfigured(orderEndpoint)) {
+      fetch(orderEndpoint).catch(() => {});
+    }
+    const tokenFresh = cachedTurnstileToken && Date.now() - cachedTurnstileTokenAt < TURNSTILE_TOKEN_MAX_AGE_MS;
+    if (TURNSTILE_SITEKEY && !turnstilePending && !tokenFresh) {
+      ensureTurnstileRendered().then(() => {
+        if (!turnstilePending) {
+          try { window.turnstile.execute(turnstileWidgetId); } catch (_) {}
+        }
+      }).catch(() => {});
+    }
+  }
+
   function openCart() {
     if (!cartDrawer) return;
     cartDrawer.hidden  = false;
@@ -219,6 +258,7 @@ document.addEventListener("DOMContentLoaded", () => {
       cartBackdrop?.classList.add("cart-backdrop--visible");
     }));
     cartToggleBtn?.setAttribute("aria-expanded", "true");
+    prewarmCheckout();
   }
 
   function closeCart() {
@@ -375,7 +415,10 @@ document.addEventListener("DOMContentLoaded", () => {
     cart[product.sku].price    = product.price;
     cart[product.sku].category = product.category || cart[product.sku].category;
     cart[product.sku].img      = product.img      || cart[product.sku].img;
-    cart[product.sku].qty     += clampQty(qtyToAdd);
+    const desired = cart[product.sku].qty + clampQty(qtyToAdd);
+    const next = clampQtyToStock(product.sku, desired);
+    cart[product.sku].qty = next > 0 ? next : 0;
+    if (cart[product.sku].qty === 0) delete cart[product.sku];
     saveCart();
     renderCart();
   }
@@ -400,14 +443,43 @@ document.addEventListener("DOMContentLoaded", () => {
         changed = true;
       }
     });
-    if (!changed) return;
-    saveCart();
+    if (changed) saveCart();
     renderCart();
+  }
+
+  function getPreorderInfo(sku) {
+    const card = document.querySelector(`.display .item-card[data-sku="${CSS.escape(sku)}"]`);
+    if (!card || !card.classList.contains("item-card--out-of-stock")) return null;
+    const weeks = Number.parseInt(card.dataset.weeks || "", 10);
+    return { weeks: Number.isFinite(weeks) && weeks > 0 ? weeks : null };
+  }
+
+  // Reads displayed stock from the product card (kept in sync by shop-filter).
+  function getCardStock(sku) {
+    const card = document.querySelector(`.display .item-card[data-sku="${CSS.escape(sku)}"]`);
+    const raw  = card?.querySelector(".stock-state-count")?.dataset.stockRaw;
+    const n    = Number.parseInt(raw || "", 10);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  function isMaterialSku(sku) {
+    const card = document.querySelector(`.display .item-card[data-sku="${CSS.escape(sku)}"]`);
+    return (card?.dataset.category || "").trim().toLowerCase() === "materials";
+  }
+
+  // Material items can't exceed displayed stock. Non-materials are unrestricted
+  // (the cart warning copy explains the delay).
+  function clampQtyToStock(sku, qty) {
+    if (!isMaterialSku(sku)) return qty;
+    const stock = getCardStock(sku);
+    if (stock === null) return qty;
+    return Math.max(0, Math.min(qty, stock));
   }
 
   function changeQty(sku, delta) {
     if (!cart[sku]) return;
-    cart[sku].qty += delta;
+    const next = clampQtyToStock(sku, cart[sku].qty + delta);
+    cart[sku].qty = next;
     if (cart[sku].qty <= 0) delete cart[sku];
     saveCart();
     renderCart();
@@ -415,7 +487,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function setQty(sku, qty) {
     if (!cart[sku]) return;
-    cart[sku].qty = clampQty(qty);
+    cart[sku].qty = clampQtyToStock(sku, clampQty(qty));
+    if (cart[sku].qty <= 0) delete cart[sku];
     saveCart();
     renderCart();
   }
@@ -472,12 +545,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ── DOM helpers ──────────────────────────────────────────────────────────────
 
+  const X_ICON_SVG = '<svg class="cart-x-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg>';
+
   function makeBtn(text, dataMap, cls) {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = cls;
     btn.textContent = text;
     Object.entries(dataMap).forEach(([k, v]) => { btn.dataset[k] = v; });
+    return btn;
+  }
+
+  function makeXBtn(dataMap, cls) {
+    const btn = makeBtn("", dataMap, cls);
+    btn.innerHTML = X_ICON_SVG;
     return btn;
   }
 
@@ -516,10 +597,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // badge + aria
-    if (cartCountEl) cartCountEl.textContent = formatQty(totalItems);
+    const badgeLabel = totalItems > 100 ? "100+" : formatQty(totalItems);
+    if (cartCountEl) cartCountEl.textContent = badgeLabel;
     if (cartItemCountEl) cartItemCountEl.textContent = `${formatQty(totalItems)} item${totalItems !== 1 ? "s" : ""}`;
     cartToggleBtn?.setAttribute("aria-label", `Cart, ${formatQty(totalItems)} item${totalItems !== 1 ? "s" : ""}`);
     cartTotalEl.textContent = formatPriceLong(totalValue);
+    if (cartTotalCompactEl) cartTotalCompactEl.textContent = formatPriceCompact(totalValue);
     cartItemsEl.innerHTML = "";
 
     if (items.length === 0) {
@@ -559,7 +642,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const nameEl = document.createElement("span");
       nameEl.className = "cart-item-name";
       nameEl.textContent = item.name;
-      const removeBtn = makeBtn("✕", { cartAction: "remove", sku: item.sku }, "cart-remove-btn");
+      const removeBtn = makeXBtn({ cartAction: "remove", sku: item.sku }, "cart-remove-btn");
       removeBtn.setAttribute("aria-label", `Remove ${item.name}`);
       header.appendChild(nameEl);
       header.appendChild(removeBtn);
@@ -577,7 +660,7 @@ document.addEventListener("DOMContentLoaded", () => {
       priceEl.innerHTML = `${formatPrice(item.price)}<span class="cart-price-label"> / item</span>`;
       const qtyWrap = makeQtyWrap(
         item.qty,
-        isShip ? "lg" : "sm",
+        "lg",
         { cartAction: "decrease", sku: item.sku },
         { cartAction: "increase", sku: item.sku },
         { cartQtyInput: item.sku }
@@ -629,7 +712,7 @@ document.addEventListener("DOMContentLoaded", () => {
             exInput.dataset.extraIdx = j;
             exControls.appendChild(exInput);
             exControls.appendChild(makeBtn("+", { cartAction: "extra-increase", sku: item.sku, extraIdx: j }, "cart-action-btn cart-action-btn--sm"));
-            exControls.appendChild(makeBtn("✕", { cartAction: "extra-remove", sku: item.sku, extraIdx: j }, "cart-extra-remove"));
+            exControls.appendChild(makeXBtn({ cartAction: "extra-remove", sku: item.sku, extraIdx: j }, "cart-extra-remove"));
 
             exRow.appendChild(exInfo);
             exRow.appendChild(exControls);
@@ -681,6 +764,52 @@ document.addEventListener("DOMContentLoaded", () => {
       totalRow.appendChild(totalLabel);
       totalRow.appendChild(totalVal);
       stack.appendChild(totalRow);
+
+      const preorder = getPreorderInfo(item.sku);
+      const cardStock = getCardStock(item.sku);
+      const overStock = cardStock !== null && item.qty > cardStock && cardStock > 0;
+      const sku = item.sku;
+      if (preorder) {
+        const preorderRow = document.createElement("div");
+        preorderRow.className = "cart-item-preorder";
+        const preorderIcon = document.createElement("span");
+        preorderIcon.className = "cart-item-preorder-icon";
+        preorderIcon.setAttribute("aria-hidden", "true");
+        preorderIcon.textContent = "!";
+        const preorderText = document.createElement("p");
+        const preorderLead = document.createElement("strong");
+        preorderLead.textContent = "Pre-order!";
+        preorderText.appendChild(preorderLead);
+        preorderText.appendChild(document.createTextNode(
+          preorder.weeks
+            ? ` Estimated delivery: ${preorder.weeks} week${preorder.weeks !== 1 ? "s" : ""}.`
+            : " Delivery estimate unavailable. We'll get started on it!"
+        ));
+        preorderRow.appendChild(preorderIcon);
+        preorderRow.appendChild(preorderText);
+        stack.appendChild(preorderRow);
+      } else if (overStock) {
+        const warnRow = document.createElement("div");
+        warnRow.className = "cart-item-preorder";
+        const icon = document.createElement("span");
+        icon.className = "cart-item-preorder-icon";
+        icon.setAttribute("aria-hidden", "true");
+        icon.textContent = "!";
+        const text = document.createElement("p");
+        const lead = document.createElement("strong");
+        if (isMaterialSku(sku)) {
+          lead.textContent = `Only ${formatQty(cardStock)} available.`;
+          text.appendChild(lead);
+          text.appendChild(document.createTextNode(" Preorder not available for this item."));
+        } else {
+          lead.textContent = `${formatQty(cardStock)} available.`;
+          text.appendChild(lead);
+          text.appendChild(document.createTextNode(` Remaining ${formatQty(item.qty - cardStock)} might take longer.`));
+        }
+        warnRow.appendChild(icon);
+        warnRow.appendChild(text);
+        stack.appendChild(warnRow);
+      }
 
       content.appendChild(stack);
       li.appendChild(imgWrap);
@@ -734,7 +863,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.addEventListener("input", (e) => {
     if (e.target.dataset.cartQtyInput !== undefined || e.target.dataset.cartExtraQtyInput !== undefined) {
-      const digits = parseQtyDigits(e.target.value).slice(0, 8);
+      const digits = parseQtyDigits(e.target.value).slice(0, 9);
       e.target.value = digits ? formatQty(Number.parseInt(digits, 10)) : "";
       resizeQtyInput(e.target);
     }
@@ -844,6 +973,35 @@ document.addEventListener("DOMContentLoaded", () => {
     }));
   }
 
+  // After a successful submit, reduce displayed card stock by acceptedQty so
+  // the page reflects the new reservation immediately, then trigger a silent
+  // background refresh so the sheet's authoritative value catches up.
+  function applyOrderSideEffects(response, submittedItems) {
+    const adjustedBySku = new Map((response?.adjusted || []).map(a => [a.sku, a]));
+    for (const item of submittedItems) {
+      const adj = adjustedBySku.get(item.sku);
+      const acceptedQty = adj && typeof adj.acceptedQty === "number" ? adj.acceptedQty : item.qty;
+      if (acceptedQty <= 0) continue;
+      const card = document.querySelector(`.display .item-card[data-sku="${CSS.escape(item.sku)}"]`);
+      const stockEl = card?.querySelector(".stock-state-count");
+      if (!stockEl) continue;
+      const current = Number.parseInt(stockEl.dataset.stockRaw || "0", 10);
+      const next = Math.max(0, (Number.isFinite(current) ? current : 0) - acceptedQty);
+      stockEl.dataset.stockRaw = String(next);
+      stockEl.textContent = formatQty(next);
+      if (next <= 0) card?.classList.add("item-card--out-of-stock");
+    }
+    // Silent re-fetch ~2s later (gives the sheet time to flush + reservations to settle).
+    setTimeout(() => {
+      if (!ShopStockFeed.refreshNow) return;
+      ShopStockFeed.refreshNow(orderEndpoint).then((map) => {
+        if (map && map.size > 0) {
+          document.dispatchEvent(new CustomEvent("shop:stock-refresh", { detail: { stockMap: map } }));
+        }
+      }).catch(() => {});
+    }, 2000);
+  }
+
   function showOrderIdError(message) {
     if (!orderIdErrorEl) return;
     orderIdErrorEl.textContent = message;
@@ -902,7 +1060,8 @@ document.addEventListener("DOMContentLoaded", () => {
           return;
         }
         cartCheckoutBtn.textContent = "Sending…";
-        await ShopStockFeed.submitOrder(orderEndpoint, { orderId, items, turnstileToken });
+        const response = await ShopStockFeed.submitOrder(orderEndpoint, { orderId, items, turnstileToken });
+        applyOrderSideEffects(response, items);
       }
       showGeneratedOrderId(orderId);
       cartCheckoutBtn.textContent = "Place Order";
@@ -968,7 +1127,8 @@ document.addEventListener("DOMContentLoaded", () => {
           return;
         }
         cartCheckoutNameBtn.textContent = "Sending…";
-        await ShopStockFeed.submitOrder(orderEndpoint, { charName, items, turnstileToken });
+        const response = await ShopStockFeed.submitOrder(orderEndpoint, { charName, items, turnstileToken });
+        applyOrderSideEffects(response, items);
       }
       cartCheckoutNameBtn.textContent = "Placed!";
       setTimeout(syncCheckoutButtonLabel, 2200);

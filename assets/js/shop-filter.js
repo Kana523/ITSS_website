@@ -84,6 +84,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const resultsCountEl = document.getElementById("results-count");
   const productDataStatusEl = document.getElementById("product-data-status");
   const cardMeta = new Map();
+  let stockDataLoaded = false;
 
   function setProductDataStatus(message, state = "") {
     if (!productDataStatusEl) return;
@@ -147,6 +148,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       syncStockState(card);
     });
+    stockDataLoaded = true;
   }
 
   function applyRemoteStock(card, record) {
@@ -177,6 +179,12 @@ document.addEventListener("DOMContentLoaded", () => {
       updatePriceEl(meta?.priceEl, record.price);
     }
 
+    if (Number.isFinite(record.weeks) && record.weeks > 0) {
+      card.dataset.weeks = String(record.weeks);
+    } else {
+      delete card.dataset.weeks;
+    }
+
     syncStockState(card);
   }
 
@@ -185,7 +193,14 @@ document.addEventListener("DOMContentLoaded", () => {
     return `Updated: ${pad(date.getHours())}:${pad(date.getMinutes())}, ${pad(date.getDate())}/${pad(date.getMonth() + 1)}`;
   }
 
-  const REFRESH_MIN_INTERVAL_MS = 60 * 60 * 1000;
+  const REFRESH_MIN_INTERVAL_MS = 5 * 60 * 1000;
+
+  // Local dev (file://, localhost, 127.0.0.1, *.local) bypasses the fresh-cache
+  // short-circuit so feed changes are visible on every reload.
+  const isLocalHost =
+    location.protocol === "file:" ||
+    /^(localhost|127\.0\.0\.1|\[::1\])$/i.test(location.hostname) ||
+    /\.local$/i.test(location.hostname);
 
   async function loadRemoteStock() {
     const cachedSnapshot = ShopStockFeed.loadCachedSnapshot({ allowStale: true });
@@ -193,6 +208,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const hasCachedStock = cachedStockMap instanceof Map && cachedStockMap.size > 0;
     const cachedAt = Number(cachedSnapshot?.cachedAt);
     const hasFreshCache =
+      !isLocalHost &&
       Number.isFinite(cachedAt) && Date.now() - cachedAt < REFRESH_MIN_INTERVAL_MS;
 
     if (hasCachedStock) {
@@ -254,7 +270,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (actionButton) {
-      actionButton.textContent = outOfStock ? "RESERVE" : "ADD TO CART";
+      actionButton.textContent = outOfStock ? "PRE-ORDER" : "ADD TO CART";
     }
   }
 
@@ -268,7 +284,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function createCardMeta(card, index) {
     const name = String(card.querySelector("h2, h3")?.textContent || "").trim();
-    const subtitle = String(card.querySelector(":scope > p")?.textContent || "").trim();
     const category = inferCategory(card);
     const sub = inferSub(card);
     const sku = normalizeSku(card.dataset.sku);
@@ -285,10 +300,10 @@ document.addEventListener("DOMContentLoaded", () => {
       index,
       sku,
       name,
-      typeLabel: subtitle || (sub ? `${category} ${sub}` : category),
+      typeLabel: sub || category,
       category,
       sub,
-      searchText: `${name.toLowerCase()} ${subtitle.toLowerCase()} ${sku} ${category} ${sub}`.trim(),
+      searchText: `${name.toLowerCase()} ${sku} ${category} ${sub}`.trim(),
       stockStateEl: card.querySelector(".stock-state"),
       stockCountEl: card.querySelector(".stock-state-count"),
       actionButtonEl: card.querySelector("[data-cart-add]"),
@@ -360,7 +375,9 @@ document.addEventListener("DOMContentLoaded", () => {
         return priceFor(a) - priceFor(b) || nameComparison;
       }
 
-      return (cardMeta.get(a)?.index || 0) - (cardMeta.get(b)?.index || 0);
+      const aOut = stockCountFor(a) <= 0 ? 1 : 0;
+      const bOut = stockCountFor(b) <= 0 ? 1 : 0;
+      return aOut - bOut || (cardMeta.get(a)?.index || 0) - (cardMeta.get(b)?.index || 0);
     });
 
     return visibleCards;
@@ -434,11 +451,13 @@ document.addEventListener("DOMContentLoaded", () => {
         nothingSelected ||
         categoryParents.has(cat) ||
         (childKey && activeChildren.has(childKey));
+      const hiddenMaterial = stockDataLoaded && cat === "materials" && stockCount <= 0;
 
       const show =
         matchesSearch &&
         matchesStock &&
-        matchesCategory;
+        matchesCategory &&
+        !hiddenMaterial;
 
       card.style.display = show ? "" : "none";
       if (show) {
@@ -467,6 +486,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     balanceCardRows();
+    display?.classList.add("is-ready");
   }
 
   function balanceCardRows() {
@@ -474,7 +494,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     display.querySelectorAll(".row-break").forEach((el) => el.remove());
 
-    const visibleCards = cards.filter((c) => c.style.display !== "none");
+    const visibleCards = Array.from(display.querySelectorAll(".item-card")).filter((c) => c.style.display !== "none");
     const n = visibleCards.length;
     if (n <= 1) return;
 
@@ -533,5 +553,19 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
+  // Initial paint: reveal cards before async stock work so we never leave
+  // them CSS-hidden when there is no cache or endpoint to drive applyFilters.
+  applyFilters();
   void loadRemoteStock();
+
+  // External components (e.g. shop-cart after a successful order) can ask us
+  // to re-apply a freshly fetched stock map without redoing the cache logic.
+  document.addEventListener("shop:stock-refresh", (e) => {
+    const map = e.detail?.stockMap;
+    if (!(map instanceof Map) || map.size === 0) return;
+    applyStockMapToCards(map);
+    document.dispatchEvent(new CustomEvent("shop:product-data-updated"));
+    setProductDataStatus(formatLastUpdate(new Date()), "live");
+    applyFilters();
+  });
 });

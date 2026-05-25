@@ -40,11 +40,13 @@
         return;
       }
 
+      const parsedWeeks = Number.parseInt(String(value.weeks ?? "").trim(), 10);
       normalized.set(normalizedSku, {
         sku: normalizedSku,
         stock,
         price: parsePriceValue(value.price),
-        nextStock: String(value.next_stock || "").trim()
+        nextStock: String(value.next_stock || "").trim(),
+        weeks: Number.isFinite(parsedWeeks) && parsedWeeks > 0 ? parsedWeeks : null
       });
     });
 
@@ -58,7 +60,8 @@
       serialized[sku] = {
         stock: record.stock,
         price: record.price,
-        next_stock: record.nextStock || ""
+        next_stock: record.nextStock || "",
+        weeks: record.weeks ?? ""
       };
     });
 
@@ -120,7 +123,8 @@
   }
 
   async function fetchRemote(endpoint) {
-    const response = await fetch(endpoint, {
+    const sep = endpoint.includes("?") ? "&" : "?";
+    const response = await fetch(`${endpoint}${sep}_=${Date.now()}`, {
       headers: {
         Accept: "application/json"
       }
@@ -175,11 +179,19 @@
     return payload;
   }
 
+  async function refreshNow(endpoint) {
+    if (!isEndpointConfigured(endpoint)) return null;
+    const stockMap = await fetchRemote(endpoint);
+    if (stockMap.size > 0) saveCache(stockMap);
+    return stockMap;
+  }
+
   window.ShopStockFeed = {
     loadCachedSnapshot,
     saveCache,
     fetchRemote,
     submitOrder,
-    isEndpointConfigured
+    isEndpointConfigured,
+    refreshNow
   };
 })();
