@@ -123,7 +123,8 @@
   }
 
   async function fetchRemote(endpoint) {
-    const response = await fetch(endpoint, {
+    const sep = endpoint.includes("?") ? "&" : "?";
+    const response = await fetch(`${endpoint}${sep}_=${Date.now()}`, {
       headers: {
         Accept: "application/json"
       }
@@ -178,11 +179,19 @@
     return payload;
   }
 
+  async function refreshNow(endpoint) {
+    if (!isEndpointConfigured(endpoint)) return null;
+    const stockMap = await fetchRemote(endpoint);
+    if (stockMap.size > 0) saveCache(stockMap);
+    return stockMap;
+  }
+
   window.ShopStockFeed = {
     loadCachedSnapshot,
     saveCache,
     fetchRemote,
     submitOrder,
-    isEndpointConfigured
+    isEndpointConfigured,
+    refreshNow
   };
 })();

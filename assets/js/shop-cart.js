@@ -415,7 +415,10 @@ document.addEventListener("DOMContentLoaded", () => {
     cart[product.sku].price    = product.price;
     cart[product.sku].category = product.category || cart[product.sku].category;
     cart[product.sku].img      = product.img      || cart[product.sku].img;
-    cart[product.sku].qty     += clampQty(qtyToAdd);
+    const desired = cart[product.sku].qty + clampQty(qtyToAdd);
+    const next = clampQtyToStock(product.sku, desired);
+    cart[product.sku].qty = next > 0 ? next : 0;
+    if (cart[product.sku].qty === 0) delete cart[product.sku];
     saveCart();
     renderCart();
   }
@@ -451,9 +454,32 @@ document.addEventListener("DOMContentLoaded", () => {
     return { weeks: Number.isFinite(weeks) && weeks > 0 ? weeks : null };
   }
 
+  // Reads displayed stock from the product card (kept in sync by shop-filter).
+  function getCardStock(sku) {
+    const card = document.querySelector(`.display .item-card[data-sku="${CSS.escape(sku)}"]`);
+    const raw  = card?.querySelector(".stock-state-count")?.dataset.stockRaw;
+    const n    = Number.parseInt(raw || "", 10);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  function isMaterialSku(sku) {
+    const card = document.querySelector(`.display .item-card[data-sku="${CSS.escape(sku)}"]`);
+    return (card?.dataset.category || "").trim().toLowerCase() === "materials";
+  }
+
+  // Material items can't exceed displayed stock. Non-materials are unrestricted
+  // (the cart warning copy explains the delay).
+  function clampQtyToStock(sku, qty) {
+    if (!isMaterialSku(sku)) return qty;
+    const stock = getCardStock(sku);
+    if (stock === null) return qty;
+    return Math.max(0, Math.min(qty, stock));
+  }
+
   function changeQty(sku, delta) {
     if (!cart[sku]) return;
-    cart[sku].qty += delta;
+    const next = clampQtyToStock(sku, cart[sku].qty + delta);
+    cart[sku].qty = next;
     if (cart[sku].qty <= 0) delete cart[sku];
     saveCart();
     renderCart();
@@ -461,7 +487,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function setQty(sku, qty) {
     if (!cart[sku]) return;
-    cart[sku].qty = clampQty(qty);
+    cart[sku].qty = clampQtyToStock(sku, clampQty(qty));
+    if (cart[sku].qty <= 0) delete cart[sku];
     saveCart();
     renderCart();
   }
@@ -739,6 +766,9 @@ document.addEventListener("DOMContentLoaded", () => {
       stack.appendChild(totalRow);
 
       const preorder = getPreorderInfo(item.sku);
+      const cardStock = getCardStock(item.sku);
+      const overStock = cardStock !== null && item.qty > cardStock && cardStock > 0;
+      const sku = item.sku;
       if (preorder) {
         const preorderRow = document.createElement("div");
         preorderRow.className = "cart-item-preorder";
@@ -758,6 +788,27 @@ document.addEventListener("DOMContentLoaded", () => {
         preorderRow.appendChild(preorderIcon);
         preorderRow.appendChild(preorderText);
         stack.appendChild(preorderRow);
+      } else if (overStock) {
+        const warnRow = document.createElement("div");
+        warnRow.className = "cart-item-preorder";
+        const icon = document.createElement("span");
+        icon.className = "cart-item-preorder-icon";
+        icon.setAttribute("aria-hidden", "true");
+        icon.textContent = "!";
+        const text = document.createElement("p");
+        const lead = document.createElement("strong");
+        if (isMaterialSku(sku)) {
+          lead.textContent = `Only ${formatQty(cardStock)} available.`;
+          text.appendChild(lead);
+          text.appendChild(document.createTextNode(" Preorder not available for this item."));
+        } else {
+          lead.textContent = `${formatQty(cardStock)} available.`;
+          text.appendChild(lead);
+          text.appendChild(document.createTextNode(` Remaining ${formatQty(item.qty - cardStock)} might take longer.`));
+        }
+        warnRow.appendChild(icon);
+        warnRow.appendChild(text);
+        stack.appendChild(warnRow);
       }
 
       content.appendChild(stack);
@@ -922,6 +973,35 @@ document.addEventListener("DOMContentLoaded", () => {
     }));
   }
 
+  // After a successful submit, reduce displayed card stock by acceptedQty so
+  // the page reflects the new reservation immediately, then trigger a silent
+  // background refresh so the sheet's authoritative value catches up.
+  function applyOrderSideEffects(response, submittedItems) {
+    const adjustedBySku = new Map((response?.adjusted || []).map(a => [a.sku, a]));
+    for (const item of submittedItems) {
+      const adj = adjustedBySku.get(item.sku);
+      const acceptedQty = adj && typeof adj.acceptedQty === "number" ? adj.acceptedQty : item.qty;
+      if (acceptedQty <= 0) continue;
+      const card = document.querySelector(`.display .item-card[data-sku="${CSS.escape(item.sku)}"]`);
+      const stockEl = card?.querySelector(".stock-state-count");
+      if (!stockEl) continue;
+      const current = Number.parseInt(stockEl.dataset.stockRaw || "0", 10);
+      const next = Math.max(0, (Number.isFinite(current) ? current : 0) - acceptedQty);
+      stockEl.dataset.stockRaw = String(next);
+      stockEl.textContent = formatQty(next);
+      if (next <= 0) card?.classList.add("item-card--out-of-stock");
+    }
+    // Silent re-fetch ~2s later (gives the sheet time to flush + reservations to settle).
+    setTimeout(() => {
+      if (!ShopStockFeed.refreshNow) return;
+      ShopStockFeed.refreshNow(orderEndpoint).then((map) => {
+        if (map && map.size > 0) {
+          document.dispatchEvent(new CustomEvent("shop:stock-refresh", { detail: { stockMap: map } }));
+        }
+      }).catch(() => {});
+    }, 2000);
+  }
+
   function showOrderIdError(message) {
     if (!orderIdErrorEl) return;
     orderIdErrorEl.textContent = message;
@@ -980,7 +1060,8 @@ document.addEventListener("DOMContentLoaded", () => {
           return;
         }
         cartCheckoutBtn.textContent = "Sending…";
-        await ShopStockFeed.submitOrder(orderEndpoint, { orderId, items, turnstileToken });
+        const response = await ShopStockFeed.submitOrder(orderEndpoint, { orderId, items, turnstileToken });
+        applyOrderSideEffects(response, items);
       }
       showGeneratedOrderId(orderId);
       cartCheckoutBtn.textContent = "Place Order";
@@ -1046,7 +1127,8 @@ document.addEventListener("DOMContentLoaded", () => {
           return;
         }
         cartCheckoutNameBtn.textContent = "Sending…";
-        await ShopStockFeed.submitOrder(orderEndpoint, { charName, items, turnstileToken });
+        const response = await ShopStockFeed.submitOrder(orderEndpoint, { charName, items, turnstileToken });
+        applyOrderSideEffects(response, items);
       }
       cartCheckoutNameBtn.textContent = "Placed!";
       setTimeout(syncCheckoutButtonLabel, 2200);
