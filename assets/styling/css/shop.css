@@ -322,6 +322,20 @@ textarea {
   opacity: 0.8;
 }
 
+/* Replace the native blue clear X with a gold one. */
+#filter-search::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M3 3 L13 13 M13 3 L3 13' stroke='%23d8b065' stroke-width='2' stroke-linecap='round' fill='none'/></svg>") center / contain no-repeat;
+  cursor: pointer;
+}
+
+#filter-search::-webkit-search-cancel-button:hover {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M3 3 L13 13 M13 3 L3 13' stroke='%23ffdd9c' stroke-width='2' stroke-linecap='round' fill='none'/></svg>");
+}
+
 #filter-clear {
   font-size: clamp(14px, 1.2vw, 21px);
   padding: 4px 12px;
@@ -1345,7 +1359,7 @@ textarea {
 .item-card.item-card--out-of-stock[data-category="ship"]        { --cat: #6A219C; }
 .item-card.item-card--out-of-stock[data-category="blueprints"]  { --cat: #0361A0; }
 .item-card.item-card--out-of-stock[data-category="structures"]  { --cat: #911D1F; }
-.item-card.item-card--out-of-stock[data-category="misc"]        { --cat: #5C3C26; }
+.item-card.item-card--out-of-stock[data-category="misc"]        { --cat: #007500; }
 
 .card-badge {
   position: absolute;
