@@ -1,74 +1,13 @@
-// Shared price utilities — exposed as window.ShopUtils for shop-cart.js (which loads after this script)
-function formatPrice(value) {
-  const amount = Number(value);
-  if (!Number.isFinite(amount) || amount <= 0) return "0";
-
-  function formatUnit(divisor, suffix) {
-    const unitValue = amount / divisor;
-    const trimmed = unitValue
-      .toFixed(1)
-      .replace(/(\.\d*?[1-9])0+$/, "$1")
-      .replace(/\.0+$/, "");
-    return `${trimmed}${suffix}`;
-  }
-
-  if (amount >= 1000000000000) return formatUnit(1000000000000, "t");
-  if (amount >= 1000000000) return formatUnit(1000000000, "b");
-  if (amount >= 1000000) return formatUnit(1000000, "m");
-  if (amount >= 1000) return formatUnit(1000, "k");
-  return `${Math.round(amount)}`;
-}
-
-function parsePriceToIsk(rawValue, fallbackLabel = "") {
-  const multipliers = {
-    k: 1000,
-    thousand: 1000,
-    m: 1000000,
-    mil: 1000000,
-    million: 1000000,
-    b: 1000000000,
-    bil: 1000000000,
-    billion: 1000000000,
-    t: 1000000000000,
-    tril: 1000000000000,
-    trillion: 1000000000000
-  };
-
-  const candidates = [rawValue, fallbackLabel];
-  for (const candidate of candidates) {
-    const text = String(candidate || "").trim();
-    if (!text) continue;
-
-    const direct = Number(text.replace(/,/g, ""));
-    if (Number.isFinite(direct) && direct > 0) return direct;
-
-    const match = text.match(/^([\d.,]+)\s*([a-zA-Z]+)?\s*(?:isk)?$/i);
-    if (!match) continue;
-
-    const numericValue = Number(match[1].replace(/,/g, ""));
-    if (!Number.isFinite(numericValue) || numericValue <= 0) continue;
-
-    const unit = String(match[2] || "").toLowerCase();
-    const multiplier = unit ? (multipliers[unit] || 1) : 1;
-    return numericValue * multiplier;
-  }
-
-  return 0;
-}
-
-function formatPriceLong(value) {
-  const amount = Number(value);
-  if (!Number.isFinite(amount) || amount <= 0) return "0";
-  return Math.round(amount).toLocaleString("en-US");
-}
-
-window.ShopUtils = { formatPrice, formatPriceLong, parsePriceToIsk };
-
 document.addEventListener("DOMContentLoaded", () => {
-  if (!window.ShopStockFeed) {
-    console.error("shop-filter.js: window.ShopStockFeed missing — shop-stock-feed.js failed to load.");
+  if (!window.ShopUtils) {
+    console.error("shop-filter.js: window.ShopUtils missing — shop-utils.js failed to load.");
     return;
   }
+  if (!window.ShopAPI) {
+    console.error("shop-filter.js: window.ShopAPI missing — shop-api.js failed to load.");
+    return;
+  }
+  const { formatPrice, parsePriceToIsk } = window.ShopUtils;
 
   // Only filter cards in the product display area
   const cards = Array.from(document.querySelectorAll(".display .item-card"));
@@ -203,7 +142,7 @@ document.addEventListener("DOMContentLoaded", () => {
     /\.local$/i.test(location.hostname);
 
   async function loadRemoteStock() {
-    const cachedSnapshot = ShopStockFeed.loadCachedSnapshot({ allowStale: true });
+    const cachedSnapshot = ShopAPI.loadCachedSnapshot({ allowStale: true });
     const cachedStockMap = cachedSnapshot?.records || null;
     const hasCachedStock = cachedStockMap instanceof Map && cachedStockMap.size > 0;
     const cachedAt = Number(cachedSnapshot?.cachedAt);
@@ -224,12 +163,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     setProductDataStatus("Updating stock and prices");
 
-    if (!ShopStockFeed.isEndpointConfigured(stockEndpoint)) return;
+    if (!ShopAPI.isEndpointConfigured(stockEndpoint)) return;
 
     try {
-      const stockMap = await ShopStockFeed.fetchRemote(stockEndpoint);
+      const stockMap = await ShopAPI.fetchRemote(stockEndpoint);
 
-      ShopStockFeed.saveCache(stockMap);
+      ShopAPI.saveCache(stockMap);
       applyStockMapToCards(stockMap);
 
       document.dispatchEvent(new CustomEvent("shop:product-data-updated"));
