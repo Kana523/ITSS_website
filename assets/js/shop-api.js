@@ -1,6 +1,7 @@
-// Encapsulates all interaction with the remote stock data source (Google Sheets via Apps Script)
-// and the local cache used as a fallback. Exposed as window.ShopStockFeed for shop-filter.js.
+// Outside-API integrations for the shop: Google Apps Script (stock + orders)
+// and Cloudflare Turnstile (bot verification). Exposed as window.ShopAPI.
 (function () {
+  // ── Stock cache ──────────────────────────────────────────────────────────────
   const STOCK_CACHE_KEY = "itss_shop_stock_cache_v1";
   const STOCK_CACHE_FRESH_AGE_MS = 15 * 60 * 1000;
   const STOCK_CACHE_FALLBACK_AGE_MS = 30 * 24 * 60 * 60 * 1000;
@@ -186,12 +187,113 @@
     return stockMap;
   }
 
-  window.ShopStockFeed = {
+  // ── Cloudflare Turnstile ─────────────────────────────────────────────────────
+  const TURNSTILE_CONTAINER_SELECTOR = "#cart-turnstile";
+  const TURNSTILE_TOKEN_MAX_AGE_MS = 4 * 60 * 1000;
+  let turnstileWidgetId = null;
+  let turnstilePending = null;
+  let cachedTurnstileToken = null;
+  let cachedTurnstileTokenAt = 0;
+
+  function turnstileSitekey() {
+    return document.querySelector(TURNSTILE_CONTAINER_SELECTOR)?.dataset.sitekey || "";
+  }
+
+  function ensureTurnstileRendered() {
+    if (turnstileWidgetId !== null) return Promise.resolve();
+    if (!document.querySelector(TURNSTILE_CONTAINER_SELECTOR) || !turnstileSitekey()) {
+      return Promise.reject(new Error("Turnstile container missing"));
+    }
+    return new Promise((resolve, reject) => {
+      const start = Date.now();
+      const tick = () => {
+        if (window.turnstile?.render) {
+          try {
+            turnstileWidgetId = window.turnstile.render(TURNSTILE_CONTAINER_SELECTOR, {
+              sitekey: turnstileSitekey(),
+              size: "invisible",
+              theme: "dark",
+              callback: (token) => {
+                if (turnstilePending) {
+                  turnstilePending.resolve(token);
+                  turnstilePending = null;
+                } else {
+                  cachedTurnstileToken = token;
+                  cachedTurnstileTokenAt = Date.now();
+                }
+              },
+              "error-callback": () => {
+                if (turnstilePending) {
+                  turnstilePending.reject(new Error("Turnstile challenge failed"));
+                  turnstilePending = null;
+                }
+              },
+              "timeout-callback": () => {
+                if (turnstilePending) {
+                  turnstilePending.reject(new Error("Turnstile timed out"));
+                  turnstilePending = null;
+                }
+              },
+            });
+            resolve();
+          } catch (e) {
+            reject(e);
+          }
+          return;
+        }
+        if (Date.now() - start > 8000) {
+          reject(new Error("Turnstile script never loaded"));
+          return;
+        }
+        setTimeout(tick, 120);
+      };
+      tick();
+    });
+  }
+
+  async function getTurnstileToken() {
+    if (cachedTurnstileToken && Date.now() - cachedTurnstileTokenAt < TURNSTILE_TOKEN_MAX_AGE_MS) {
+      const token = cachedTurnstileToken;
+      cachedTurnstileToken = null;
+      return token;
+    }
+    await ensureTurnstileRendered();
+    if (turnstilePending) {
+      turnstilePending.reject(new Error("Turnstile superseded"));
+      turnstilePending = null;
+    }
+    return new Promise((resolve, reject) => {
+      turnstilePending = { resolve, reject };
+      try {
+        window.turnstile.reset(turnstileWidgetId);
+        window.turnstile.execute(turnstileWidgetId);
+      } catch (e) {
+        turnstilePending = null;
+        reject(e);
+      }
+    });
+  }
+
+  // Render + fire the invisible challenge before checkout so a token is ready
+  // when the user actually clicks Place Order. No-op if a fresh token exists.
+  function prewarmTurnstile() {
+    if (!turnstileSitekey()) return;
+    const tokenFresh = cachedTurnstileToken && Date.now() - cachedTurnstileTokenAt < TURNSTILE_TOKEN_MAX_AGE_MS;
+    if (turnstilePending || tokenFresh) return;
+    ensureTurnstileRendered().then(() => {
+      if (turnstilePending) return;
+      try { window.turnstile.execute(turnstileWidgetId); } catch (_) {}
+    }).catch(() => {});
+  }
+
+  window.ShopAPI = {
     loadCachedSnapshot,
     saveCache,
     fetchRemote,
     submitOrder,
     isEndpointConfigured,
-    refreshNow
+    refreshNow,
+    getTurnstileToken,
+    prewarmTurnstile,
   };
 })();

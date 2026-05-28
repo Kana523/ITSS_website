@@ -99,12 +99,15 @@ a {
 
 /* Start of header*/
 header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
   display: flex;
   justify-content: space-between;
   line-height: 1;
   padding: 0 10px 0 0;
   background:
-    linear-gradient(180deg, rgba(22, 28, 48, 0.55) 0%, rgba(8, 11, 18, 0.65) 100%);
+    linear-gradient(180deg, rgb(22, 28, 48) 0%, rgb(8, 11, 18) 100%);
 }
 
 header a {

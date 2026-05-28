@@ -13,23 +13,20 @@ const STATUS_VALUES = ["New", "In progress", "Fulfilled", "Cancelled"];
 const RESERVED_STATUSES = new Set(["new", "in progress"]);
 const COMPLETED_STATUSES = new Set(["fulfilled", "cancelled"]);
 
-// Reads Stock!A:E and N. Returns per-sku: price, stock, isMaterial.
+// Reads Stock!A:E. Returns per-sku: stock, price, next_stock, weeks.
 function readStockData(sheet) {
   const out = new Map();
   if (!sheet || sheet.getLastRow() < 2) return out;
   const lastRow = sheet.getLastRow();
   const ae = sheet.getRange(2, 1, lastRow - 1, 5).getValues();
-  const n  = sheet.getRange(2, 14, lastRow - 1, 1).getValues();
   for (let i = 0; i < ae.length; i++) {
     const sku = String(ae[i][0] || "").trim().toLowerCase();
     if (!sku) continue;
-    const type = String(n[i][0] || "").trim().toLowerCase();
     out.set(sku, {
       stock: toInt(ae[i][1]),
       price: toNumber(ae[i][2]),
       next_stock: toText(ae[i][3]),
-      weeks: toNumber(ae[i][4]),
-      isMaterial: type === "material" || type === "materials"
+      weeks: toNumber(ae[i][4])
     });
   }
   return out;
@@ -240,8 +237,9 @@ function doPost(e) {
       const requestedQty = toInt(item.qty);
       if (requestedQty <= 0) continue;
 
+      const isMaterial = String(item.category || "").trim().toLowerCase() === "materials";
       let acceptedQty = requestedQty;
-      if (info.isMaterial) {
+      if (isMaterial) {
         const available = Math.max(0, info.stock - (reserved.get(sku) || 0));
         if (requestedQty > available) {
           acceptedQty = available;
@@ -377,20 +375,15 @@ function toText(value) {
 }
 
 // Pulls best Buy/Sell prices for SKUs in column A of the "Stock" sheet from
-// Jita 4-4, Amarr VIII, and C-J6MT Keepstar, plus the authed character's
-// personal inventory and the corporation's inventory. For rows where column N
-// (Type) is "Material", Stock!B is overwritten with the count held in the
-// corporation "Sales" hangar across all corp offices. Non-material rows in B
-// are left alone (user-managed).
-// Writes to columns F:M (headers in row 1, data from row 2) plus column B for
-// materials. Column N is user-owned (Type). Columns C–E (price, next_stock,
-// weeks) are never touched.
+// Jita 4-4, Amarr VIII, and C-J6MT Keepstar. Stock!B is overwritten with the
+// count held in the corporation "Sales" hangar across all corp offices.
+// Writes to columns F:K (headers in row 1, data from row 2) plus column B.
+// Columns C–E (price, next_stock, weeks) are never touched.
 // SKUs are dash-separated (e.g. "sylramic-fibers"); they're converted to
 // spaces ("sylramic fibers") for the ESI name->id lookup.
 // Jita/Amarr: public ESI, no auth. Other columns require ESI OAuth scopes:
 //   esi-markets.structure_markets.v1          (C-J6MT prices)
-//   esi-assets.read_assets.v1                 (Char Stock)
-//   esi-assets.read_corporation_assets.v1     (Corp Stock + Sales hangar)
+//   esi-assets.read_corporation_assets.v1     (Sales hangar)
 //   esi-corporations.read_divisions.v1        (find Sales hangar by name)
 // See authSetupStep1/2.
 const ESI_BASE         = "https://esi.evetech.net/latest";
@@ -403,17 +396,14 @@ function pullPrices() {
   if (!src) throw new Error('Missing "' + STOCK_SHEET_NAME + '" sheet.');
   if (src.getLastRow() < 2) throw new Error('"' + STOCK_SHEET_NAME + '" sheet is empty.');
 
-  // Skip header row. Read SKUs from A2:A and Types from N2:N (user-managed).
+  // Skip header row. Read SKUs from A2:A.
   const lastRow = src.getLastRow();
   const aValues = src.getRange(2, 1, lastRow - 1, 1).getValues().flat();
-  const nValues = src.getRange(2, 14, lastRow - 1, 1).getValues().flat();
   const skus = [];
-  const typeBySku = {};
   for (let i = 0; i < aValues.length; i++) {
     const sku = String(aValues[i] || "").trim();
     if (!sku) continue;
     skus.push(sku);
-    typeBySku[sku] = String(nValues[i] || "").trim().toLowerCase();
   }
 
   // SKU "sylramic-fibers" -> query name "sylramic fibers"
@@ -441,8 +431,8 @@ function pullPrices() {
     (data.inventory_types || []).forEach(t => typeIds[t.name.toLowerCase()] = t.id);
   }
 
-  // 2. Fetch access token once. Used for both C-J6MT structure orders and
-  //    the authed character's asset list. If auth fails, both are skipped.
+  // 2. Fetch access token once. Used for C-J6MT structure orders and the
+  //    corporation's asset list. If auth fails, both are skipped.
   let accessToken = null;
   let tokenError = null;
   try {
@@ -464,55 +454,28 @@ function pullPrices() {
     }
   }
 
-  // 2b. Character assets summed by type_id (across all locations).
-  let charStockByType = {};
-  let assetsError = tokenError;
-  let charId = null;
+  // 2b. Corporation "Sales" hangar across all corp offices, used to overwrite
+  //     Stock!B. Needs Director role + the corp asset & divisions scopes.
+  let salesStockByType = null;  // null = couldn't read (don't overwrite B)
+  let salesError = tokenError;
   if (accessToken) {
     try {
-      charId = getCharacterIdFromToken(accessToken);
-      const assets = fetchCharacterAssets(charId, accessToken);
-      for (const a of assets) {
-        charStockByType[a.type_id] = (charStockByType[a.type_id] || 0) + (a.quantity || 0);
-      }
-    } catch (e) {
-      assetsError = e.message;
-      Logger.log("Char assets skipped: " + assetsError);
-    }
-  }
-
-  // 2c. Corporation assets summed by type_id, and items in the "Sales" hangar
-  //     division across all corp offices (used to overwrite Stock!B for
-  //     material rows). Needs Director role + the corp asset & divisions scopes.
-  let corpStockByType = {};
-  let salesStockByType = null;  // null = couldn't read (don't overwrite B)
-  let corpError = tokenError;
-  let salesError = tokenError;
-  if (accessToken && charId) {
-    try {
+      const charId = getCharacterIdFromToken(accessToken);
       const corpId = fetchCorporationId(charId);
       const assets = fetchCorporationAssets(corpId, accessToken);
+      const divisions = fetchCorpDivisions(corpId, accessToken);
+      const sales = divisions.find(d => String(d.name || "").trim().toLowerCase() === "sales");
+      if (!sales) throw new Error('No hangar division named "Sales".');
+      const flag = "CorpSAG" + sales.division;
+      salesStockByType = {};
       for (const a of assets) {
-        corpStockByType[a.type_id] = (corpStockByType[a.type_id] || 0) + (a.quantity || 0);
-      }
-      try {
-        const divisions = fetchCorpDivisions(corpId, accessToken);
-        const sales = divisions.find(d => String(d.name || "").trim().toLowerCase() === "sales");
-        if (!sales) throw new Error('No hangar division named "Sales".');
-        const flag = "CorpSAG" + sales.division;
-        salesStockByType = {};
-        for (const a of assets) {
-          if (a.location_flag === flag) {
-            salesStockByType[a.type_id] = (salesStockByType[a.type_id] || 0) + (a.quantity || 0);
-          }
+        if (a.location_flag === flag) {
+          salesStockByType[a.type_id] = (salesStockByType[a.type_id] || 0) + (a.quantity || 0);
         }
-      } catch (e) {
-        salesError = e.message;
-        Logger.log("Sales hangar skipped: " + salesError);
       }
     } catch (e) {
-      corpError = e.message;
-      Logger.log("Corp assets skipped: " + corpError);
+      salesError = e.message;
+      Logger.log("Sales hangar skipped: " + salesError);
     }
   }
 
@@ -522,16 +485,15 @@ function pullPrices() {
     { label: "C-J6MT", structure: true }
   ];
 
-  // 3. Per item: 6 hub prices + char inventory + corp inventory go to F:M.
-  //    For material rows we also rewrite Stock!B to the Sales hangar count
-  //    (if Sales was found). Build the new B column by starting from current
-  //    values and updating only material rows — atomic single write.
+  // 3. Per item: 6 hub prices go to F:K. Stock!B is rewritten to the Sales
+  //    hangar count for every row (if Sales was found). Build the new B by
+  //    starting from current values — atomic single write.
   const currentB = src.getRange(2, 2, skus.length, 1).getValues();
   const priceRows = [];
   for (let i = 0; i < skus.length; i++) {
     const sku = skus[i];
     const tid = typeIds[skuToQuery[sku].toLowerCase()];
-    if (!tid) { priceRows.push(["", "", "", "", "", "", "", ""]); continue; }
+    if (!tid) { priceRows.push(["", "", "", "", "", ""]); continue; }
 
     const row = [];
     for (const hub of HUBS) {
@@ -543,42 +505,39 @@ function pullPrices() {
       row.push(buys.length  ? Math.max(...buys)  : "");
       row.push(sells.length ? Math.min(...sells) : "");
     }
-    row.push(charStockByType[tid] || 0);
-    row.push(corpStockByType[tid] || 0);
     priceRows.push(row);
 
-    const isMaterial = typeBySku[sku] === "material" || typeBySku[sku] === "materials";
-    if (isMaterial && salesStockByType) {
+    if (salesStockByType) {
       currentB[i][0] = salesStockByType[tid] || 0;
     }
   }
 
-  const mainHeaders = ["Jita Buy", "Jita Sell", "Amarr Buy", "Amarr Sell", "C-J6MT Buy", "C-J6MT Sell", "Char Stock", "Corp Stock"];
+  const mainHeaders = ["Jita Buy", "Jita Sell", "Amarr Buy", "Amarr Sell", "C-J6MT Buy", "C-J6MT Sell"];
   src.getRange(1, 6, 1, mainHeaders.length).setValues([mainHeaders]).setFontWeight("bold");
   src.getRange(2, 6, priceRows.length, mainHeaders.length).setValues(priceRows);
   if (salesStockByType) src.getRange(2, 2, currentB.length, 1).setValues(currentB);
 
-  // Clear old Sale Stock column header/data if it lingers from a previous version.
-  src.getRange(1, 15, src.getMaxRows(), 1).clearContent().clearNote();
-
   if (cjError)     src.getRange(1, 10).setNote("C-J6MT skipped: " + cjError);
-  if (assetsError) src.getRange(1, 12).setNote("Char Stock skipped: " + assetsError);
-  if (corpError)   src.getRange(1, 13).setNote("Corp Stock skipped: " + corpError);
-  if (salesError && !corpError) src.getRange(1, 2).setNote("Sales hangar: " + salesError);
+  if (salesError && !cjError) src.getRange(1, 2).setNote("Sales hangar: " + salesError);
 }
 
 // ESI fetch with automatic 420 (rate limit) backoff and error-budget awareness.
-// On 420 it waits for X-Esi-Error-Limit-Reset seconds (capped) and retries once.
+// On 420 it waits for X-Esi-Error-Limit-Reset seconds (capped) and retries.
+// On 502/503/504 (transient upstream errors — ESI can't reach Tranquility) it
+// retries with exponential backoff up to 3 times.
 // If less than 10 errors remain in the budget, it pauses briefly to let it recover.
 function esiFetch(url, options) {
   options = options || { muteHttpExceptions: true };
   if (!options.muteHttpExceptions) options.muteHttpExceptions = true;
 
-  for (let attempt = 0; attempt < 2; attempt++) {
+  const MAX_ATTEMPTS = 4;
+  let lastResp = null;
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     const resp = UrlFetchApp.fetch(url, options);
     const code = resp.getResponseCode();
     const hdrs = resp.getHeaders();
     const remain = parseInt(hdrs["x-esi-error-limit-remain"] || hdrs["X-Esi-Error-Limit-Remain"] || "100", 10);
+    lastResp = resp;
 
     if (code === 420) {
       const reset = parseInt(hdrs["x-esi-error-limit-reset"] || hdrs["X-Esi-Error-Limit-Reset"] || "30", 10);
@@ -587,12 +546,17 @@ function esiFetch(url, options) {
       Utilities.sleep(wait);
       continue;
     }
+    if (code === 502 || code === 503 || code === 504) {
+      const wait = Math.min(2000 * Math.pow(2, attempt), 8000);
+      Logger.log(`ESI ${code} on ${url} — sleeping ${wait/1000}s before retry (attempt ${attempt + 1}/${MAX_ATTEMPTS})`);
+      Utilities.sleep(wait);
+      continue;
+    }
     // Be polite when the error budget is nearly drained
     if (remain < 10) Utilities.sleep(2000);
     return resp;
   }
-  // Final attempt — return whatever comes back (caller decides)
-  return UrlFetchApp.fetch(url, options);
+  return lastResp;
 }
 
 function fetchRegionOrders(regionId, typeId) {
@@ -658,29 +622,6 @@ function fetchCorporationAssets(corporationId, accessToken) {
   return all;
 }
 
-function fetchCharacterAssets(characterId, accessToken) {
-  let all = [];
-  let page = 1;
-  while (true) {
-    const url = `${ESI_BASE}/characters/${characterId}/assets/?page=${page}`;
-    const resp = esiFetch(url, {
-      headers: { Authorization: "Bearer " + accessToken },
-      muteHttpExceptions: true
-    });
-    if (resp.getResponseCode() !== 200) {
-      throw new Error(`characters/${characterId}/assets HTTP ${resp.getResponseCode()}: ${resp.getContentText()}`);
-    }
-    const chunk = JSON.parse(resp.getContentText() || "[]");
-    if (!chunk.length) break;
-    all = all.concat(chunk);
-    const headers = resp.getHeaders();
-    const pages = parseInt(headers["x-pages"] || headers["X-Pages"] || "1", 10);
-    if (page >= pages) break;
-    page++;
-  }
-  return all;
-}
-
 // Decode a JWT payload (base64url) without verifying — we only need the `sub`
 // claim, which ESI sets to "CHARACTER:EVE:<id>".
 function getCharacterIdFromToken(token) {
@@ -720,16 +661,15 @@ function fetchStructureOrders(structureId, accessToken) {
 
 // === ESI OAuth ===
 //
-// One-time setup for C-J6MT + character/corp inventory + Sales hangar access:
+// One-time setup for C-J6MT prices + Sales hangar count:
 // 1) Go to https://developers.eveonline.com/applications and create an application.
 //      Connection Type: Authentication & API Access
 //      Permissions:     esi-markets.structure_markets.v1
-//                       esi-assets.read_assets.v1
 //                       esi-assets.read_corporation_assets.v1
 //                       esi-corporations.read_divisions.v1
 //      Callback URL:    https://localhost/callback   (or any URL you control)
-//    Corp Stock + Sales hangar additionally require that the authed character
-//    holds the Director role in the corporation.
+//    Sales hangar additionally requires that the authed character holds the
+//    Director role in the corporation.
 // 2) Apps Script: Project Settings → Script Properties → add three properties:
 //      EVE_CLIENT_ID       (from the app page)
 //      EVE_CLIENT_SECRET   (from the app page)
@@ -755,7 +695,7 @@ function authSetupStep1() {
     `?response_type=code` +
     `&redirect_uri=${encodeURIComponent(callback)}` +
     `&client_id=${encodeURIComponent(clientId)}` +
-    `&scope=${encodeURIComponent("esi-markets.structure_markets.v1 esi-assets.read_assets.v1 esi-assets.read_corporation_assets.v1 esi-corporations.read_divisions.v1")}` +
+    `&scope=${encodeURIComponent("esi-markets.structure_markets.v1 esi-assets.read_corporation_assets.v1 esi-corporations.read_divisions.v1")}` +
     `&state=${state}`;
   Logger.log("Open this URL in your browser, authorize, then copy the `code` query param from the redirect:");
   Logger.log(url);

@@ -18,100 +18,17 @@ document.addEventListener("DOMContentLoaded", () => {
   const orderIdErrorEl        = document.getElementById("cart-orderid-error");
   const orderEndpoint = (document.body?.dataset.stockEndpoint || "").trim();
 
-  const TURNSTILE_CONTAINER = "#cart-turnstile";
-  const TURNSTILE_SITEKEY = document.getElementById("cart-turnstile")?.dataset.sitekey || "";
-  let turnstileWidgetId = null;
-  let turnstilePending = null;
-  let cachedTurnstileToken = null;
-  let cachedTurnstileTokenAt = 0;
-  const TURNSTILE_TOKEN_MAX_AGE_MS = 4 * 60 * 1000;
-
-  function ensureTurnstileRendered() {
-    if (turnstileWidgetId !== null) return Promise.resolve();
-    if (!document.getElementById("cart-turnstile") || !TURNSTILE_SITEKEY) {
-      return Promise.reject(new Error("Turnstile container missing"));
-    }
-    return new Promise((resolve, reject) => {
-      const start = Date.now();
-      const tick = () => {
-        if (window.turnstile?.render) {
-          try {
-            turnstileWidgetId = window.turnstile.render(TURNSTILE_CONTAINER, {
-              sitekey: TURNSTILE_SITEKEY,
-              size: "invisible",
-              theme: "dark",
-              callback: (token) => {
-                if (turnstilePending) {
-                  turnstilePending.resolve(token);
-                  turnstilePending = null;
-                } else {
-                  cachedTurnstileToken = token;
-                  cachedTurnstileTokenAt = Date.now();
-                }
-              },
-              "error-callback": () => {
-                if (turnstilePending) {
-                  turnstilePending.reject(new Error("Turnstile challenge failed"));
-                  turnstilePending = null;
-                }
-              },
-              "timeout-callback": () => {
-                if (turnstilePending) {
-                  turnstilePending.reject(new Error("Turnstile timed out"));
-                  turnstilePending = null;
-                }
-              },
-            });
-            resolve();
-          } catch (e) {
-            reject(e);
-          }
-          return;
-        }
-        if (Date.now() - start > 8000) {
-          reject(new Error("Turnstile script never loaded"));
-          return;
-        }
-        setTimeout(tick, 120);
-      };
-      tick();
-    });
-  }
-
-  async function getTurnstileToken() {
-    if (cachedTurnstileToken && Date.now() - cachedTurnstileTokenAt < TURNSTILE_TOKEN_MAX_AGE_MS) {
-      const token = cachedTurnstileToken;
-      cachedTurnstileToken = null;
-      return token;
-    }
-    await ensureTurnstileRendered();
-    if (turnstilePending) {
-      turnstilePending.reject(new Error("Turnstile superseded"));
-      turnstilePending = null;
-    }
-    return new Promise((resolve, reject) => {
-      turnstilePending = { resolve, reject };
-      try {
-        window.turnstile.reset(turnstileWidgetId);
-        window.turnstile.execute(turnstileWidgetId);
-      } catch (e) {
-        turnstilePending = null;
-        reject(e);
-      }
-    });
-  }
-
   if (!cartItemsEl || !cartTotalEl) return;
 
   if (!window.ShopUtils) {
-    console.error("shop-cart.js: window.ShopUtils missing — shop-filter.js failed to load.");
+    console.error("shop-cart.js: window.ShopUtils missing — shop-utils.js failed to load.");
     return;
   }
-  if (!window.ShopStockFeed) {
-    console.error("shop-cart.js: window.ShopStockFeed missing — shop-stock-feed.js failed to load.");
+  if (!window.ShopAPI) {
+    console.error("shop-cart.js: window.ShopAPI missing — shop-api.js failed to load.");
     return;
   }
-  const { formatPrice, formatPriceLong, parsePriceToIsk } = window.ShopUtils;
+  const { formatPrice, formatPriceLong, formatPriceCompact, parsePriceToIsk } = window.ShopUtils;
   const CART_STORAGE_KEY = "itss_shop_cart_v1";
   const ORDER_ID_LENGTH = 20;
   const ORDER_ID_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -206,19 +123,6 @@ document.addEventListener("DOMContentLoaded", () => {
     return num.toLocaleString("en-US");
   }
 
-  function formatPriceCompact(value) {
-    const num = Number(value);
-    if (!Number.isFinite(num) || num === 0) return "";
-    const abs = Math.abs(num);
-    const sign = num < 0 ? "-" : "";
-    let scaled, suffix;
-    if (abs >= 1e12)      { scaled = abs / 1e12; suffix = "t"; }
-    else if (abs >= 1e9)  { scaled = abs / 1e9;  suffix = "b"; }
-    else                  { scaled = abs / 1e6;  suffix = "m"; }
-    const text = scaled.toFixed(2).replace(/\.?0+$/, "");
-    return `~${sign}${text}${suffix}`;
-  }
-
   function clampQty(rawQty) {
     const digits = parseQtyDigits(rawQty);
     const parsed = Number.parseInt(digits, 10);
@@ -235,17 +139,10 @@ document.addEventListener("DOMContentLoaded", () => {
   // ── Drawer open / close ──────────────────────────────────────────────────────
 
   function prewarmCheckout() {
-    if (ShopStockFeed.isEndpointConfigured(orderEndpoint)) {
+    if (ShopAPI.isEndpointConfigured(orderEndpoint)) {
       fetch(orderEndpoint).catch(() => {});
     }
-    const tokenFresh = cachedTurnstileToken && Date.now() - cachedTurnstileTokenAt < TURNSTILE_TOKEN_MAX_AGE_MS;
-    if (TURNSTILE_SITEKEY && !turnstilePending && !tokenFresh) {
-      ensureTurnstileRendered().then(() => {
-        if (!turnstilePending) {
-          try { window.turnstile.execute(turnstileWidgetId); } catch (_) {}
-        }
-      }).catch(() => {});
-    }
+    ShopAPI.prewarmTurnstile();
   }
 
   function openCart() {
@@ -618,7 +515,7 @@ document.addEventListener("DOMContentLoaded", () => {
     items.sort((a, b) => a.name.localeCompare(b.name));
 
     items.forEach((item) => {
-      const isShip = item.category === "ship";
+      const isShip = item.category === "ships";
       const li = document.createElement("li");
       li.className = `cart-item${isShip ? " cart-item--ship" : ""}`;
 
@@ -993,8 +890,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     // Silent re-fetch ~2s later (gives the sheet time to flush + reservations to settle).
     setTimeout(() => {
-      if (!ShopStockFeed.refreshNow) return;
-      ShopStockFeed.refreshNow(orderEndpoint).then((map) => {
+      if (!ShopAPI.refreshNow) return;
+      ShopAPI.refreshNow(orderEndpoint).then((map) => {
         if (map && map.size > 0) {
           document.dispatchEvent(new CustomEvent("shop:stock-refresh", { detail: { stockMap: map } }));
         }
@@ -1052,7 +949,7 @@ document.addEventListener("DOMContentLoaded", () => {
       } else {
         let turnstileToken;
         try {
-          turnstileToken = await getTurnstileToken();
+          turnstileToken = await ShopAPI.getTurnstileToken();
         } catch (verifyErr) {
           console.error("Turnstile verification failed.", verifyErr);
           showOrderIdError("Verification failed. Please try again.");
@@ -1060,7 +957,7 @@ document.addEventListener("DOMContentLoaded", () => {
           return;
         }
         cartCheckoutBtn.textContent = "Sending…";
-        const response = await ShopStockFeed.submitOrder(orderEndpoint, { orderId, items, turnstileToken });
+        const response = await ShopAPI.submitOrder(orderEndpoint, { orderId, items, turnstileToken });
         applyOrderSideEffects(response, items);
       }
       showGeneratedOrderId(orderId);
@@ -1070,7 +967,6 @@ document.addEventListener("DOMContentLoaded", () => {
       showOrderIdError("Couldn't reach the order server. Please retry.");
       cartCheckoutBtn.textContent = "Retry";
     } finally {
-      try { if (turnstileWidgetId !== null) window.turnstile?.reset?.(turnstileWidgetId); } catch (_) {}
       cartCheckoutBtn.disabled = false;
     }
   }
@@ -1116,7 +1012,7 @@ document.addEventListener("DOMContentLoaded", () => {
       } else {
         let turnstileToken;
         try {
-          turnstileToken = await getTurnstileToken();
+          turnstileToken = await ShopAPI.getTurnstileToken();
         } catch (verifyErr) {
           console.error("Turnstile verification failed.", verifyErr);
           if (nameErrorEl) {
@@ -1127,7 +1023,7 @@ document.addEventListener("DOMContentLoaded", () => {
           return;
         }
         cartCheckoutNameBtn.textContent = "Sending…";
-        const response = await ShopStockFeed.submitOrder(orderEndpoint, { charName, items, turnstileToken });
+        const response = await ShopAPI.submitOrder(orderEndpoint, { charName, items, turnstileToken });
         applyOrderSideEffects(response, items);
       }
       cartCheckoutNameBtn.textContent = "Placed!";
@@ -1140,7 +1036,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       cartCheckoutNameBtn.textContent = "Retry";
     } finally {
-      try { if (turnstileWidgetId !== null) window.turnstile?.reset?.(turnstileWidgetId); } catch (_) {}
       cartCheckoutNameBtn.disabled = false;
     }
   }
