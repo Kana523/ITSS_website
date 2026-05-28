@@ -522,17 +522,22 @@ function pullPrices() {
 }
 
 // ESI fetch with automatic 420 (rate limit) backoff and error-budget awareness.
-// On 420 it waits for X-Esi-Error-Limit-Reset seconds (capped) and retries once.
+// On 420 it waits for X-Esi-Error-Limit-Reset seconds (capped) and retries.
+// On 502/503/504 (transient upstream errors — ESI can't reach Tranquility) it
+// retries with exponential backoff up to 3 times.
 // If less than 10 errors remain in the budget, it pauses briefly to let it recover.
 function esiFetch(url, options) {
   options = options || { muteHttpExceptions: true };
   if (!options.muteHttpExceptions) options.muteHttpExceptions = true;
 
-  for (let attempt = 0; attempt < 2; attempt++) {
+  const MAX_ATTEMPTS = 4;
+  let lastResp = null;
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     const resp = UrlFetchApp.fetch(url, options);
     const code = resp.getResponseCode();
     const hdrs = resp.getHeaders();
     const remain = parseInt(hdrs["x-esi-error-limit-remain"] || hdrs["X-Esi-Error-Limit-Remain"] || "100", 10);
+    lastResp = resp;
 
     if (code === 420) {
       const reset = parseInt(hdrs["x-esi-error-limit-reset"] || hdrs["X-Esi-Error-Limit-Reset"] || "30", 10);
@@ -541,12 +546,17 @@ function esiFetch(url, options) {
       Utilities.sleep(wait);
       continue;
     }
+    if (code === 502 || code === 503 || code === 504) {
+      const wait = Math.min(2000 * Math.pow(2, attempt), 8000);
+      Logger.log(`ESI ${code} on ${url} — sleeping ${wait/1000}s before retry (attempt ${attempt + 1}/${MAX_ATTEMPTS})`);
+      Utilities.sleep(wait);
+      continue;
+    }
     // Be polite when the error budget is nearly drained
     if (remain < 10) Utilities.sleep(2000);
     return resp;
   }
-  // Final attempt — return whatever comes back (caller decides)
-  return UrlFetchApp.fetch(url, options);
+  return lastResp;
 }
 
 function fetchRegionOrders(regionId, typeId) {
