@@ -76,5 +76,13 @@
     return 0;
   }
 
-  window.ShopUtils = { formatPrice, formatPriceLong, formatPriceCompact, parsePriceToIsk };
+  // Canonical lookup key for an item name. Trim, lowercase, collapse internal
+  // whitespace. Hyphens are preserved (EVE has items like "Nano-Factory").
+  // Used identically on both ends (frontend catalog ↔ Apps Script sheet) so
+  // string matches work regardless of casing or stray spaces.
+  function normalizeName(value) {
+    return String(value || "").trim().toLowerCase().replace(/\s+/g, " ");
+  }
+
+  window.ShopUtils = { formatPrice, formatPriceLong, formatPriceCompact, parsePriceToIsk, normalizeName };
 })();

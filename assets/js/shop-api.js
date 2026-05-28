@@ -6,9 +6,8 @@
   const STOCK_CACHE_FRESH_AGE_MS = 15 * 60 * 1000;
   const STOCK_CACHE_FALLBACK_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 
-  function normalizeSku(value) {
-    return String(value || "").trim().toLowerCase();
-  }
+  const normalizeName = window.ShopUtils?.normalizeName
+    || ((value) => String(value || "").trim().toLowerCase().replace(/\s+/g, " "));
 
   function parseStockValue(value) {
     const parsed = Number.parseInt(String(value ?? "").trim(), 10);
@@ -28,22 +27,22 @@
       return normalized;
     }
 
-    Object.entries(payload).forEach(([sku, value]) => {
+    Object.entries(payload).forEach(([rawName, value]) => {
       if (!value || typeof value !== "object") {
-        console.warn(`Stock feed: skipping entry "${sku}" — expected object, got ${typeof value}`);
+        console.warn(`Stock feed: skipping entry "${rawName}" — expected object, got ${typeof value}`);
         return;
       }
 
-      const normalizedSku = normalizeSku(sku);
+      const key = normalizeName(rawName);
       const stock = parseStockValue(value.stock);
-      if (!normalizedSku || stock === null) {
-        console.warn(`Stock feed: skipping entry "${sku}" — missing or invalid sku/stock`);
+      if (!key || stock === null) {
+        console.warn(`Stock feed: skipping entry "${rawName}" — missing or invalid name/stock`);
         return;
       }
 
       const parsedWeeks = Number.parseInt(String(value.weeks ?? "").trim(), 10);
-      normalized.set(normalizedSku, {
-        sku: normalizedSku,
+      normalized.set(key, {
+        key,
         stock,
         price: parsePriceValue(value.price),
         nextStock: String(value.next_stock || "").trim(),
@@ -57,8 +56,8 @@
   function serializeStockMap(stockMap) {
     const serialized = {};
 
-    stockMap.forEach((record, sku) => {
-      serialized[sku] = {
+    stockMap.forEach((record, key) => {
+      serialized[key] = {
         stock: record.stock,
         price: record.price,
         next_stock: record.nextStock || "",

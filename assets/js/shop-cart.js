@@ -28,7 +28,7 @@ document.addEventListener("DOMContentLoaded", () => {
     console.error("shop-cart.js: window.ShopAPI missing — shop-api.js failed to load.");
     return;
   }
-  const { formatPrice, formatPriceLong, formatPriceCompact, parsePriceToIsk } = window.ShopUtils;
+  const { formatPrice, formatPriceLong, formatPriceCompact, parsePriceToIsk, normalizeName } = window.ShopUtils;
   const CART_STORAGE_KEY = "itss_shop_cart_v1";
   const ORDER_ID_LENGTH = 20;
   const ORDER_ID_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -68,16 +68,16 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!parsed || typeof parsed !== "object") return {};
 
       const normalized = {};
-      Object.entries(parsed).forEach(([sku, item]) => {
+      Object.entries(parsed).forEach(([rawKey, item]) => {
         if (!item || typeof item !== "object") return;
-        const safeSku   = String(item.sku  || sku || "").trim();
         const safeName  = String(item.name || "").trim();
+        const safeKey   = normalizeName(safeName || rawKey);
         const safeQty   = Number(item.qty);
         const safePrice = parsePriceToIsk(item.price, item.priceLabel);
-        if (!safeSku || !safeName || !Number.isFinite(safeQty) || safeQty < 1) return;
+        if (!safeKey || !safeName || !Number.isFinite(safeQty) || safeQty < 1) return;
 
-        normalized[safeSku] = {
-          sku:        safeSku,
+        normalized[safeKey] = {
+          key:        safeKey,
           name:       safeName,
           qty:        Math.floor(safeQty),
           price:      Number.isFinite(safePrice) ? safePrice : 0,
@@ -101,14 +101,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function getProductData(card) {
     if (!card) return null;
-    const sku = String(card.dataset.sku || "").trim();
-    if (!sku) return null;
+    const key = String(card.dataset.name || "").trim();
+    if (!key) return null;
     const name     = String(card.querySelector("h2, h3")?.textContent || "Unnamed item").trim();
     const price    = parsePriceToIsk(card.dataset.price);
     const category = String(card.dataset.category || "").trim();
     const imgEl    = card.querySelector("img");
     const img      = imgEl ? imgEl.src : "";
-    return { sku, name, price, category, img };
+    return { key, name, price, category, img };
   }
 
   const MAX_QTY = 999999999;
@@ -244,7 +244,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return { el, qtyEl };
   }
 
-  function scheduleToastVanish(entry, sku) {
+  function scheduleToastVanish(entry, key) {
     entry.vanishTimeout = setTimeout(() => {
       if (cartToggleBtn) {
         const fromRect = entry.el.getBoundingClientRect();
@@ -258,18 +258,18 @@ document.addEventListener("DOMContentLoaded", () => {
       entry.el.classList.add("cart-toast--vanishing");
       entry.removeTimeout = setTimeout(() => {
         entry.el.remove();
-        if (activeToasts.get(sku) === entry) activeToasts.delete(sku);
+        if (activeToasts.get(key) === entry) activeToasts.delete(key);
       }, TOAST_VANISH_MS);
     }, TOAST_HOLD_MS);
   }
 
   function showAddToCartToast(product) {
-    if (!product?.sku) return;
+    if (!product?.key) return;
     const container = ensureToastContainer();
-    const totalQty  = cart[product.sku]?.qty ?? 0;
+    const totalQty  = cart[product.key]?.qty ?? 0;
     const qtyText   = `×${formatQty(totalQty)} in cart`;
 
-    const existing = activeToasts.get(product.sku);
+    const existing = activeToasts.get(product.key);
     if (existing) {
       clearTimeout(existing.vanishTimeout);
       clearTimeout(existing.removeTimeout);
@@ -284,7 +284,7 @@ document.addEventListener("DOMContentLoaded", () => {
         void existing.el.offsetWidth;
         existing.el.classList.add("cart-toast--bump");
       }
-      scheduleToastVanish(existing, product.sku);
+      scheduleToastVanish(existing, product.key);
       return;
     }
 
@@ -293,29 +293,30 @@ document.addEventListener("DOMContentLoaded", () => {
     container.appendChild(built.el);
 
     const entry = { el: built.el, qtyEl: built.qtyEl };
-    activeToasts.set(product.sku, entry);
+    activeToasts.set(product.key, entry);
 
     requestAnimationFrame(() => requestAnimationFrame(() => {
       built.el.classList.add("cart-toast--visible");
     }));
 
-    scheduleToastVanish(entry, product.sku);
+    scheduleToastVanish(entry, product.key);
   }
 
   // ── Cart mutations ───────────────────────────────────────────────────────────
 
   function addToCart(product, qtyToAdd = 1) {
     if (!product) return;
-    if (!cart[product.sku]) {
-      cart[product.sku] = { ...product, qty: 0, extras: [] };
+    const { key } = product;
+    if (!cart[key]) {
+      cart[key] = { ...product, qty: 0, extras: [] };
     }
-    cart[product.sku].price    = product.price;
-    cart[product.sku].category = product.category || cart[product.sku].category;
-    cart[product.sku].img      = product.img      || cart[product.sku].img;
-    const desired = cart[product.sku].qty + clampQty(qtyToAdd);
-    const next = clampQtyToStock(product.sku, desired);
-    cart[product.sku].qty = next > 0 ? next : 0;
-    if (cart[product.sku].qty === 0) delete cart[product.sku];
+    cart[key].price    = product.price;
+    cart[key].category = product.category || cart[key].category;
+    cart[key].img      = product.img      || cart[key].img;
+    const desired = cart[key].qty + clampQty(qtyToAdd);
+    const next = clampQtyToStock(key, desired);
+    cart[key].qty = next > 0 ? next : 0;
+    if (cart[key].qty === 0) delete cart[key];
     saveCart();
     renderCart();
   }
@@ -324,8 +325,8 @@ document.addEventListener("DOMContentLoaded", () => {
     let changed = false;
     document.querySelectorAll(".display .item-card").forEach((card) => {
       const product = getProductData(card);
-      if (!product || !cart[product.sku]) return;
-      const entry = cart[product.sku];
+      if (!product || !cart[product.key]) return;
+      const entry = cart[product.key];
       if (entry.price !== product.price) {
         entry.price      = product.price;
         entry.priceLabel = formatPrice(product.price);
@@ -344,54 +345,58 @@ document.addEventListener("DOMContentLoaded", () => {
     renderCart();
   }
 
-  function getPreorderInfo(sku) {
-    const card = document.querySelector(`.display .item-card[data-sku="${CSS.escape(sku)}"]`);
+  function cardForKey(key) {
+    return document.querySelector(`.display .item-card[data-name="${CSS.escape(key)}"]`);
+  }
+
+  function getPreorderInfo(key) {
+    const card = cardForKey(key);
     if (!card || !card.classList.contains("item-card--out-of-stock")) return null;
     const weeks = Number.parseInt(card.dataset.weeks || "", 10);
     return { weeks: Number.isFinite(weeks) && weeks > 0 ? weeks : null };
   }
 
   // Reads displayed stock from the product card (kept in sync by shop-filter).
-  function getCardStock(sku) {
-    const card = document.querySelector(`.display .item-card[data-sku="${CSS.escape(sku)}"]`);
+  function getCardStock(key) {
+    const card = cardForKey(key);
     const raw  = card?.querySelector(".stock-state-count")?.dataset.stockRaw;
     const n    = Number.parseInt(raw || "", 10);
     return Number.isFinite(n) ? n : null;
   }
 
-  function isMaterialSku(sku) {
-    const card = document.querySelector(`.display .item-card[data-sku="${CSS.escape(sku)}"]`);
+  function isMaterial(key) {
+    const card = cardForKey(key);
     return (card?.dataset.category || "").trim().toLowerCase() === "materials";
   }
 
   // Material items can't exceed displayed stock. Non-materials are unrestricted
   // (the cart warning copy explains the delay).
-  function clampQtyToStock(sku, qty) {
-    if (!isMaterialSku(sku)) return qty;
-    const stock = getCardStock(sku);
+  function clampQtyToStock(key, qty) {
+    if (!isMaterial(key)) return qty;
+    const stock = getCardStock(key);
     if (stock === null) return qty;
     return Math.max(0, Math.min(qty, stock));
   }
 
-  function changeQty(sku, delta) {
-    if (!cart[sku]) return;
-    const next = clampQtyToStock(sku, cart[sku].qty + delta);
-    cart[sku].qty = next;
-    if (cart[sku].qty <= 0) delete cart[sku];
+  function changeQty(key, delta) {
+    if (!cart[key]) return;
+    const next = clampQtyToStock(key, cart[key].qty + delta);
+    cart[key].qty = next;
+    if (cart[key].qty <= 0) delete cart[key];
     saveCart();
     renderCart();
   }
 
-  function setQty(sku, qty) {
-    if (!cart[sku]) return;
-    cart[sku].qty = clampQtyToStock(sku, clampQty(qty));
-    if (cart[sku].qty <= 0) delete cart[sku];
+  function setQty(key, qty) {
+    if (!cart[key]) return;
+    cart[key].qty = clampQtyToStock(key, clampQty(qty));
+    if (cart[key].qty <= 0) delete cart[key];
     saveCart();
     renderCart();
   }
 
-  function removeItem(sku) {
-    delete cart[sku];
+  function removeItem(key) {
+    delete cart[key];
     saveCart();
     renderCart();
   }
@@ -402,40 +407,40 @@ document.addEventListener("DOMContentLoaded", () => {
     renderCart();
   }
 
-  function addExtra(sku, fitting) {
-    if (!cart[sku] || !fitting?.name) return;
-    if (!cart[sku].extras) cart[sku].extras = [];
-    const existing = cart[sku].extras.find((e) => e.name === fitting.name);
+  function addExtra(key, fitting) {
+    if (!cart[key] || !fitting?.name) return;
+    if (!cart[key].extras) cart[key].extras = [];
+    const existing = cart[key].extras.find((e) => e.name === fitting.name);
     if (existing) {
       existing.qty += 1;
       if (Number.isFinite(fitting.price)) existing.price = fitting.price;
     } else {
-      cart[sku].extras.push({ name: fitting.name, price: fitting.price, qty: 1 });
+      cart[key].extras.push({ name: fitting.name, price: fitting.price, qty: 1 });
     }
     saveCart();
     renderCart();
   }
 
-  function changeExtraQty(sku, idx, delta) {
-    const ex = cart[sku]?.extras?.[idx];
+  function changeExtraQty(key, idx, delta) {
+    const ex = cart[key]?.extras?.[idx];
     if (!ex) return;
     ex.qty += delta;
-    if (ex.qty <= 0) cart[sku].extras.splice(idx, 1);
+    if (ex.qty <= 0) cart[key].extras.splice(idx, 1);
     saveCart();
     renderCart();
   }
 
-  function setExtraQty(sku, idx, qty) {
-    const ex = cart[sku]?.extras?.[idx];
+  function setExtraQty(key, idx, qty) {
+    const ex = cart[key]?.extras?.[idx];
     if (!ex) return;
     ex.qty = clampQty(qty);
     saveCart();
     renderCart();
   }
 
-  function removeExtra(sku, idx) {
-    if (!cart[sku]?.extras) return;
-    cart[sku].extras.splice(idx, 1);
+  function removeExtra(key, idx) {
+    if (!cart[key]?.extras) return;
+    cart[key].extras.splice(idx, 1);
     saveCart();
     renderCart();
   }
@@ -539,7 +544,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const nameEl = document.createElement("span");
       nameEl.className = "cart-item-name";
       nameEl.textContent = item.name;
-      const removeBtn = makeXBtn({ cartAction: "remove", sku: item.sku }, "cart-remove-btn");
+      const removeBtn = makeXBtn({ cartAction: "remove", name: item.key }, "cart-remove-btn");
       removeBtn.setAttribute("aria-label", `Remove ${item.name}`);
       header.appendChild(nameEl);
       header.appendChild(removeBtn);
@@ -558,9 +563,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const qtyWrap = makeQtyWrap(
         item.qty,
         "lg",
-        { cartAction: "decrease", sku: item.sku },
-        { cartAction: "increase", sku: item.sku },
-        { cartQtyInput: item.sku }
+        { cartAction: "decrease", name: item.key },
+        { cartAction: "increase", name: item.key },
+        { cartQtyInput: item.key }
       );
       mainRow.appendChild(priceEl);
       mainRow.appendChild(qtyWrap);
@@ -598,18 +603,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const exControls = document.createElement("div");
             exControls.className = "cart-extra-controls";
-            exControls.appendChild(makeBtn("−", { cartAction: "extra-decrease", sku: item.sku, extraIdx: j }, "cart-action-btn cart-action-btn--sm"));
+            exControls.appendChild(makeBtn("−", { cartAction: "extra-decrease", name: item.key, extraIdx: j }, "cart-action-btn cart-action-btn--sm"));
             const exInput = document.createElement("input");
             exInput.type = "text";
             exInput.inputMode = "numeric";
             exInput.className = "cart-item-qty cart-item-qty--sm";
             exInput.value = formatQty(ex.qty);
             exInput.setAttribute("aria-label", `Quantity of ${ex.name}`);
-            exInput.dataset.cartExtraQtyInput = item.sku;
+            exInput.dataset.cartExtraQtyInput = item.key;
             exInput.dataset.extraIdx = j;
             exControls.appendChild(exInput);
-            exControls.appendChild(makeBtn("+", { cartAction: "extra-increase", sku: item.sku, extraIdx: j }, "cart-action-btn cart-action-btn--sm"));
-            exControls.appendChild(makeXBtn({ cartAction: "extra-remove", sku: item.sku, extraIdx: j }, "cart-extra-remove"));
+            exControls.appendChild(makeBtn("+", { cartAction: "extra-increase", name: item.key, extraIdx: j }, "cart-action-btn cart-action-btn--sm"));
+            exControls.appendChild(makeXBtn({ cartAction: "extra-remove", name: item.key, extraIdx: j }, "cart-extra-remove"));
 
             exRow.appendChild(exInfo);
             exRow.appendChild(exControls);
@@ -625,7 +630,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const fitSelect = document.createElement("select");
         fitSelect.className = "cart-fitting-select";
-        fitSelect.dataset.fittingSelect = item.sku;
+        fitSelect.dataset.fittingSelect = item.key;
         fitSelect.setAttribute("aria-label", `Add fitting to ${item.name}`);
 
         const placeholder = document.createElement("option");
@@ -662,10 +667,10 @@ document.addEventListener("DOMContentLoaded", () => {
       totalRow.appendChild(totalVal);
       stack.appendChild(totalRow);
 
-      const preorder = getPreorderInfo(item.sku);
-      const cardStock = getCardStock(item.sku);
+      const preorder = getPreorderInfo(item.key);
+      const cardStock = getCardStock(item.key);
       const overStock = cardStock !== null && item.qty > cardStock && cardStock > 0;
-      const sku = item.sku;
+      const key = item.key;
       if (preorder) {
         const preorderRow = document.createElement("div");
         preorderRow.className = "cart-item-preorder";
@@ -694,7 +699,7 @@ document.addEventListener("DOMContentLoaded", () => {
         icon.textContent = "!";
         const text = document.createElement("p");
         const lead = document.createElement("strong");
-        if (isMaterialSku(sku)) {
+        if (isMaterial(key)) {
           lead.textContent = `Only ${formatQty(cardStock)} available.`;
           text.appendChild(lead);
           text.appendChild(document.createTextNode(" Preorder not available for this item."));
@@ -747,15 +752,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const actionBtn = e.target.closest("[data-cart-action]");
     if (!actionBtn) return;
     const action = actionBtn.dataset.cartAction;
-    const sku    = String(actionBtn.dataset.sku || "").trim();
+    const key    = String(actionBtn.dataset.name || "").trim();
 
-    if (action === "decrease"       && sku) changeQty(sku, -1);
-    if (action === "increase"       && sku) changeQty(sku,  1);
-    if (action === "remove"         && sku) removeItem(sku);
+    if (action === "decrease"       && key) changeQty(key, -1);
+    if (action === "increase"       && key) changeQty(key,  1);
+    if (action === "remove"         && key) removeItem(key);
 
-    if (action === "extra-decrease" && sku) changeExtraQty(sku, Number(actionBtn.dataset.extraIdx), -1);
-    if (action === "extra-increase" && sku) changeExtraQty(sku, Number(actionBtn.dataset.extraIdx),  1);
-    if (action === "extra-remove"   && sku) removeExtra(sku, Number(actionBtn.dataset.extraIdx));
+    if (action === "extra-decrease" && key) changeExtraQty(key, Number(actionBtn.dataset.extraIdx), -1);
+    if (action === "extra-increase" && key) changeExtraQty(key, Number(actionBtn.dataset.extraIdx),  1);
+    if (action === "extra-remove"   && key) removeExtra(key, Number(actionBtn.dataset.extraIdx));
   });
 
   document.addEventListener("input", (e) => {
@@ -776,12 +781,12 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
     if (e.target.dataset.fittingSelect) {
-      const sku = e.target.dataset.fittingSelect;
+      const key = e.target.dataset.fittingSelect;
       const fittingName = e.target.value;
       e.target.value = "";
       if (!fittingName) return;
       const fitting = FITTINGS.find((f) => f.name === fittingName);
-      if (fitting) addExtra(sku, fitting);
+      if (fitting) addExtra(key, fitting);
     }
   });
 
@@ -857,7 +862,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function buildOrderItems() {
     return Object.values(cart).map((item) => ({
-      sku: item.sku,
       name: item.name,
       category: item.category || "",
       qty: item.qty,
@@ -874,12 +878,13 @@ document.addEventListener("DOMContentLoaded", () => {
   // the page reflects the new reservation immediately, then trigger a silent
   // background refresh so the sheet's authoritative value catches up.
   function applyOrderSideEffects(response, submittedItems) {
-    const adjustedBySku = new Map((response?.adjusted || []).map(a => [a.sku, a]));
+    const adjustedByName = new Map((response?.adjusted || []).map(a => [normalizeName(a.name), a]));
     for (const item of submittedItems) {
-      const adj = adjustedBySku.get(item.sku);
+      const key = normalizeName(item.name);
+      const adj = adjustedByName.get(key);
       const acceptedQty = adj && typeof adj.acceptedQty === "number" ? adj.acceptedQty : item.qty;
       if (acceptedQty <= 0) continue;
-      const card = document.querySelector(`.display .item-card[data-sku="${CSS.escape(item.sku)}"]`);
+      const card = document.querySelector(`.display .item-card[data-name="${CSS.escape(key)}"]`);
       const stockEl = card?.querySelector(".stock-state-count");
       if (!stockEl) continue;
       const current = Number.parseInt(stockEl.dataset.stockRaw || "0", 10);
