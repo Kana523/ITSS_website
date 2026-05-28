@@ -7,7 +7,7 @@ document.addEventListener("DOMContentLoaded", () => {
     console.error("shop-filter.js: window.ShopAPI missing — shop-api.js failed to load.");
     return;
   }
-  const { formatPrice, parsePriceToIsk } = window.ShopUtils;
+  const { formatPrice, parsePriceToIsk, normalizeName } = window.ShopUtils;
 
   // Only filter cards in the product display area
   const cards = Array.from(document.querySelectorAll(".display .item-card"));
@@ -60,10 +60,6 @@ document.addEventListener("DOMContentLoaded", () => {
     return stock;
   }
 
-  function normalizeSku(value) {
-    return String(value || "").trim().toLowerCase();
-  }
-
   function updatePriceEl(el, price) {
     if (!el) return;
     const label = formatPrice(price);
@@ -78,7 +74,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function applyStockMapToCards(stockMap) {
     cards.forEach((card) => {
-      const record = stockMap.get(cardMeta.get(card)?.sku || "");
+      const record = stockMap.get(cardMeta.get(card)?.key || "");
 
       if (record) {
         applyRemoteStock(card, record);
@@ -225,7 +221,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const name = String(card.querySelector("h2, h3")?.textContent || "").trim();
     const category = inferCategory(card);
     const sub = inferSub(card);
-    const sku = normalizeSku(card.dataset.sku);
+    const key = normalizeName(card.dataset.name);
 
     const priceEl = card.querySelector(".item-card-footer p");
 
@@ -237,12 +233,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     return {
       index,
-      sku,
+      key,
       name,
       typeLabel: sub || category,
       category,
       sub,
-      searchText: `${name.toLowerCase()} ${sku} ${category} ${sub}`.trim(),
+      searchText: `${key} ${category} ${sub}`.trim(),
       stockStateEl: card.querySelector(".stock-state"),
       stockCountEl: card.querySelector(".stock-state-count"),
       actionButtonEl: card.querySelector("[data-cart-add]"),
