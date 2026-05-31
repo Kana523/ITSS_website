@@ -33,22 +33,17 @@ main section + section {
   max-width: 280px;
   padding: 14px 18px;
   border: var(--border-md) solid transparent;
-  border-image: var(--gold-border-gradient) 1;
+  border-image: var(--border) 1;
   background:
-    radial-gradient(circle at 50% 0%, rgba(216, 176, 101, 0.18), transparent 65%),
-    linear-gradient(180deg, rgba(34, 27, 12, 0.55), rgba(8, 11, 18, 0.9));
-  box-shadow:
-    0 10px 24px rgba(0, 0, 0, 0.35),
-    0 0 20px rgba(216, 176, 101, 0.06);
+    radial-gradient(circle at 50% 0%, color-mix(in oklch, var(--text-muted) 18%, transparent), transparent 65%),
+    linear-gradient(180deg, rgba(34, 27, 12, 0.55), color-mix(in oklch, var(--space-900) 90%, transparent));
   transition: box-shadow var(--transition-fast), transform var(--transition-fast);
 }
 
 .store-more-card:hover,
 .store-more-card:focus-visible {
   transform: scale(1.03);
-  box-shadow:
-    0 16px 32px rgba(0, 0, 0, 0.5),
-    0 0 28px rgba(255, 221, 156, 0.18);
+  box-shadow: 0 0 28px color-mix(in oklch, var(--glow-gold) 18%, transparent);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -58,7 +53,7 @@ main section + section {
 }
 
 .store-more-card:focus-visible {
-  outline: var(--border-md) solid var(--text-gold-top);
+  outline: var(--border-md) solid var(--text-strong);
   outline-offset: 4px;
 }
 
@@ -84,7 +79,7 @@ main section + section {
 
 .store-more-card p {
   font-size: var(--font-small);
-  color: var(--text-gold-mid);
+  color: var(--text-muted);
   text-align: left;
   margin: 0;
 }
@@ -94,10 +89,10 @@ main section + section {
   align-items: center;
   justify-content: center;
   padding: 10px 22px;
-  border: var(--border-sm) solid var(--text-gold-top);
+  border: var(--border-sm) solid var(--text-strong);
   border-radius: var(--radius-pill);
-  background: var(--button-background);
-  color: var(--text-gold-top);
+  background: var(--surface-control);
+  color: var(--text-strong);
   font-family: var(--font-text);
   font-size: var(--font-small);
   font-weight: bold;

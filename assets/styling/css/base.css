@@ -23,41 +23,72 @@
 }
 
 :root {
-  /* Fonts */
+  /* ── Fonts ── */
   --font-title: 'Space_Grotesk', Courier, monospace;
   --font-text: 'Roboto', sans-serif;
 
-  /* Text colours */
-  --text-gold-top: #ffdd9c;
-  --text-gold-mid: #d8b065;
-  --text-gold-bottom: #ae8538;
-  --text-gold-dark: #6e4e10;
-  --text-gradient-gold: linear-gradient(to bottom, var(--text-gold-top), var(--text-gold-bottom));
+  /* ── Tier 1 · palette (raw; reference via the roles below, not directly) ── */
+  --gold-100: #ffdd9c;
+  --gold-200: #d8b065;
+  --gold-300: #ae8538;
+  --gold-400: #6e4e10;
+  --green: #8fd6a3;
+  --red: #dc3232;
+  --ink: #0a0c12;
+  --space-900: #080b12;
+  --space-700: #161c30;   /* merges former 22,28,48 / 23,30,46 / 17,23,43 / 19,24,40 */
+  --space-500: #22304a;
 
-  /* Border colours */
-  --gold-border-gradient: linear-gradient(to bottom, var(--text-gold-mid), var(--text-gold-bottom));
-  --gold-border-alternate: rgba(255, 215, 138, 0.35);
+  /* category hues — in-stock / dimmed out-of-stock (hand-picked) */
+  --cat-boats: #B878E2;
+  --cat-blueprints: #6AC0FC;
+  --cat-structures: #EB2345;
+  --cat-materials: #EDCB40;
+  --cat-misc: #69FF69;
+  --cat-boats-dim: #6A219C;
+  --cat-blueprints-dim: #0361A0;
+  --cat-structures-dim: #911D1F;
+  --cat-materials-dim: #806E00;
+  --cat-misc-dim: #007500;
 
-  /* Hover effects */
-  --surface-hover: rgba(34, 48, 74, 0.95);
+  /* ── Tier 2 · roles (reference these) ── */
+  /* text */
+  --text: var(--gold-300);            /* default body p/a/label */
+  --text-muted: var(--gold-200);      /* links, placeholders, buttons */
+  --text-strong: var(--gold-100);     /* active nav, headings, emphasis */
+  --text-disabled: var(--gold-400);   /* out-of-stock */
+  --text-on-gold: var(--ink);
+  --text-gradient: linear-gradient(to bottom, var(--gold-100), var(--gold-300));
 
-  /* Status & accent colours */
-  --accent-green: #8fd6a3;
-  --ink-on-gold: #0a0c12;
-  --danger-line: rgba(220, 50, 50, 0.6);
-  --danger-fill: rgba(220, 50, 50, 0.1);
-  --danger-fill-hover: rgba(220, 50, 50, 0.18);
+  /* surface */
+  --surface: color-mix(in oklch, var(--space-900) 86%, transparent);
+  --surface-raised: color-mix(in oklch, var(--space-700) 72%, transparent);
+  --surface-control: color-mix(in oklch, var(--ink) 85%, transparent);
+  --surface-hover: color-mix(in oklch, var(--space-500) 95%, transparent);
+  --surface-overlay: rgba(0, 0, 0, 0.65);   /* cart/modal scrim */
+
+  /* border */
+  --border: linear-gradient(to bottom, var(--gold-200), var(--gold-300));
+  --border-subtle: color-mix(in oklch, var(--gold-100) 35%, transparent);
+
+  /* header */
+  --header-bg: linear-gradient(180deg, var(--space-700) 0%, var(--space-900) 100%);
+
+  /* accent / status */
+  --accent: var(--green);             /* in-stock / success */
+  --danger: #e03232;
+  --danger-strong: #f08a8a;
   --danger-text: #e07070;
   --danger-text-hover: #ef9a9a;
-  --danger-icon: #e03232;
-  --danger-error: #f08a8a;
+  --danger-line: color-mix(in oklch, var(--red) 60%, transparent);
+  --danger-bg: color-mix(in oklch, var(--red) 10%, transparent);
+  --danger-bg-hover: color-mix(in oklch, var(--red) 18%, transparent);
 
-  /* Background colours */
-  --surface-850: rgba(8, 11, 18, 0.86);
-  --surface-700: rgba(23, 30, 46, 0.72);
-  --button-background: rgba(10, 12, 18, 0.85);
+  /* glow (drives the surviving coloured shadows) */
+  --glow-gold: var(--gold-100);
+  --glow-green: var(--accent);
 
-  /* Formatting */
+  /* ── Format ── */
   --radius-pill: 999px;
   --border-sm: 1px;
   --border-md: 2px;
@@ -72,18 +103,27 @@
 }
 
 body {
-  background-image: url(../../images/backgrounds/galaxybg.avif);
-  background-size: cover;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+}
+
+/* Galaxy backdrop pinned to the viewport (not the document) so cover sizing
+   stays near the image's native scale — sharp and identical on every page
+   regardless of length or scroll. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: url(../../images/backgrounds/galaxybg.avif) center / cover no-repeat;
 }
 
 /* Gold gradient-clipped text. Shared by headings and any element opting in via
    the utility class (cart drawer title, cart total, …). */
 :is(h1, h2, h3),
 .text-gradient-gold {
-  background: var(--text-gradient-gold);
+  background: var(--text-gradient);
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -107,7 +147,7 @@ body {
 }
 
 :is(p,a,label) {
-  color: var(--text-gold-bottom);
+  color: var(--text);
   text-decoration: none;
   font-family: var(--font-text);
 }
@@ -125,8 +165,7 @@ header {
   justify-content: space-between;
   line-height: 1;
   padding: 0 10px 0 0;
-  background:
-    linear-gradient(180deg, rgb(22, 28, 48) 0%, rgb(8, 11, 18) 100%);
+  background: var(--header-bg);
 }
 
 header a {
@@ -164,7 +203,7 @@ footer {
 
 footer a {
   font-weight: normal;
-  color: var(--text-gold-mid);
+  color: var(--text-muted);
   text-decoration: underline;
   text-underline-offset: 2px;
   transition: color var(--transition-fast);
@@ -172,11 +211,11 @@ footer a {
 
 footer a:hover,
 footer a:focus-visible {
-  color: var(--text-gold-top);
+  color: var(--text-strong);
 }
 
 nav a[aria-current="page"] {
-  color: var(--text-gold-top);
+  color: var(--text-strong);
   text-decoration: underline;
 }
 
@@ -186,8 +225,8 @@ nav a[aria-current="page"] {
   padding: 10px;
   min-width: 70px;
 
-  border: var(--border-sm) solid var(--text-gold-top);
-  color: var(--text-gold-mid);
+  border: var(--border-sm) solid var(--text-strong);
+  color: var(--text-muted);
   font-weight: bold;
   cursor: pointer;
 }
@@ -203,8 +242,8 @@ nav a[aria-current="page"] {
    own padding / box-shadow / grid placement. */
 .panel {
   border: var(--border-md) solid transparent;
-  border-image: var(--gold-border-gradient) 1;
-  background: linear-gradient(145deg, var(--surface-850), var(--surface-700));
+  border-image: var(--border) 1;
+  background: linear-gradient(145deg, var(--surface), var(--surface-raised));
 }
 
 /* Small uppercase eyebrow label above a heading. */
@@ -225,14 +264,14 @@ nav a[aria-current="page"] {
 /*Card CSS */
 .item-card {
   position: relative;
-  --cat: var(--text-gold-mid);
+  --cat: var(--text-muted);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
   min-width: 220px;
   max-width: 220px;
-  border: var(--border-md) solid var(--text-gold-bottom);
+  border: var(--border-md) solid var(--text);
   padding: 5px 0;
   transition: transform var(--transition-fast);
 }
@@ -302,7 +341,7 @@ nav a[aria-current="page"] {
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--cat);
-  background: color-mix(in oklch, var(--cat) 14%, var(--surface-850));
+  background: color-mix(in oklch, var(--cat) 14%, var(--surface));
   border-left: 1px solid color-mix(in oklch, var(--cat) 40%, transparent);
   border-bottom: 1px solid color-mix(in oklch, var(--cat) 40%, transparent);
   text-shadow: 0 0 6px color-mix(in oklch, var(--cat) 75%, transparent);
@@ -324,20 +363,20 @@ nav a[aria-current="page"] {
     inset -10px 0 16px -10px color-mix(in oklch, var(--cat) 5%, transparent);
 }
 
-.item-card--cat[data-category="boats"]       { --cat: #B878E2; }
-.item-card--cat[data-category="blueprints"]  { --cat: #6AC0FC; }
-.item-card--cat[data-category="structures"]  { --cat: #EB2345; }
-.item-card--cat[data-category="materials"]   { --cat: #EDCB40; }
-.item-card--cat[data-category="misc"]        { --cat: #69FF69; }
+.item-card--cat[data-category="boats"]       { --cat: var(--cat-boats); }
+.item-card--cat[data-category="blueprints"]  { --cat: var(--cat-blueprints); }
+.item-card--cat[data-category="structures"]  { --cat: var(--cat-structures); }
+.item-card--cat[data-category="materials"]   { --cat: var(--cat-materials); }
+.item-card--cat[data-category="misc"]        { --cat: var(--cat-misc); }
 
 /* ── Out-of-stock treatment. Home never sets this class, so home cards stay
       gold/full-opacity regardless of stock. ── */
-.item-card.item-card--out-of-stock { border-color: var(--text-gold-dark); }
-.item-card--cat.item-card--out-of-stock[data-category="boats"]       { --cat: #6A219C; }
-.item-card--cat.item-card--out-of-stock[data-category="blueprints"]  { --cat: #0361A0; }
-.item-card--cat.item-card--out-of-stock[data-category="structures"]  { --cat: #911D1F; }
-.item-card--cat.item-card--out-of-stock[data-category="materials"]   { --cat: #806E00; }
-.item-card--cat.item-card--out-of-stock[data-category="misc"]        { --cat: #007500; }
+.item-card.item-card--out-of-stock { border-color: var(--text-disabled); }
+.item-card--cat.item-card--out-of-stock[data-category="boats"]       { --cat: var(--cat-boats-dim); }
+.item-card--cat.item-card--out-of-stock[data-category="blueprints"]  { --cat: var(--cat-blueprints-dim); }
+.item-card--cat.item-card--out-of-stock[data-category="structures"]  { --cat: var(--cat-structures-dim); }
+.item-card--cat.item-card--out-of-stock[data-category="materials"]   { --cat: var(--cat-materials-dim); }
+.item-card--cat.item-card--out-of-stock[data-category="misc"]        { --cat: var(--cat-misc-dim); }
 
 .item-card--out-of-stock .stock-state[data-next-stock] {
   cursor: help;
@@ -351,9 +390,9 @@ nav a[aria-current="page"] {
   transform: translateX(-50%);
   min-width: 100px;
   padding: 8px 10px;
-  border: var(--border-sm) solid var(--text-gold-bottom);
-  background: var(--surface-850);
-  color: var(--text-gold-mid);
+  border: var(--border-sm) solid var(--text);
+  background: var(--surface);
+  color: var(--text-muted);
   font-family: var(--font-text);
   text-align: center;
 }
