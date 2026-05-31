@@ -2,43 +2,52 @@ const STOCK_SHEET_NAME    = "Stock";
 const ORDERS_SHEET_NAME   = "WebOrders";
 const ARCHIVE_SHEET_NAME  = "WebOrdersArchive";
 
-// WebOrders columns (1-indexed): orderId, status, customerRef, timestamp, sku,
-// name, category, qty, unitPrice, lineTotal, orderTotal, isExtra.
+// WebOrders columns (1-indexed): orderId, status, customerRef, timestamp,
+// key, name, category, qty, unitPrice, lineTotal, orderTotal, isExtra.
+// `key` is the normalized item name (lookup form). `name` is the display
+// name (original casing). On extra rows, `key` is the parent line's key.
 const WEBORDERS_HEADERS = [
   "orderId", "status", "customerRef", "timestamp",
-  "sku", "name", "category", "qty",
+  "key", "name", "category", "qty",
   "unitPrice", "lineTotal", "orderTotal", "isExtra"
 ];
 const STATUS_VALUES = ["New", "In progress", "Fulfilled", "Cancelled"];
 const RESERVED_STATUSES = new Set(["new", "in progress"]);
 const COMPLETED_STATUSES = new Set(["fulfilled", "cancelled"]);
 
-// Reads Stock!A:E and N. Returns per-sku: price, stock, isMaterial.
+// Canonical lookup key. Mirrors window.ShopUtils.normalizeName on the frontend.
+// Trim, lowercase, collapse internal whitespace. Hyphens preserved (EVE has
+// items like "Nano-Factory").
+function normalizeName(value) {
+  return String(value == null ? "" : value).trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+// Reads Stock!A:E. Returns Map keyed by normalizeName(col A) →
+// { stock, price, next_stock, weeks }.
 function readStockData(sheet) {
   const out = new Map();
   if (!sheet || sheet.getLastRow() < 2) return out;
   const lastRow = sheet.getLastRow();
   const ae = sheet.getRange(2, 1, lastRow - 1, 5).getValues();
-  const n  = sheet.getRange(2, 14, lastRow - 1, 1).getValues();
   for (let i = 0; i < ae.length; i++) {
-    const sku = String(ae[i][0] || "").trim().toLowerCase();
-    if (!sku) continue;
-    const type = String(n[i][0] || "").trim().toLowerCase();
-    out.set(sku, {
+    const key = normalizeName(ae[i][0]);
+    if (!key) continue;
+    out.set(key, {
       stock: toInt(ae[i][1]),
       price: toNumber(ae[i][2]),
       next_stock: toText(ae[i][3]),
-      weeks: toNumber(ae[i][4]),
-      isMaterial: type === "material" || type === "materials"
+      weeks: toNumber(ae[i][4])
     });
   }
   return out;
 }
 
-// Sums qty per sku across all WebOrders rows whose order is currently
+// Sums qty per item key across all WebOrders rows whose order is currently
 // reserved (status ∈ New / In progress). Status lives on the first row of
 // each order only; this scans twice — once to map orderId→status, then to
 // accumulate qty for reserved orders, skipping extras.
+// Reads from col F (name) so existing rows with the old dash-SKU in col E
+// stay forward-compatible — display name has always been canonical.
 function computeReservations(ordersSheet) {
   const reserved = new Map();
   if (!ordersSheet || ordersSheet.getLastRow() < 2) return reserved;
@@ -57,9 +66,9 @@ function computeReservations(ordersSheet) {
     if (!RESERVED_STATUSES.has(statusByOrder.get(orderId) || "")) continue;
     const isExtra = row[11] === true || String(row[11]).toLowerCase() === "true";
     if (isExtra) continue;
-    const sku = String(row[4] || "").trim().toLowerCase();
+    const key = normalizeName(row[5]);
     const qty = toInt(row[7]);
-    if (sku && qty) reserved.set(sku, (reserved.get(sku) || 0) + qty);
+    if (key && qty) reserved.set(key, (reserved.get(key) || 0) + qty);
   }
   return reserved;
 }
@@ -160,9 +169,9 @@ function doGet() {
   const reserved = computeReservations(ss.getSheetByName(ORDERS_SHEET_NAME));
 
   const payload = {};
-  stockData.forEach((info, sku) => {
-    const available = Math.max(0, info.stock - (reserved.get(sku) || 0));
-    payload[sku] = {
+  stockData.forEach((info, key) => {
+    const available = Math.max(0, info.stock - (reserved.get(key) || 0));
+    payload[key] = {
       stock: available,
       price: info.price,
       next_stock: info.next_stock,
@@ -217,8 +226,8 @@ function doPost(e) {
 
   const stockData = readStockData(stockSheet);
   for (const item of items) {
-    const sku = String(item.sku || "").trim().toLowerCase();
-    if (!stockData.has(sku)) return jsonResponse({ ok: false, error: "Order contains an unrecognised item." });
+    const key = normalizeName(item.name);
+    if (!stockData.has(key)) return jsonResponse({ ok: false, error: "Order contains an unrecognised item." });
   }
 
   // Lock around read-validate-write so concurrent orders can't both consume
@@ -235,31 +244,33 @@ function doPost(e) {
 
     // Pass 1: clamp materials. Lines clamped to 0 are dropped.
     for (const item of items) {
-      const sku = String(item.sku || "").trim().toLowerCase();
-      const info = stockData.get(sku);
+      const name = String(item.name || "").trim();
+      const key = normalizeName(name);
+      const info = stockData.get(key);
       const requestedQty = toInt(item.qty);
       if (requestedQty <= 0) continue;
 
+      const isMaterial = String(item.category || "").trim().toLowerCase() === "materials";
       let acceptedQty = requestedQty;
-      if (info.isMaterial) {
-        const available = Math.max(0, info.stock - (reserved.get(sku) || 0));
+      if (isMaterial) {
+        const available = Math.max(0, info.stock - (reserved.get(key) || 0));
         if (requestedQty > available) {
           acceptedQty = available;
-          adjusted.push({ sku, requestedQty, acceptedQty, isMaterial: true });
+          adjusted.push({ name, requestedQty, acceptedQty, isMaterial: true });
         }
-      } else if (requestedQty > Math.max(0, info.stock - (reserved.get(sku) || 0))) {
+      } else if (requestedQty > Math.max(0, info.stock - (reserved.get(key) || 0))) {
         // Non-material over-order — flag but don't clamp (corp will fulfill later).
         adjusted.push({
-          sku, requestedQty, acceptedQty,
+          name, requestedQty, acceptedQty,
           isMaterial: false,
-          available: Math.max(0, info.stock - (reserved.get(sku) || 0))
+          available: Math.max(0, info.stock - (reserved.get(key) || 0))
         });
       }
       if (acceptedQty <= 0) continue;
 
       lineSpecs.push({
-        sku,
-        name: String(item.name || "").trim(),
+        key,
+        name,
         category: String(item.category || "").trim(),
         qty: acceptedQty,
         unitPrice: info.price || 0,
@@ -275,30 +286,31 @@ function doPost(e) {
     const orderTotal = lineSpecs.reduce((sum, line) => {
       let total = line.unitPrice * line.qty;
       line.extras.forEach(ex => {
-        const exPrice = stockData.get(String(ex.name || "").trim().toLowerCase())?.price || 0;
+        const exPrice = stockData.get(normalizeName(ex.name))?.price || 0;
         total += exPrice * toInt(ex.qty);
       });
       return sum + total;
     }, 0);
 
-    // Build rows. Status goes only on the FIRST row of the order.
+    // Build rows. Status goes only on the FIRST row of the order. Col E
+    // stores the normalized key (lookup form); col F stores the display name.
     const rows = [];
     let isFirst = true;
     for (const line of lineSpecs) {
       const lineTotal = line.unitPrice * line.qty;
       rows.push([
         orderId, isFirst ? "New" : "", customerRef, timestamp,
-        line.sku, line.name, line.category, line.qty,
+        line.key, line.name, line.category, line.qty,
         line.unitPrice, lineTotal, orderTotal, false
       ]);
       isFirst = false;
       for (const ex of line.extras) {
         const exName  = String(ex.name || "").trim();
         const exQty   = toInt(ex.qty);
-        const exPrice = stockData.get(exName.toLowerCase())?.price || 0;
+        const exPrice = stockData.get(normalizeName(exName))?.price || 0;
         rows.push([
           orderId, "", customerRef, timestamp,
-          line.sku, exName, line.category, exQty,
+          line.key, exName, line.category, exQty,
           exPrice, exPrice * exQty, orderTotal, true
         ]);
       }
@@ -376,21 +388,17 @@ function toText(value) {
   return String(value || "").trim();
 }
 
-// Pulls best Buy/Sell prices for SKUs in column A of the "Stock" sheet from
-// Jita 4-4, Amarr VIII, and C-J6MT Keepstar, plus the authed character's
-// personal inventory and the corporation's inventory. For rows where column N
-// (Type) is "Material", Stock!B is overwritten with the count held in the
-// corporation "Sales" hangar across all corp offices. Non-material rows in B
-// are left alone (user-managed).
-// Writes to columns F:M (headers in row 1, data from row 2) plus column B for
-// materials. Column N is user-owned (Type). Columns C–E (price, next_stock,
-// weeks) are never touched.
-// SKUs are dash-separated (e.g. "sylramic-fibers"); they're converted to
-// spaces ("sylramic fibers") for the ESI name->id lookup.
+// Pulls best Buy/Sell prices for item names in column A of the "Stock" sheet
+// from Jita 4-4, Amarr VIII, and C-J6MT Keepstar. Stock!B is overwritten with
+// the count held in the corporation "Sales" hangar across all corp offices.
+// Writes to columns F:K (headers in row 1, data from row 2) plus column B.
+// Columns C–E (price, next_stock, weeks) are never touched.
+// Column A holds the real EVE item names (e.g. "Carbon Polymers",
+// "Nano-Factory") and is sent to ESI as-is. The lookup matches ESI's response
+// by normalizeName so casing/whitespace differences don't break tid resolution.
 // Jita/Amarr: public ESI, no auth. Other columns require ESI OAuth scopes:
 //   esi-markets.structure_markets.v1          (C-J6MT prices)
-//   esi-assets.read_assets.v1                 (Char Stock)
-//   esi-assets.read_corporation_assets.v1     (Corp Stock + Sales hangar)
+//   esi-assets.read_corporation_assets.v1     (Sales hangar)
 //   esi-corporations.read_divisions.v1        (find Sales hangar by name)
 // See authSetupStep1/2.
 const ESI_BASE         = "https://esi.evetech.net/latest";
@@ -403,31 +411,21 @@ function pullPrices() {
   if (!src) throw new Error('Missing "' + STOCK_SHEET_NAME + '" sheet.');
   if (src.getLastRow() < 2) throw new Error('"' + STOCK_SHEET_NAME + '" sheet is empty.');
 
-  // Skip header row. Read SKUs from A2:A and Types from N2:N (user-managed).
+  // Skip header row. Read item names from A2:A.
   const lastRow = src.getLastRow();
   const aValues = src.getRange(2, 1, lastRow - 1, 1).getValues().flat();
-  const nValues = src.getRange(2, 14, lastRow - 1, 1).getValues().flat();
-  const skus = [];
-  const typeBySku = {};
+  const names = [];
   for (let i = 0; i < aValues.length; i++) {
-    const sku = String(aValues[i] || "").trim();
-    if (!sku) continue;
-    skus.push(sku);
-    typeBySku[sku] = String(nValues[i] || "").trim().toLowerCase();
+    const name = String(aValues[i] || "").trim();
+    if (!name) continue;
+    names.push(name);
   }
 
-  // SKU "sylramic-fibers" -> query name "sylramic fibers"
-  const skuToQuery = {};
-  const queryNames = skus.map(sku => {
-    const q = sku.replace(/-/g, " ");
-    skuToQuery[sku] = q;
-    return q;
-  });
-
-  // 1. Resolve names -> type_ids
+  // 1. Resolve names -> type_ids. Send names as-is; key the result map by
+  //    normalizeName so case/whitespace differences don't miss.
   const typeIds = {};
-  for (let i = 0; i < queryNames.length; i += 500) {
-    const batch = queryNames.slice(i, i + 500);
+  for (let i = 0; i < names.length; i += 500) {
+    const batch = names.slice(i, i + 500);
     const resp = UrlFetchApp.fetch(ESI_BASE + "/universe/ids/", {
       method: "post",
       contentType: "application/json",
@@ -438,11 +436,11 @@ function pullPrices() {
       throw new Error("universe/ids failed: " + resp.getContentText());
     }
     const data = JSON.parse(resp.getContentText());
-    (data.inventory_types || []).forEach(t => typeIds[t.name.toLowerCase()] = t.id);
+    (data.inventory_types || []).forEach(t => typeIds[normalizeName(t.name)] = t.id);
   }
 
-  // 2. Fetch access token once. Used for both C-J6MT structure orders and
-  //    the authed character's asset list. If auth fails, both are skipped.
+  // 2. Fetch access token once. Used for C-J6MT structure orders and the
+  //    corporation's asset list. If auth fails, both are skipped.
   let accessToken = null;
   let tokenError = null;
   try {
@@ -464,55 +462,28 @@ function pullPrices() {
     }
   }
 
-  // 2b. Character assets summed by type_id (across all locations).
-  let charStockByType = {};
-  let assetsError = tokenError;
-  let charId = null;
+  // 2b. Corporation "Sales" hangar across all corp offices, used to overwrite
+  //     Stock!B. Needs Director role + the corp asset & divisions scopes.
+  let salesStockByType = null;  // null = couldn't read (don't overwrite B)
+  let salesError = tokenError;
   if (accessToken) {
     try {
-      charId = getCharacterIdFromToken(accessToken);
-      const assets = fetchCharacterAssets(charId, accessToken);
-      for (const a of assets) {
-        charStockByType[a.type_id] = (charStockByType[a.type_id] || 0) + (a.quantity || 0);
-      }
-    } catch (e) {
-      assetsError = e.message;
-      Logger.log("Char assets skipped: " + assetsError);
-    }
-  }
-
-  // 2c. Corporation assets summed by type_id, and items in the "Sales" hangar
-  //     division across all corp offices (used to overwrite Stock!B for
-  //     material rows). Needs Director role + the corp asset & divisions scopes.
-  let corpStockByType = {};
-  let salesStockByType = null;  // null = couldn't read (don't overwrite B)
-  let corpError = tokenError;
-  let salesError = tokenError;
-  if (accessToken && charId) {
-    try {
+      const charId = getCharacterIdFromToken(accessToken);
       const corpId = fetchCorporationId(charId);
       const assets = fetchCorporationAssets(corpId, accessToken);
+      const divisions = fetchCorpDivisions(corpId, accessToken);
+      const sales = divisions.find(d => String(d.name || "").trim().toLowerCase() === "sales");
+      if (!sales) throw new Error('No hangar division named "Sales".');
+      const flag = "CorpSAG" + sales.division;
+      salesStockByType = {};
       for (const a of assets) {
-        corpStockByType[a.type_id] = (corpStockByType[a.type_id] || 0) + (a.quantity || 0);
-      }
-      try {
-        const divisions = fetchCorpDivisions(corpId, accessToken);
-        const sales = divisions.find(d => String(d.name || "").trim().toLowerCase() === "sales");
-        if (!sales) throw new Error('No hangar division named "Sales".');
-        const flag = "CorpSAG" + sales.division;
-        salesStockByType = {};
-        for (const a of assets) {
-          if (a.location_flag === flag) {
-            salesStockByType[a.type_id] = (salesStockByType[a.type_id] || 0) + (a.quantity || 0);
-          }
+        if (a.location_flag === flag) {
+          salesStockByType[a.type_id] = (salesStockByType[a.type_id] || 0) + (a.quantity || 0);
         }
-      } catch (e) {
-        salesError = e.message;
-        Logger.log("Sales hangar skipped: " + salesError);
       }
     } catch (e) {
-      corpError = e.message;
-      Logger.log("Corp assets skipped: " + corpError);
+      salesError = e.message;
+      Logger.log("Sales hangar skipped: " + salesError);
     }
   }
 
@@ -522,16 +493,14 @@ function pullPrices() {
     { label: "C-J6MT", structure: true }
   ];
 
-  // 3. Per item: 6 hub prices + char inventory + corp inventory go to F:M.
-  //    For material rows we also rewrite Stock!B to the Sales hangar count
-  //    (if Sales was found). Build the new B column by starting from current
-  //    values and updating only material rows — atomic single write.
-  const currentB = src.getRange(2, 2, skus.length, 1).getValues();
+  // 3. Per item: 6 hub prices go to F:K. Stock!B is rewritten to the Sales
+  //    hangar count for every row (if Sales was found). Build the new B by
+  //    starting from current values — atomic single write.
+  const currentB = src.getRange(2, 2, names.length, 1).getValues();
   const priceRows = [];
-  for (let i = 0; i < skus.length; i++) {
-    const sku = skus[i];
-    const tid = typeIds[skuToQuery[sku].toLowerCase()];
-    if (!tid) { priceRows.push(["", "", "", "", "", "", "", ""]); continue; }
+  for (let i = 0; i < names.length; i++) {
+    const tid = typeIds[normalizeName(names[i])];
+    if (!tid) { priceRows.push(["", "", "", "", "", ""]); continue; }
 
     const row = [];
     for (const hub of HUBS) {
@@ -543,42 +512,39 @@ function pullPrices() {
       row.push(buys.length  ? Math.max(...buys)  : "");
       row.push(sells.length ? Math.min(...sells) : "");
     }
-    row.push(charStockByType[tid] || 0);
-    row.push(corpStockByType[tid] || 0);
     priceRows.push(row);
 
-    const isMaterial = typeBySku[sku] === "material" || typeBySku[sku] === "materials";
-    if (isMaterial && salesStockByType) {
+    if (salesStockByType) {
       currentB[i][0] = salesStockByType[tid] || 0;
     }
   }
 
-  const mainHeaders = ["Jita Buy", "Jita Sell", "Amarr Buy", "Amarr Sell", "C-J6MT Buy", "C-J6MT Sell", "Char Stock", "Corp Stock"];
+  const mainHeaders = ["Jita Buy", "Jita Sell", "Amarr Buy", "Amarr Sell", "C-J6MT Buy", "C-J6MT Sell"];
   src.getRange(1, 6, 1, mainHeaders.length).setValues([mainHeaders]).setFontWeight("bold");
   src.getRange(2, 6, priceRows.length, mainHeaders.length).setValues(priceRows);
   if (salesStockByType) src.getRange(2, 2, currentB.length, 1).setValues(currentB);
 
-  // Clear old Sale Stock column header/data if it lingers from a previous version.
-  src.getRange(1, 15, src.getMaxRows(), 1).clearContent().clearNote();
-
   if (cjError)     src.getRange(1, 10).setNote("C-J6MT skipped: " + cjError);
-  if (assetsError) src.getRange(1, 12).setNote("Char Stock skipped: " + assetsError);
-  if (corpError)   src.getRange(1, 13).setNote("Corp Stock skipped: " + corpError);
-  if (salesError && !corpError) src.getRange(1, 2).setNote("Sales hangar: " + salesError);
+  if (salesError && !cjError) src.getRange(1, 2).setNote("Sales hangar: " + salesError);
 }
 
 // ESI fetch with automatic 420 (rate limit) backoff and error-budget awareness.
-// On 420 it waits for X-Esi-Error-Limit-Reset seconds (capped) and retries once.
+// On 420 it waits for X-Esi-Error-Limit-Reset seconds (capped) and retries.
+// On 502/503/504 (transient upstream errors — ESI can't reach Tranquility) it
+// retries with exponential backoff up to 3 times.
 // If less than 10 errors remain in the budget, it pauses briefly to let it recover.
 function esiFetch(url, options) {
   options = options || { muteHttpExceptions: true };
   if (!options.muteHttpExceptions) options.muteHttpExceptions = true;
 
-  for (let attempt = 0; attempt < 2; attempt++) {
+  const MAX_ATTEMPTS = 4;
+  let lastResp = null;
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     const resp = UrlFetchApp.fetch(url, options);
     const code = resp.getResponseCode();
     const hdrs = resp.getHeaders();
     const remain = parseInt(hdrs["x-esi-error-limit-remain"] || hdrs["X-Esi-Error-Limit-Remain"] || "100", 10);
+    lastResp = resp;
 
     if (code === 420) {
       const reset = parseInt(hdrs["x-esi-error-limit-reset"] || hdrs["X-Esi-Error-Limit-Reset"] || "30", 10);
@@ -587,12 +553,17 @@ function esiFetch(url, options) {
       Utilities.sleep(wait);
       continue;
     }
+    if (code === 502 || code === 503 || code === 504) {
+      const wait = Math.min(2000 * Math.pow(2, attempt), 8000);
+      Logger.log(`ESI ${code} on ${url} — sleeping ${wait/1000}s before retry (attempt ${attempt + 1}/${MAX_ATTEMPTS})`);
+      Utilities.sleep(wait);
+      continue;
+    }
     // Be polite when the error budget is nearly drained
     if (remain < 10) Utilities.sleep(2000);
     return resp;
   }
-  // Final attempt — return whatever comes back (caller decides)
-  return UrlFetchApp.fetch(url, options);
+  return lastResp;
 }
 
 function fetchRegionOrders(regionId, typeId) {
@@ -658,29 +629,6 @@ function fetchCorporationAssets(corporationId, accessToken) {
   return all;
 }
 
-function fetchCharacterAssets(characterId, accessToken) {
-  let all = [];
-  let page = 1;
-  while (true) {
-    const url = `${ESI_BASE}/characters/${characterId}/assets/?page=${page}`;
-    const resp = esiFetch(url, {
-      headers: { Authorization: "Bearer " + accessToken },
-      muteHttpExceptions: true
-    });
-    if (resp.getResponseCode() !== 200) {
-      throw new Error(`characters/${characterId}/assets HTTP ${resp.getResponseCode()}: ${resp.getContentText()}`);
-    }
-    const chunk = JSON.parse(resp.getContentText() || "[]");
-    if (!chunk.length) break;
-    all = all.concat(chunk);
-    const headers = resp.getHeaders();
-    const pages = parseInt(headers["x-pages"] || headers["X-Pages"] || "1", 10);
-    if (page >= pages) break;
-    page++;
-  }
-  return all;
-}
-
 // Decode a JWT payload (base64url) without verifying — we only need the `sub`
 // claim, which ESI sets to "CHARACTER:EVE:<id>".
 function getCharacterIdFromToken(token) {
@@ -720,16 +668,15 @@ function fetchStructureOrders(structureId, accessToken) {
 
 // === ESI OAuth ===
 //
-// One-time setup for C-J6MT + character/corp inventory + Sales hangar access:
+// One-time setup for C-J6MT prices + Sales hangar count:
 // 1) Go to https://developers.eveonline.com/applications and create an application.
 //      Connection Type: Authentication & API Access
 //      Permissions:     esi-markets.structure_markets.v1
-//                       esi-assets.read_assets.v1
 //                       esi-assets.read_corporation_assets.v1
 //                       esi-corporations.read_divisions.v1
 //      Callback URL:    https://localhost/callback   (or any URL you control)
-//    Corp Stock + Sales hangar additionally require that the authed character
-//    holds the Director role in the corporation.
+//    Sales hangar additionally requires that the authed character holds the
+//    Director role in the corporation.
 // 2) Apps Script: Project Settings → Script Properties → add three properties:
 //      EVE_CLIENT_ID       (from the app page)
 //      EVE_CLIENT_SECRET   (from the app page)
@@ -755,7 +702,7 @@ function authSetupStep1() {
     `?response_type=code` +
     `&redirect_uri=${encodeURIComponent(callback)}` +
     `&client_id=${encodeURIComponent(clientId)}` +
-    `&scope=${encodeURIComponent("esi-markets.structure_markets.v1 esi-assets.read_assets.v1 esi-assets.read_corporation_assets.v1 esi-corporations.read_divisions.v1")}` +
+    `&scope=${encodeURIComponent("esi-markets.structure_markets.v1 esi-assets.read_corporation_assets.v1 esi-corporations.read_divisions.v1")}` +
     `&state=${state}`;
   Logger.log("Open this URL in your browser, authorize, then copy the `code` query param from the redirect:");
   Logger.log(url);

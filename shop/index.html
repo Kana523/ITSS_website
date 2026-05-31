@@ -7,19 +7,25 @@
   <link rel="stylesheet" href="../assets/styling/css/base.css">
   <link rel="stylesheet" href="../assets/styling/css/shop.css">
 
-  <!-- shop-stock-feed.js must load before shop-filter.js: filter calls window.ShopStockFeed -->
-  <!-- shop-filter.js must load before shop-cart.js: filter fires shop:product-data-updated which cart listens to -->
-  <script src="../assets/js/shop-stock-feed.js" defer></script>
+  <!-- Load order matters:
+       shop-utils.js  → defines window.ShopUtils (price formatters/parsers)
+       shop-api.js    → defines window.ShopAPI (stock feed, order submit, Turnstile)
+       shop-catalog.js → renders product cards into .display (must run before filter/cart read the DOM)
+       shop-filter.js → fires shop:product-data-updated which shop-cart.js listens to
+       shop-cart.js   → uses ShopUtils + ShopAPI -->
+  <script src="../assets/js/shop-utils.js" defer></script>
+  <script src="../assets/js/shop-api.js" defer></script>
+  <script src="../assets/js/shop-catalog.js" defer></script>
   <script src="../assets/js/shop-filter.js" defer></script>
   <script src="../assets/js/shop-cart.js" defer></script>
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 
-  <meta name="description" content="Browse and buy ships, reaction materials, planetary materials, components and blueprints from Interstellar Systems in EVE Online.">
-  <meta name="keywords" content="EVE Online store, buy ships, blueprints, reaction materials, planetary materials, components, ISK, Interstellar Systems">
+  <meta name="description" content="Browse and buy boats, reaction materials, planetary materials, components and blueprints from Interstellar Systems in EVE Online.">
+  <meta name="keywords" content="EVE Online store, buy boats, blueprints, reaction materials, planetary materials, components, ISK, Interstellar Systems">
   <title>ITS-S Store</title>
 </head>
 
-<body data-stock-endpoint="https://script.google.com/macros/s/AKfycbwPP0jU_4atc5YK8PndnhHf_vwDaG1IJHQVEoKMpsj1jC3PZ4vd5F_zl4VKc0qaS1bG/exec">
+<body data-stock-endpoint="https://script.google.com/macros/s/AKfycbyaaO9WxF6G-KLwVg9_lOvmNbhVlXVCQRTE089G6dYlWnENFArQf_Fk-TPJncUNTETM/exec">
     <header>
       <a class="container-logo" href="../">
         <img src="../assets/images/icons/itss.png" alt="Interstellar Systems logo">
@@ -92,13 +98,19 @@
                 <svg class="perks-check" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
                   <polyline points="20 6 9 17 4 12"></polyline>
                 </svg>
-                <p>Delivery within Imperium space</p>
+                <p>All items in C-J6</p>
               </li>
               <li>
                 <svg class="perks-check" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
                   <polyline points="20 6 9 17 4 12"></polyline>
                 </svg>
                 <p>All prices are in ISK</p>
+              </li>
+              <li class="perks-note">
+                <svg class="perks-check" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <p>ME/TE is 10/20, unless stated otherwise.</p>
               </li>
             </ul>
           </div>
@@ -155,7 +167,7 @@
           id="filter-search"
           type="search"
           aria-label="Search items"
-          placeholder="Search items..."
+          placeholder="Cap, Zirnitra, Reaction..."
           autocomplete="off"
         >
       </div>
@@ -167,24 +179,24 @@
 
       <div class="filter-group">
         <div class="filter-row">
-          <input id="filter-ships" type="checkbox" value="ship" data-parent>
-          <label for="filter-ships" class="filter-label">Ships</label>
+          <input id="filter-boats" type="checkbox" value="boats" data-parent>
+          <label for="filter-boats" class="filter-label">Boats</label>
 
           <button
             type="button"
             class="filter-toggle"
-            aria-controls="ships-sub"
+            aria-controls="boats-sub"
             aria-expanded="false"
-            aria-label="Toggle Ships sub-filters"
+            aria-label="Toggle Boats sub-filters"
           ></button>
         </div>
 
-        <div id="ships-sub" class="filter-sub" hidden>
-          <label><input type="checkbox" value="ship:dreadnought" data-child> Dreadnoughts</label>
-          <label><input type="checkbox" value="ship:fax" data-child> FAX-es</label>
-          <label><input type="checkbox" value="ship:carrier" data-child> Carriers</label>
-          <label><input type="checkbox" value="ship:jump-freighter" data-child> Jump Freighters</label>
-          <label><input type="checkbox" value="ship:industrial" data-child> Industrial</label>
+        <div id="boats-sub" class="filter-sub" hidden>
+          <label><input type="checkbox" value="boats:dreadnought" data-child> Dreadnoughts</label>
+          <label><input type="checkbox" value="boats:force-auxiliary" data-child> Force Auxiliaries</label>
+          <label><input type="checkbox" value="boats:carrier" data-child> Carriers</label>
+          <label><input type="checkbox" value="boats:jump-freighter" data-child> Jump Freighters</label>
+          <label><input type="checkbox" value="boats:industrial-capital" data-child> Industrial Capitals</label>
         </div>
       </div>
 
@@ -203,8 +215,9 @@
         </div>
 
         <div id="blueprints-sub" class="filter-sub" hidden>
-          <label><input type="checkbox" value="blueprints:ships" data-child> Ships</label>
+          <label><input type="checkbox" value="blueprints:boats" data-child> Boats</label>
           <label><input type="checkbox" value="blueprints:modules" data-child> Modules</label>
+          <label><input type="checkbox" value="blueprints:component" data-child> Component</label>
           <label><input type="checkbox" value="blueprints:packs" data-child> Packs</label>
           <label><input type="checkbox" value="blueprints:other" data-child> Other</label>
         </div>
@@ -225,9 +238,9 @@
         </div>
 
         <div id="structures-sub" class="filter-sub" hidden>
-          <label><input type="checkbox" value="structures:medium" data-child> Medium</label>
-          <label><input type="checkbox" value="structures:large" data-child> Large</label>
-          <label><input type="checkbox" value="structures:x-large" data-child> X-Large</label>
+          <label><input type="checkbox" value="structures:citadel" data-child> Citadel</label>
+          <label><input type="checkbox" value="structures:engineering" data-child> Engineering</label>
+          <label><input type="checkbox" value="structures:refinery" data-child> Refinery</label>
         </div>
       </div>
 
@@ -246,8 +259,8 @@
         </div>
 
         <div id="materials-sub" class="filter-sub" hidden>
-          <label><input type="checkbox" value="materials:planetary" data-child> Planetary</label>
           <label><input type="checkbox" value="materials:reaction" data-child> Reaction</label>
+          <label><input type="checkbox" value="materials:planetary" data-child> Planetary</label>
           <label><input type="checkbox" value="materials:component" data-child> Component</label>
           <label><input type="checkbox" value="materials:fuel-block" data-child> Fuel Blocks</label>
         </div>
@@ -283,278 +296,8 @@
 
   </aside>
 
-  <!-- Right column: main display / products -->
-  <section class="display" aria-label="Products">
-    <article class="item-card" data-sku="zirnitra" data-price="4400000000" data-category="ship" data-sub="dreadnought">
-      <span class="card-badge">Dreadnought</span>
-      <h2>Zirnitra</h2>
-      <img src="../assets/images/items/ships/zirnitra-render-128.avif" alt="Zirnitra ship render">
-      <div class="text">
-        <div class="item-card-footer">
-          <p><strong>Price:</strong></p>
-          <div class="stock-state">
-            <img src="../assets/images/icons/stock.png" alt="" aria-hidden="true">
-            <p class="stock-state-count"></p>
-          </div>
-        </div>
-        <div class="item-buy-controls">
-          <button type="button" class="buy-button" data-cart-add aria-label="Add Zirnitra to cart">ADD TO CART</button>
-        </div>
-      </div>
-    </article>
-
-    <article class="item-card" data-sku="sylramic-fibers" data-price="8750000" data-category="materials" data-sub="reaction">
-      <span class="card-badge">Reaction</span>
-      <h2>Sylramic Fibers</h2>
-      <img src="../assets/images/items/materials/reaction/sylramic_fibers.avif" alt="Sylramic Fibers">
-      <div class="text">
-        <div class="item-card-footer">
-          <p><strong>Price:</strong></p>
-          <div class="stock-state">
-            <img src="../assets/images/icons/stock.png" alt="" aria-hidden="true">
-            <p class="stock-state-count"></p>
-          </div>
-        </div>
-        <div class="item-buy-controls">
-          <button type="button" class="buy-button" data-cart-add aria-label="Add Sylramic Fibers to cart">ADD TO CART</button>
-        </div>
-      </div>
-    </article>
-
-    <article class="item-card" data-sku="reinforced-carbon-fiber" data-price="12300000" data-category="blueprints">
-      <span class="card-badge">Blueprints</span>
-      <h2>Reinforced Carbon Fiber</h2>
-      <img src="../assets/images/items/materials/reaction/reinforced_carbon_fiber.avif" alt="Reinforced Carbon Fiber">
-      <div class="text">
-        <div class="item-card-footer">
-          <p><strong>Price:</strong></p>
-          <div class="stock-state">
-            <img src="../assets/images/icons/stock.png" alt="" aria-hidden="true">
-            <p class="stock-state-count"></p>
-          </div>
-        </div>
-        <div class="item-buy-controls">
-          <button type="button" class="buy-button" data-cart-add aria-label="Add Reinforced Carbon Fiber to cart">ADD TO CART</button>
-        </div>
-      </div>
-    </article>
-
-    <article class="item-card" data-sku="titanium-carbide" data-price="9600000" data-category="structures">
-      <span class="card-badge">Structures</span>
-      <h2>Titanium Carbide</h2>
-      <img src="../assets/images/items/materials/reaction/titanium_carbide.avif" alt="Titanium Carbide">
-      <div class="text">
-        <div class="item-card-footer">
-          <p><strong>Price:</strong></p>
-          <div class="stock-state">
-            <img src="../assets/images/icons/stock.png" alt="" aria-hidden="true">
-            <p class="stock-state-count"></p>
-          </div>
-        </div>
-        <div class="item-buy-controls">
-          <button type="button" class="buy-button" data-cart-add aria-label="Add Titanium Carbide to cart">ADD TO CART</button>
-        </div>
-      </div>
-    </article>
-
-    <article class="item-card" data-sku="tungsten-carbide" data-price="10100000" data-category="misc">
-      <span class="card-badge">Misc</span>
-      <h2>Tungsten Carbide</h2>
-      <img src="../assets/images/items/materials/reaction/tungsten_carbide.avif" alt="Tungsten Carbide">
-      <div class="text">
-        <div class="item-card-footer">
-          <p><strong>Price:</strong></p>
-          <div class="stock-state">
-            <img src="../assets/images/icons/stock.png" alt="" aria-hidden="true">
-            <p class="stock-state-count"></p>
-          </div>
-        </div>
-        <div class="item-buy-controls">
-          <button type="button" class="buy-button" data-cart-add aria-label="Add Tungsten Carbide to cart">ADD TO CART</button>
-        </div>
-      </div>
-    </article>
-
-    <article class="item-card" data-sku="pressurized-oxidizers" data-price="7800000" data-category="materials" data-sub="reaction">
-      <span class="card-badge">Reaction</span>
-      <h2>Pressurized Oxidizers</h2>
-      <img src="../assets/images/items/materials/reaction/pressurized_oxidizers.avif" alt="Pressurized Oxidizers">
-      <div class="text">
-        <div class="item-card-footer">
-          <p><strong>Price:</strong></p>
-          <div class="stock-state">
-            <img src="../assets/images/icons/stock.png" alt="" aria-hidden="true">
-            <p class="stock-state-count"></p>
-          </div>
-        </div>
-        <div class="item-buy-controls">
-          <button type="button" class="buy-button" data-cart-add aria-label="Add Pressurized Oxidizers to cart">ADD TO CART</button>
-        </div>
-      </div>
-    </article>
-
-    <article class="item-card" data-sku="ferrogel" data-price="15800000" data-category="materials" data-sub="reaction">
-      <span class="card-badge">Reaction</span>
-      <h2>Ferrogel</h2>
-      <img src="../assets/images/items/materials/reaction/ferrogel.avif" alt="Ferrogel">
-      <div class="text">
-        <div class="item-card-footer">
-          <p><strong>Price:</strong></p>
-          <div class="stock-state">
-            <img src="../assets/images/icons/stock.png" alt="" aria-hidden="true">
-            <p class="stock-state-count"></p>
-          </div>
-        </div>
-        <div class="item-buy-controls">
-          <button type="button" class="buy-button" data-cart-add aria-label="Add Ferrogel to cart">ADD TO CART</button>
-        </div>
-      </div>
-    </article>
-
-    <article class="item-card" data-sku="fernite-carbide" data-price="11200000" data-category="materials" data-sub="reaction">
-      <span class="card-badge">Reaction</span>
-      <h2>Fernite Carbide</h2>
-      <img src="../assets/images/items/materials/reaction/fernite_carbide.avif" alt="Fernite Carbide">
-      <div class="text">
-        <div class="item-card-footer">
-          <p><strong>Price:</strong></p>
-          <div class="stock-state">
-            <img src="../assets/images/icons/stock.png" alt="" aria-hidden="true">
-            <p class="stock-state-count"></p>
-          </div>
-        </div>
-        <div class="item-buy-controls">
-          <button type="button" class="buy-button" data-cart-add aria-label="Add Fernite Carbide to cart">ADD TO CART</button>
-        </div>
-      </div>
-    </article>
-
-    <article class="item-card" data-sku="broadcast-node" data-price="5200000" data-category="materials" data-sub="planetary">
-      <span class="card-badge">Planetary</span>
-      <h2>Broadcast Node</h2>
-      <img src="../assets/images/items/materials/planetary/broadcast_node.avif" alt="Broadcast Node">
-      <div class="text">
-        <div class="item-card-footer">
-          <p><strong>Price:</strong></p>
-          <div class="stock-state">
-            <img src="../assets/images/icons/stock.png" alt="" aria-hidden="true">
-            <p class="stock-state-count"></p>
-          </div>
-        </div>
-        <div class="item-buy-controls">
-          <button type="button" class="buy-button" data-cart-add aria-label="Add Broadcast Node to cart">ADD TO CART</button>
-        </div>
-      </div>
-    </article>
-
-    <article class="item-card" data-sku="integrity-response-drones" data-price="6100000" data-category="materials" data-sub="planetary">
-      <span class="card-badge">Planetary</span>
-      <h2>Integrity Response Drones</h2>
-      <img src="../assets/images/items/materials/planetary/integrity_response_drones.avif" alt="Integrity Response Drones">
-      <div class="text">
-        <div class="item-card-footer">
-          <p><strong>Price:</strong></p>
-          <div class="stock-state">
-            <img src="../assets/images/icons/stock.png" alt="" aria-hidden="true">
-            <p class="stock-state-count"></p>
-          </div>
-        </div>
-        <div class="item-buy-controls">
-          <button type="button" class="buy-button" data-cart-add aria-label="Add Integrity Response Drones to cart">ADD TO CART</button>
-        </div>
-      </div>
-    </article>
-
-    <article class="item-card" data-sku="sterile-conduits" data-price="4700000" data-category="materials" data-sub="planetary">
-      <span class="card-badge">Planetary</span>
-      <h2>Sterile Conduits</h2>
-      <img src="../assets/images/items/materials/planetary/sterile_conduits.avif" alt="Sterile Conduits">
-      <div class="text">
-        <div class="item-card-footer">
-          <p><strong>Price:</strong></p>
-          <div class="stock-state">
-            <img src="../assets/images/icons/stock.png" alt="" aria-hidden="true">
-            <p class="stock-state-count"></p>
-          </div>
-        </div>
-        <div class="item-buy-controls">
-          <button type="button" class="buy-button" data-cart-add aria-label="Add Sterile Conduits to cart">ADD TO CART</button>
-        </div>
-      </div>
-    </article>
-
-    <article class="item-card" data-sku="wetware-mainframe" data-price="9300000" data-category="materials" data-sub="planetary">
-      <span class="card-badge">Planetary</span>
-      <h2>Wetware Mainframe</h2>
-      <img src="../assets/images/items/materials/planetary/wetware_mainframe.avif" alt="Wetware Mainframe">
-      <div class="text">
-        <div class="item-card-footer">
-          <p><strong>Price:</strong></p>
-          <div class="stock-state">
-            <img src="../assets/images/icons/stock.png" alt="" aria-hidden="true">
-            <p class="stock-state-count"></p>
-          </div>
-        </div>
-        <div class="item-buy-controls">
-          <button type="button" class="buy-button" data-cart-add aria-label="Add Wetware Mainframe to cart">ADD TO CART</button>
-        </div>
-      </div>
-    </article>
-
-    <article class="item-card" data-sku="capital-armor-plates" data-price="68000000" data-category="materials" data-sub="component">
-      <span class="card-badge">Component</span>
-      <h2>Capital Armor Plates</h2>
-      <img src="../assets/images/items/ships/zirnitra-render-128.avif" alt="Capital Armor Plates">
-      <div class="text">
-        <div class="item-card-footer">
-          <p><strong>Price:</strong></p>
-          <div class="stock-state">
-            <img src="../assets/images/icons/stock.png" alt="" aria-hidden="true">
-            <p class="stock-state-count"></p>
-          </div>
-        </div>
-        <div class="item-buy-controls">
-          <button type="button" class="buy-button" data-cart-add aria-label="Add Capital Armor Plates to cart">ADD TO CART</button>
-        </div>
-      </div>
-    </article>
-
-    <article class="item-card" data-sku="capital-capacitor-battery" data-price="75000000" data-category="materials" data-sub="component">
-      <span class="card-badge">Component</span>
-      <h2>Capital Capacitor Battery</h2>
-      <img src="../assets/images/items/ships/zirnitra-render-128.avif" alt="Capital Capacitor Battery">
-      <div class="text">
-        <div class="item-card-footer">
-          <p><strong>Price:</strong></p>
-          <div class="stock-state">
-            <img src="../assets/images/icons/stock.png" alt="" aria-hidden="true">
-            <p class="stock-state-count"></p>
-          </div>
-        </div>
-        <div class="item-buy-controls">
-          <button type="button" class="buy-button" data-cart-add aria-label="Add Capital Capacitor Battery to cart">ADD TO CART</button>
-        </div>
-      </div>
-    </article>
-
-    <article class="item-card" data-sku="capital-cargo-bay" data-price="59000000" data-category="materials" data-sub="component">
-      <span class="card-badge">Component</span>
-      <h2>Capital Cargo Bay</h2>
-      <img src="../assets/images/items/ships/zirnitra-render-128.avif" alt="Capital Cargo Bay">
-      <div class="text">
-        <div class="item-card-footer">
-          <p><strong>Price:</strong></p>
-          <div class="stock-state">
-            <img src="../assets/images/icons/stock.png" alt="" aria-hidden="true">
-            <p class="stock-state-count"></p>
-          </div>
-        </div>
-        <div class="item-buy-controls">
-          <button type="button" class="buy-button" data-cart-add aria-label="Add Capital Cargo Bay to cart">ADD TO CART</button>
-        </div>
-      </div>
-    </article>
-  </section>
+  <!-- Right column: main display / products. Cards are injected by shop-catalog.js. -->
+  <section class="display" aria-label="Products"></section>
 
 </div>
     </main>
@@ -576,18 +319,23 @@
   <!-- Cart side drawer -->
   <aside class="cart-drawer" id="cart-drawer" hidden aria-label="Shopping cart">
     <div class="cart-drawer-header">
-      <button type="button" class="cart-drawer-close" id="cart-drawer-close" aria-label="Close cart">‹</button>
-      <span class="cart-drawer-title">Your Cart</span>
+      <button type="button" class="cart-drawer-close" id="cart-drawer-close" aria-label="Close cart">×</button>
+      <span class="cart-drawer-title text-gradient-gold">Your Cart</span>
       <span class="cart-drawer-count" id="cart-item-count">0 items</span>
     </div>
 
     <ul class="cart-items" id="cart-items" aria-live="polite" aria-label="Cart items"></ul>
 
     <div class="cart-drawer-footer">
+      <div class="cart-warning cart-preorder-summary" id="cart-preorder-summary" aria-live="polite" hidden>
+        <span class="cart-warning-icon" aria-hidden="true">!</span>
+        <p id="cart-preorder-summary-text"></p>
+      </div>
+
       <div class="cart-total-row">
         <span class="cart-total-label">Total ISK</span>
         <div class="cart-total-amounts">
-          <span class="cart-total-value" id="cart-total">0</span>
+          <span class="cart-total-value text-gradient-gold" id="cart-total">0</span>
           <span class="cart-total-compact" id="cart-total-compact"></span>
         </div>
       </div>
@@ -610,8 +358,8 @@
               <p class="cart-orderid-expiry">Orders not confirmed within <strong>7 days</strong> will be cancelled.</p>
             </div>
           </div>
-          <div class="cart-char-name-warning">
-            <span class="cart-char-name-warning-icon" aria-hidden="true">!</span>
+          <div class="cart-warning">
+            <span class="cart-warning-icon" aria-hidden="true">!</span>
             <p>Please verify your character name. Incorrect name might prevent us from delivering your order.</p>
           </div>
           <input type="text" id="cart-char-name" class="cart-identity-input" placeholder="Your character name…" autocomplete="off">

@@ -1,74 +1,13 @@
-// Shared price utilities — exposed as window.ShopUtils for shop-cart.js (which loads after this script)
-function formatPrice(value) {
-  const amount = Number(value);
-  if (!Number.isFinite(amount) || amount <= 0) return "0";
-
-  function formatUnit(divisor, suffix) {
-    const unitValue = amount / divisor;
-    const trimmed = unitValue
-      .toFixed(1)
-      .replace(/(\.\d*?[1-9])0+$/, "$1")
-      .replace(/\.0+$/, "");
-    return `${trimmed}${suffix}`;
-  }
-
-  if (amount >= 1000000000000) return formatUnit(1000000000000, "t");
-  if (amount >= 1000000000) return formatUnit(1000000000, "b");
-  if (amount >= 1000000) return formatUnit(1000000, "m");
-  if (amount >= 1000) return formatUnit(1000, "k");
-  return `${Math.round(amount)}`;
-}
-
-function parsePriceToIsk(rawValue, fallbackLabel = "") {
-  const multipliers = {
-    k: 1000,
-    thousand: 1000,
-    m: 1000000,
-    mil: 1000000,
-    million: 1000000,
-    b: 1000000000,
-    bil: 1000000000,
-    billion: 1000000000,
-    t: 1000000000000,
-    tril: 1000000000000,
-    trillion: 1000000000000
-  };
-
-  const candidates = [rawValue, fallbackLabel];
-  for (const candidate of candidates) {
-    const text = String(candidate || "").trim();
-    if (!text) continue;
-
-    const direct = Number(text.replace(/,/g, ""));
-    if (Number.isFinite(direct) && direct > 0) return direct;
-
-    const match = text.match(/^([\d.,]+)\s*([a-zA-Z]+)?\s*(?:isk)?$/i);
-    if (!match) continue;
-
-    const numericValue = Number(match[1].replace(/,/g, ""));
-    if (!Number.isFinite(numericValue) || numericValue <= 0) continue;
-
-    const unit = String(match[2] || "").toLowerCase();
-    const multiplier = unit ? (multipliers[unit] || 1) : 1;
-    return numericValue * multiplier;
-  }
-
-  return 0;
-}
-
-function formatPriceLong(value) {
-  const amount = Number(value);
-  if (!Number.isFinite(amount) || amount <= 0) return "0";
-  return Math.round(amount).toLocaleString("en-US");
-}
-
-window.ShopUtils = { formatPrice, formatPriceLong, parsePriceToIsk };
-
 document.addEventListener("DOMContentLoaded", () => {
-  if (!window.ShopStockFeed) {
-    console.error("shop-filter.js: window.ShopStockFeed missing — shop-stock-feed.js failed to load.");
+  if (!window.ShopUtils) {
+    console.error("shop-filter.js: window.ShopUtils missing — shop-utils.js failed to load.");
     return;
   }
+  if (!window.ShopAPI) {
+    console.error("shop-filter.js: window.ShopAPI missing — shop-api.js failed to load.");
+    return;
+  }
+  const { formatPrice, parsePriceToIsk, normalizeName } = window.ShopUtils;
 
   // Only filter cards in the product display area
   const cards = Array.from(document.querySelectorAll(".display .item-card"));
@@ -121,10 +60,6 @@ document.addEventListener("DOMContentLoaded", () => {
     return stock;
   }
 
-  function normalizeSku(value) {
-    return String(value || "").trim().toLowerCase();
-  }
-
   function updatePriceEl(el, price) {
     if (!el) return;
     const label = formatPrice(price);
@@ -139,7 +74,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function applyStockMapToCards(stockMap) {
     cards.forEach((card) => {
-      const record = stockMap.get(cardMeta.get(card)?.sku || "");
+      const record = stockMap.get(cardMeta.get(card)?.key || "");
 
       if (record) {
         applyRemoteStock(card, record);
@@ -195,20 +130,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const REFRESH_MIN_INTERVAL_MS = 5 * 60 * 1000;
 
-  // Local dev (file://, localhost, 127.0.0.1, *.local) bypasses the fresh-cache
-  // short-circuit so feed changes are visible on every reload.
-  const isLocalHost =
-    location.protocol === "file:" ||
-    /^(localhost|127\.0\.0\.1|\[::1\])$/i.test(location.hostname) ||
-    /\.local$/i.test(location.hostname);
-
   async function loadRemoteStock() {
-    const cachedSnapshot = ShopStockFeed.loadCachedSnapshot({ allowStale: true });
+    const cachedSnapshot = ShopAPI.loadCachedSnapshot({ allowStale: true });
     const cachedStockMap = cachedSnapshot?.records || null;
     const hasCachedStock = cachedStockMap instanceof Map && cachedStockMap.size > 0;
     const cachedAt = Number(cachedSnapshot?.cachedAt);
+    // Local dev bypasses the fresh-cache short-circuit so feed changes show on every reload.
     const hasFreshCache =
-      !isLocalHost &&
+      !ShopUtils.isLocalHost() &&
       Number.isFinite(cachedAt) && Date.now() - cachedAt < REFRESH_MIN_INTERVAL_MS;
 
     if (hasCachedStock) {
@@ -224,12 +153,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     setProductDataStatus("Updating stock and prices");
 
-    if (!ShopStockFeed.isEndpointConfigured(stockEndpoint)) return;
+    if (!ShopAPI.isEndpointConfigured(stockEndpoint)) return;
 
     try {
-      const stockMap = await ShopStockFeed.fetchRemote(stockEndpoint);
+      const stockMap = await ShopAPI.fetchRemote(stockEndpoint);
 
-      ShopStockFeed.saveCache(stockMap);
+      ShopAPI.saveCache(stockMap);
       applyStockMapToCards(stockMap);
 
       document.dispatchEvent(new CustomEvent("shop:product-data-updated"));
@@ -286,7 +215,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const name = String(card.querySelector("h2, h3")?.textContent || "").trim();
     const category = inferCategory(card);
     const sub = inferSub(card);
-    const sku = normalizeSku(card.dataset.sku);
+    const key = normalizeName(card.dataset.name);
 
     const priceEl = card.querySelector(".item-card-footer p");
 
@@ -298,12 +227,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     return {
       index,
-      sku,
+      key,
       name,
       typeLabel: sub || category,
       category,
       sub,
-      searchText: `${name.toLowerCase()} ${sku} ${category} ${sub}`.trim(),
+      searchText: `${key} ${category} ${sub}`.trim(),
       stockStateEl: card.querySelector(".stock-state"),
       stockCountEl: card.querySelector(".stock-state-count"),
       actionButtonEl: card.querySelector("[data-cart-add]"),
@@ -482,7 +411,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (resultsCountEl) {
       const noun = shownCount === 1 ? "item" : "items";
-      resultsCountEl.textContent = `Showing ${shownCount} ${noun}`;
+      resultsCountEl.innerHTML = `Showing <strong>${shownCount}</strong> ${noun}`;
     }
 
     balanceCardRows();

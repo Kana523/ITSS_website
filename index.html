@@ -7,20 +7,23 @@
   <link rel="stylesheet" href="assets/styling/css/base.css">
   <link rel="stylesheet" href="assets/styling/css/home.css">
 
-  
-  <meta name="description" content="Interstellar Systems — an EVE Online corporation selling ships, materials, blueprints and more. Organically grown space boats.">
-  <meta name="keywords" content="EVE Online, corporation, ships, blueprints, materials, ISK, store, space boats, Interstellar Systems">
+  <!-- Highlights row reuses the shop catalog + stock feed:
+       shop-utils.js    → window.ShopUtils (formatters)
+       shop-api.js      → window.ShopAPI (stock feed cache/fetch)
+       shop-catalog.js  → window.ShopCatalog (shared product data, no-ops rendering off-shop)
+       home-highlights.js → renders capital-boat highlight cards into .container-items -->
+  <script src="assets/js/shop-utils.js" defer></script>
+  <script src="assets/js/shop-api.js" defer></script>
+  <script src="assets/js/shop-catalog.js" defer></script>
+  <script src="assets/js/home-highlights.js" defer></script>
+
+  <meta name="description" content="Interstellar Systems — an EVE Online corporation selling boats, materials, blueprints and more. Organically grown space boats.">
+  <meta name="keywords" content="EVE Online, corporation, boats, blueprints, materials, ISK, store, space boats, Interstellar Systems">
   <title>ITS-S Home</title>
-  
+
 </head>
 
-<!--Fonts to use: Roboto, Courier New...
-      Complete home page, Home page: News, discounts, upcoming, etc etc. add header on top, footer bottom, nav under header, re-organise content a bit
-            shopping cart function, add to cart, emails, removes from site etc. removes from stock
-            Buy/reserve button next to boat on home page
--->
-
-<body>
+<body data-stock-endpoint="https://script.google.com/macros/s/AKfycbyaaO9WxF6G-KLwVg9_lOvmNbhVlXVCQRTE089G6dYlWnENFArQf_Fk-TPJncUNTETM/exec">
     <header>
       <a class="container-logo" href="./">
         <img src="assets/images/icons/itss.png" alt="Interstellar Systems logo">
@@ -43,73 +46,10 @@
       <section>
         <h1>Highlights</h1>
 
-        <div class="container-items">
-
-          <article class="item-card" data-sku="capital-ancillary-current-router-ii-rum" data-price="6400000" data-category="materials" data-sub="planetary">
-            <h2>Capital Ancillary Current Router II</h2>
-            <p>Materials</p>
-            <img src="assets/images/items/ships/zirnitra-render-128.avif" alt="Tritanium image">
-
-            <div class="text">
-              <div class="item-card-footer">
-                <p><strong>Price:</strong> 6.4mil</p>
-
-                <div class="stock-state" aria-label="In stock: 12"> <!--TODO add a script that changes this stock number based on stock-->
-                  <!-- TODO add a hover option of when next stock is available-->
-                  <img src="assets/images/icons/stock.png" alt="stock icon" aria-hidden="true">
-                  <p class="stock-state-count" aria-hidden="true">12</p>
-                </div>
-              </div>
-
-              <div class="item-buy-controls">
-                <button type="button" class="buy-button" data-cart-add>BUY</button>
-              </div>
-            </div>
-          </article>
-
-          <article class="item-card" data-sku="capital-ancillary-current-router-ii-rum" data-price="6400000" data-category="materials" data-sub="planetary">
-            <h2>Capital Ancillary Current Router II</h2>
-            <p>Materials</p>
-            <img src="assets/images/items/ships/zirnitra-render-128.avif" alt="Tritanium image">
-
-            <div class="text">
-              <div class="item-card-footer">
-                <p><strong>Price:</strong> 6.4mil</p>
-
-                <div class="stock-state" aria-label="In stock: 12"> <!--TODO add a script that changes this stock number based on stock-->
-                  <!-- TODO add a hover option of when next stock is available-->
-                  <img src="assets/images/icons/stock.png" alt="stock icon" aria-hidden="true">
-                  <p class="stock-state-count" aria-hidden="true">12</p>
-                </div>
-              </div>
-
-              <div class="item-buy-controls">
-                <button type="button" class="buy-button" data-cart-add>BUY</button>
-              </div>
-            </div>
-          </article>
-
-          <article class="item-card" data-sku="capital-ancillary-current-router-ii-rum" data-price="6400000" data-category="materials" data-sub="planetary">
-            <h2>Capital Ancillary Current Router II</h2>
-            <p>Materials</p>
-            <img src="assets/images/items/ships/zirnitra-render-128.avif" alt="Tritanium image">
-
-            <div class="text">
-              <div class="item-card-footer">
-                <p><strong>Price:</strong> 6.4mil</p>
-
-                <div class="stock-state" aria-label="In stock: 12"> <!--TODO add a script that changes this stock number based on stock-->
-                  <!-- TODO add a hover option of when next stock is available-->
-                  <img src="assets/images/icons/stock.png" alt="stock icon" aria-hidden="true">
-                  <p class="stock-state-count" aria-hidden="true">12</p>
-                </div>
-              </div>
-
-              <div class="item-buy-controls">
-                <button type="button" class="buy-button" data-cart-add>BUY</button>
-              </div>
-            </div>
-          </article>
+        <!-- Capital-boat highlight cards are injected before the "Store has more"
+             card by home-highlights.js. In-stock capitals come first, the rest
+             are random fillers. Each card links to the store with ?add= intent. -->
+        <div class="container-items" data-highlights>
 
           <a class="store-more-card" href="shop/" aria-label="Visit the store for more items">
             <h2>Store has more</h2>
@@ -125,22 +65,21 @@
         </div>
       </section>
 
-      <section style="margin-top: 50px;">
+      <section>
         <h1>Sell your materials</h1>
 
         <div class="container-items">
 
-          <article class="item-card" data-sku="capital-ancillary-current-router-ii-rum" data-price="6400000" data-category="materials" data-sub="planetary">
+          <article class="item-card" data-price="6400000" data-category="materials" data-sub="planetary">
             <h2>Capital Ancillary Current Router II</h2>
             <p>Materials</p>
-            <img src="assets/images/items/ships/zirnitra-render-128.avif" alt="Tritanium image">
+            <img src="assets/images/items/boats/zirnitra-render-128.avif" alt="Tritanium image" width="128" height="128" loading="lazy" decoding="async">
 
             <div class="text">
               <div class="item-card-footer">
                 <p><strong>Price:</strong> 6.4mil</p>
 
-                <div class="stock-state" aria-label="In stock: 12"> <!--TODO add a script that changes this stock number based on stock-->
-                  <!-- TODO add a hover option of when next stock is available-->
+                <div class="stock-state" aria-label="In stock: 12">
                   <img src="assets/images/icons/stock.png" alt="stock icon" aria-hidden="true">
                   <p class="stock-state-count" aria-hidden="true">12</p>
                 </div>
@@ -152,17 +91,16 @@
             </div>
           </article>
 
-          <article class="item-card" data-sku="capital-ancillary-current-router-ii-rum" data-price="6400000" data-category="materials" data-sub="planetary">
+          <article class="item-card" data-price="6400000" data-category="materials" data-sub="planetary">
             <h2>Capital Ancillary Current Router II</h2>
             <p>Materials</p>
-            <img src="assets/images/items/ships/zirnitra-render-128.avif" alt="Tritanium image">
+            <img src="assets/images/items/boats/zirnitra-render-128.avif" alt="Tritanium image" width="128" height="128" loading="lazy" decoding="async">
 
             <div class="text">
               <div class="item-card-footer">
                 <p><strong>Price:</strong> 6.4mil</p>
 
-                <div class="stock-state" aria-label="In stock: 12"> <!--TODO add a script that changes this stock number based on stock-->
-                  <!-- TODO add a hover option of when next stock is available-->
+                <div class="stock-state" aria-label="In stock: 12">
                   <img src="assets/images/icons/stock.png" alt="stock icon" aria-hidden="true">
                   <p class="stock-state-count" aria-hidden="true">12</p>
                 </div>
@@ -174,17 +112,16 @@
             </div>
           </article>
 
-          <article class="item-card" data-sku="capital-ancillary-current-router-ii-rum" data-price="6400000" data-category="materials" data-sub="planetary">
+          <article class="item-card" data-price="6400000" data-category="materials" data-sub="planetary">
             <h2>Capital Ancillary Current Router II</h2>
             <p>Materials</p>
-            <img src="assets/images/items/ships/zirnitra-render-128.avif" alt="Tritanium image">
+            <img src="assets/images/items/boats/zirnitra-render-128.avif" alt="Tritanium image" width="128" height="128" loading="lazy" decoding="async">
 
             <div class="text">
               <div class="item-card-footer">
                 <p><strong>Price:</strong> 6.4mil</p>
 
-                <div class="stock-state" aria-label="In stock: 12"> <!--TODO add a script that changes this stock number based on stock-->
-                  <!-- TODO add a hover option of when next stock is available-->
+                <div class="stock-state" aria-label="In stock: 12">
                   <img src="assets/images/icons/stock.png" alt="stock icon" aria-hidden="true">
                   <p class="stock-state-count" aria-hidden="true">12</p>
                 </div>

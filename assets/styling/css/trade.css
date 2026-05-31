@@ -1,8 +1,6 @@
-﻿.buyback-page {
-  width: min(1120px, calc(100% - 32px));
-  margin: 28px auto 40px;
-  display: flex;
-  flex-direction: column;
+﻿/* layout from .page-narrow */
+.buyback-page {
+  max-width: 1120px;
   gap: 20px;
 }
 
@@ -14,13 +12,6 @@
   border: var(--border-sm) solid var(--gold-border-alternate);
   background: linear-gradient(135deg, var(--surface-850), var(--surface-700));
   box-shadow: 0 0 24px var(--surface-850);
-}
-
-.buyback-kicker {
-  font-family: var(--font-text);
-  font-size: 0.8rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
 }
 
 .buyback-copy {
