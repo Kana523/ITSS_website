@@ -10,25 +10,24 @@
   //      "Nano-Factory"    → nano_factory.avif)
   //   - non-materials without `image` will render a broken <img> (must specify)
   const CATALOG = [
-    { name: "Zirnitra",                  category: "ships",      sub: "dreadnought",        price: 4_400_000_000, image: "ships/zirnitra-render-128.avif" },
-    { name: "Moros",                     category: "ships",      sub: "dreadnought",        price:             0, image: "ships/zirnitra-render-128.avif" },
-    { name: "Naglfar",                   category: "ships",      sub: "dreadnought",        price:             0, image: "ships/zirnitra-render-128.avif" },
-    { name: "Phoenix",                   category: "ships",      sub: "dreadnought",        price:             0, image: "ships/zirnitra-render-128.avif" },
-    { name: "Revelation",                category: "ships",      sub: "dreadnought",        price:             0, image: "ships/zirnitra-render-128.avif" },
-    { name: "Apostle",                   category: "ships",      sub: "force-auxiliary",    price:             0, image: "ships/zirnitra-render-128.avif" },
-    { name: "Minokawa",                  category: "ships",      sub: "force-auxiliary",    price:             0, image: "ships/zirnitra-render-128.avif" },
-    { name: "Ninazu",                    category: "ships",      sub: "force-auxiliary",    price:             0, image: "ships/zirnitra-render-128.avif" },
-    { name: "Lif",                       category: "ships",      sub: "force-auxiliary",    price:             0, image: "ships/zirnitra-render-128.avif" },
-    { name: "Ark",                       category: "ships",      sub: "jump-freighter",     price:             0, image: "ships/zirnitra-render-128.avif" },
-    { name: "Rhea",                      category: "ships",      sub: "jump-freighter",     price:             0, image: "ships/zirnitra-render-128.avif" },
-    { name: "Anshar",                    category: "ships",      sub: "jump-freighter",     price:             0, image: "ships/zirnitra-render-128.avif" },
-    { name: "Nomad",                     category: "ships",      sub: "jump-freighter",     price:             0, image: "ships/zirnitra-render-128.avif" },
-    { name: "Rorqual",                   category: "ships",      sub: "industrial-capital", price:             0, image: "ships/zirnitra-render-128.avif" },
-    { name: "Astrahus",                  category: "structures", sub: "citadel",            price:             0 },
-    { name: "Raitaru",                   category: "structures", sub: "engineering",        price:             0 },
-    { name: "Athanor",                   category: "structures", sub: "refinery",           price:             0 },
+    { name: "Zirnitra",                  category: "boats",      sub: "dreadnought",        price: 4_400_000_000, image: "boats/zirnitra-render-256.avif" },
+    { name: "Moros",                     category: "boats",      sub: "dreadnought",        price:             0, image: "boats/moros-render-256.avif" },
+    { name: "Naglfar",                   category: "boats",      sub: "dreadnought",        price:             0, image: "boats/naglfar-render-256.avif" },
+    { name: "Phoenix",                   category: "boats",      sub: "dreadnought",        price:             0, image: "boats/phoenix-render-256.avif" },
+    { name: "Revelation",                category: "boats",      sub: "dreadnought",        price:             0, image: "boats/revelation-render-256.avif" },
+    { name: "Apostle",                   category: "boats",      sub: "force-auxiliary",    price:             0, image: "boats/apostle-render-256.avif" },
+    { name: "Minokawa",                  category: "boats",      sub: "force-auxiliary",    price:             0, image: "boats/minokawa-render-256.avif" },
+    { name: "Ninazu",                    category: "boats",      sub: "force-auxiliary",    price:             0, image: "boats/ninazu-render-256.avif" },
+    { name: "Lif",                       category: "boats",      sub: "force-auxiliary",    price:             0, image: "boats/lif-render-256.avif" },
+    { name: "Ark",                       category: "boats",      sub: "jump-freighter",     price:             0, image: "boats/ark-render-256.avif" },
+    { name: "Rhea",                      category: "boats",      sub: "jump-freighter",     price:             0, image: "boats/rhea-render-256.avif" },
+    { name: "Anshar",                    category: "boats",      sub: "jump-freighter",     price:             0, image: "boats/anshar-render-256.avif" },
+    { name: "Nomad",                     category: "boats",      sub: "jump-freighter",     price:             0, image: "boats/nomad-render-256.avif" },
+    { name: "Rorqual",                   category: "boats",      sub: "industrial-capital", price:             0, image: "boats/rorqual-render-256.avif" },
+    { name: "Astrahus",                  category: "structures", sub: "citadel",            price:             0, image: "structures/astrahus-render-256.avif" },
+    { name: "Raitaru",                   category: "structures", sub: "engineering",        price:             0, image: "structures/raitaru-render-256.avif" },
+    { name: "Athanor",                   category: "structures", sub: "refinery",           price:             0, image: "structures/athanor-render-256.avif" },
     { name: "Carbon Polymers",           category: "materials",  sub: "reaction",  price:             0 },
-    { name: "Ceramic Fibers",            category: "materials",  sub: "reaction",  price:             0 },
     { name: "Fermionic Condensates",     category: "materials",  sub: "reaction",  price:             0 },
     { name: "Fluxed Condensates",        category: "materials",  sub: "reaction",  price:             0 },
     { name: "Hypersynaptic Fibers",      category: "materials",  sub: "reaction",  price:             0 },
@@ -53,18 +52,32 @@
     { name: "Self-Harmonizing Power Core", category: "materials",  sub: "planetary", price:             0 },
     { name: "Sterile Conduits",            category: "materials",  sub: "planetary", price:      4_700_000 },
     { name: "Wetware Mainframe",           category: "materials",  sub: "planetary", price:      9_300_000 },
-    { name: "Capital Armor Plates",      category: "materials",  sub: "component", price:     68_000_000, image: "ships/zirnitra-render-128.avif" },
-    { name: "Capital Capacitor Battery", category: "materials",  sub: "component", price:     75_000_000, image: "ships/zirnitra-render-128.avif" },
-    { name: "Capital Cargo Bay",         category: "materials",  sub: "component", price:     59_000_000, image: "ships/zirnitra-render-128.avif" },
+    { name: "Capital Armor Plates",      category: "materials",  sub: "component", price:     68_000_000, image: "boats/zirnitra-render-128.avif" },
+    { name: "Capital Capacitor Battery", category: "materials",  sub: "component", price:     75_000_000, image: "boats/zirnitra-render-128.avif" },
+    { name: "Capital Cargo Bay",         category: "materials",  sub: "component", price:     59_000_000, image: "boats/zirnitra-render-128.avif" },
+    { name: "Capital Capacitor Battery Blueprint",    category: "blueprints", sub: "component", price: 0, image: "blueprints/component/capital_capacitor_battery_blueprint.png" },
+    { name: "Capital Computer System Blueprint",      category: "blueprints", sub: "component", price: 0, image: "boats/zirnitra-render-128.avif" },
+    { name: "Capital Construction Parts Blueprint",   category: "blueprints", sub: "component", price: 0, image: "boats/zirnitra-render-128.avif" },
+    { name: "Capital Corporate Hangar Bay Blueprint", category: "blueprints", sub: "component", price: 0, image: "boats/zirnitra-render-128.avif" },
+    { name: "Capital Drone Bay Blueprint",            category: "blueprints", sub: "component", price: 0, image: "boats/zirnitra-render-128.avif" },
+    { name: "Capital Power Generator Blueprint",      category: "blueprints", sub: "component", price: 0, image: "boats/zirnitra-render-128.avif" },
+    { name: "Capital Propulsion Engine Blueprint",    category: "blueprints", sub: "component", price: 0, image: "boats/zirnitra-render-128.avif" },
+    { name: "Capital Sensor Cluster Blueprint",       category: "blueprints", sub: "component", price: 0, image: "boats/zirnitra-render-128.avif" },
+    { name: "Capital Shield Emitter Blueprint",       category: "blueprints", sub: "component", price: 0, image: "boats/zirnitra-render-128.avif" },
+    { name: "Capital Ship Maintenance Bay Blueprint", category: "blueprints", sub: "component", price: 0, image: "boats/zirnitra-render-128.avif" },
   ];
 
   const { normalizeName } = window.ShopUtils;
 
-  function imagePath(item) {
-    if (item.image) return `../assets/images/items/${item.image}`;
+  const SHOP_IMAGE_ROOT = "../assets/images/items/";
+
+  // `root` is the path prefix to images/items/ for the current page. Shop pages
+  // sit one level deep so default to "../"; the home page passes its own root.
+  function imagePath(item, root = SHOP_IMAGE_ROOT) {
+    if (item.image) return `${root}${item.image}`;
     if (item.category === "materials" && item.sub) {
       const file = item.name.toLowerCase().replace(/[\s-]+/g, "_") + ".avif";
-      return `../assets/images/items/materials/${item.sub}/${file}`;
+      return `${root}materials/${item.sub}/${file}`;
     }
     return "";
   }
@@ -74,24 +87,69 @@
     return raw.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
   }
 
-  function renderCard(item) {
-    const article = document.createElement("article");
-    article.className = "item-card";
-    article.dataset.name = normalizeName(item.name);
-    article.dataset.price = String(item.price);
-    article.dataset.category = item.category;
-    if (item.sub) article.dataset.sub = item.sub;
+  // Icons live alongside items (…/images/items/ ↔ …/images/icons/), so derive
+  // the icon root from whatever image root the page passed in.
+  function iconRootFrom(imageRoot) {
+    return imageRoot.replace(/items\/?$/, "icons/");
+  }
+
+  // Generalized product card, shared across the shop, the home highlights row,
+  // and any other page that loads shop-utils + shop-catalog. Options cover the
+  // per-page differences; defaults produce the interactive shop card.
+  //   tag / href      — "article" (shop) or "a" linking elsewhere (home)
+  //   imageRoot       — path prefix to images/items/ for the current page
+  //   categorized     — category-coloured badge + glow (shop/trade) vs gold (home)
+  //   action          — "button" (data-cart-add) | "span" (label) | "none"
+  //   actionLabel     — text on the button/label
+  //   priceText       — value after "Price:"; omit to let shop-filter fill it
+  //   stockText       — stock-count text; omit to let shop-filter fill it
+  //   stockValue      — number for the "In stock: N" aria-label; omit for none
+  //   outOfStock      — apply the muted out-of-stock treatment (shop only)
+  //   extraClass      — extra class(es) on the card (e.g. "highlight-card")
+  //   ariaLabel       — accessible label for link cards
+  function createCard(item, opts = {}) {
+    const {
+      tag = "article",
+      href = null,
+      imageRoot = SHOP_IMAGE_ROOT,
+      categorized = true,
+      action = "button",
+      actionLabel = "ADD TO CART",
+      priceText = null,
+      stockText = null,
+      stockValue = null,
+      outOfStock = false,
+      extraClass = "",
+      ariaLabel = null,
+    } = opts;
+
+    const card = document.createElement(tag);
+    card.className = "item-card"
+      + (categorized ? " item-card--cat" : "")
+      + (outOfStock ? " item-card--out-of-stock" : "")
+      + (extraClass ? ` ${extraClass}` : "");
+    if (href) card.href = href;
+    if (ariaLabel) card.setAttribute("aria-label", ariaLabel);
+
+    card.dataset.name = normalizeName(item.name);
+    card.dataset.price = String(item.price);
+    card.dataset.category = item.category;
+    if (item.sub) card.dataset.sub = item.sub;
 
     const badge = document.createElement("span");
     badge.className = "card-badge";
     badge.textContent = badgeText(item);
 
+    const img = document.createElement("img");
+    img.src = imagePath(item, imageRoot);
+    img.alt = item.name;
+    img.width = 128;
+    img.height = 128;
+    img.loading = "lazy";
+    img.decoding = "async";
+
     const heading = document.createElement("h2");
     heading.textContent = item.name;
-
-    const img = document.createElement("img");
-    img.src = imagePath(item);
-    img.alt = item.name;
 
     const text = document.createElement("div");
     text.className = "text";
@@ -103,15 +161,21 @@
     const priceStrong = document.createElement("strong");
     priceStrong.textContent = "Price:";
     priceP.appendChild(priceStrong);
+    if (priceText !== null) priceP.appendChild(document.createTextNode(` ${priceText}`));
 
     const stockState = document.createElement("div");
     stockState.className = "stock-state";
+    if (stockValue !== null) stockState.setAttribute("aria-label", `In stock: ${stockValue}`);
     const stockIcon = document.createElement("img");
-    stockIcon.src = "../assets/images/icons/stock.png";
+    stockIcon.src = `${iconRootFrom(imageRoot)}stock.png`;
     stockIcon.alt = "";
     stockIcon.setAttribute("aria-hidden", "true");
     const stockCount = document.createElement("p");
     stockCount.className = "stock-state-count";
+    if (stockText !== null) {
+      stockCount.setAttribute("aria-hidden", "true");
+      stockCount.textContent = stockText;
+    }
     stockState.appendChild(stockIcon);
     stockState.appendChild(stockCount);
 
@@ -120,31 +184,42 @@
 
     const controls = document.createElement("div");
     controls.className = "item-buy-controls";
-    const buyBtn = document.createElement("button");
-    buyBtn.type = "button";
-    buyBtn.className = "buy-button";
-    buyBtn.setAttribute("data-cart-add", "");
-    buyBtn.setAttribute("aria-label", `Add ${item.name} to cart`);
-    buyBtn.textContent = "ADD TO CART";
-    controls.appendChild(buyBtn);
+    if (action !== "none") {
+      const actionEl = document.createElement(action === "button" ? "button" : "span");
+      actionEl.className = "buy-button";
+      actionEl.textContent = actionLabel;
+      if (action === "button") {
+        actionEl.type = "button";
+        actionEl.setAttribute("data-cart-add", "");
+        actionEl.setAttribute("aria-label", `Add ${item.name} to cart`);
+      }
+      controls.appendChild(actionEl);
+    }
 
     text.appendChild(footer);
     text.appendChild(controls);
 
-    article.appendChild(badge);
-    article.appendChild(heading);
-    article.appendChild(img);
-    article.appendChild(text);
-    return article;
+    // Badge is absolutely positioned, so DOM order here is the visual order:
+    // image, heading, then the price/stock/action block.
+    card.appendChild(badge);
+    card.appendChild(img);
+    card.appendChild(heading);
+    card.appendChild(text);
+    return card;
   }
 
   function renderCatalog() {
     const display = document.querySelector(".display");
     if (!display) return;
     const frag = document.createDocumentFragment();
-    CATALOG.forEach((item) => frag.appendChild(renderCard(item)));
+    CATALOG.forEach((item) => frag.appendChild(createCard(item)));
     display.appendChild(frag);
   }
+
+  // Shared product data + helpers, consumed by the home highlights row and any
+  // page that wants product cards. (renderCatalog no-ops where there is no
+  // .display, e.g. the home page.)
+  window.ShopCatalog = { CATALOG, imagePath, badgeText, createCard };
 
   renderCatalog();
 })();

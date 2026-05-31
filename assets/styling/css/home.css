@@ -3,6 +3,11 @@ section{
   flex-direction: column;
 }
 
+/* Space between stacked content sections (e.g. Highlights → Sell your materials). */
+main section + section {
+  margin-top: 50px;
+}
+
 .container-items{
   margin: 10px auto 0;
   display: flex;
@@ -40,10 +45,16 @@ section{
 
 .store-more-card:hover,
 .store-more-card:focus-visible {
-  transform: translateY(-4px);
+  transform: scale(1.03);
   box-shadow:
     0 16px 32px rgba(0, 0, 0, 0.5),
     0 0 28px rgba(255, 221, 156, 0.18);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .store-more-card { transition: none; }
+  .store-more-card:hover,
+  .store-more-card:focus-visible { transform: none; }
 }
 
 .store-more-card:focus-visible {
@@ -104,4 +115,12 @@ section{
 .store-more-card:hover .store-more-cta,
 .store-more-card:focus-visible .store-more-cta {
   background: var(--surface-hover);
+}
+
+/* ── Highlight cards (capital boats, injected by home-highlights.js) ──
+   Structure, the gold corner badge and hover come from the shared .item-card
+   styles in base.css. Home cards omit .item-card--cat, so they render in the
+   default gold treatment regardless of stock (never the muted store state). */
+.highlight-card .buy-button {
+  text-align: center;
 }

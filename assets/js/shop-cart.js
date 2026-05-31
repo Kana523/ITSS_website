@@ -4,6 +4,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const cartItemsEl      = document.getElementById("cart-items");
   const cartTotalEl      = document.getElementById("cart-total");
   const cartTotalCompactEl = document.getElementById("cart-total-compact");
+  const cartPreorderSummaryEl     = document.getElementById("cart-preorder-summary");
+  const cartPreorderSummaryTextEl = document.getElementById("cart-preorder-summary-text");
   const cartClearBtn     = document.getElementById("cart-clear");
   const cartClearNameBtn = document.getElementById("cart-clear-name");
   const cartToggleBtn    = document.getElementById("cart-toggle");
@@ -28,26 +30,19 @@ document.addEventListener("DOMContentLoaded", () => {
     console.error("shop-cart.js: window.ShopAPI missing — shop-api.js failed to load.");
     return;
   }
-  const { formatPrice, formatPriceLong, formatPriceCompact, parsePriceToIsk, normalizeName } = window.ShopUtils;
+  const { formatPrice, formatPriceLong, formatPriceCompact, parsePriceToIsk, normalizeName, isLocalHost } = window.ShopUtils;
   const CART_STORAGE_KEY = "itss_shop_cart_v1";
   const ORDER_ID_LENGTH = 20;
   const ORDER_ID_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
   function generateOrderId() {
-    const out = new Array(ORDER_ID_LENGTH);
-    const cryptoObj = window.crypto || window.msCrypto;
-    if (cryptoObj?.getRandomValues) {
-      const buf = new Uint32Array(ORDER_ID_LENGTH);
-      cryptoObj.getRandomValues(buf);
-      for (let i = 0; i < ORDER_ID_LENGTH; i++) {
-        out[i] = ORDER_ID_ALPHABET[buf[i] % ORDER_ID_ALPHABET.length];
-      }
-    } else {
-      for (let i = 0; i < ORDER_ID_LENGTH; i++) {
-        out[i] = ORDER_ID_ALPHABET[Math.floor(Math.random() * ORDER_ID_ALPHABET.length)];
-      }
+    const buf = new Uint32Array(ORDER_ID_LENGTH);
+    crypto.getRandomValues(buf);
+    let out = "";
+    for (let i = 0; i < ORDER_ID_LENGTH; i++) {
+      out += ORDER_ID_ALPHABET[buf[i] % ORDER_ID_ALPHABET.length];
     }
-    return out.join("");
+    return out;
   }
 
   const FITTINGS = [
@@ -499,7 +494,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // badge + aria
-    const badgeLabel = totalItems > 100 ? "100+" : formatQty(totalItems);
+    const badgeLabel = totalItems > 99 ? "99+" : formatQty(totalItems);
     if (cartCountEl) cartCountEl.textContent = badgeLabel;
     if (cartItemCountEl) cartItemCountEl.textContent = `${formatQty(totalItems)} item${totalItems !== 1 ? "s" : ""}`;
     cartToggleBtn?.setAttribute("aria-label", `Cart, ${formatQty(totalItems)} item${totalItems !== 1 ? "s" : ""}`);
@@ -512,6 +507,7 @@ document.addEventListener("DOMContentLoaded", () => {
       empty.className = "cart-empty";
       empty.textContent = "Your cart is empty.";
       cartItemsEl.appendChild(empty);
+      if (cartPreorderSummaryEl) cartPreorderSummaryEl.hidden = true;
       if (cartClearBtn) cartClearBtn.disabled = true;
       if (cartClearNameBtn) cartClearNameBtn.disabled = true;
       return;
@@ -519,10 +515,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
     items.sort((a, b) => a.name.localeCompare(b.name));
 
+    // Pre-order tiering: with more than 2 pre-order items the per-item notices
+    // clog the list, so they're suppressed in favour of one consolidated box
+    // above the total (rendered after the loop). The box quotes the longest
+    // delivery estimate among them.
+    const preorderInfoByKey = new Map();
     items.forEach((item) => {
-      const isShip = item.category === "ships";
+      const info = getPreorderInfo(item.key);
+      if (info) preorderInfoByKey.set(item.key, info);
+    });
+    const consolidatePreorders = preorderInfoByKey.size > 2;
+
+    items.forEach((item) => {
+      const isBoat = item.category === "boats";
       const li = document.createElement("li");
-      li.className = `cart-item${isShip ? " cart-item--ship" : ""}`;
+      li.className = `cart-item${isBoat ? " cart-item--boat" : ""}`;
 
       // ── Image ──
       const imgWrap = document.createElement("div");
@@ -544,7 +551,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const nameEl = document.createElement("span");
       nameEl.className = "cart-item-name";
       nameEl.textContent = item.name;
-      const removeBtn = makeXBtn({ cartAction: "remove", name: item.key }, "cart-remove-btn");
+      const removeBtn = makeXBtn({ cartAction: "remove", name: item.key }, "cart-x-btn");
       removeBtn.setAttribute("aria-label", `Remove ${item.name}`);
       header.appendChild(nameEl);
       header.appendChild(removeBtn);
@@ -571,8 +578,8 @@ document.addEventListener("DOMContentLoaded", () => {
       mainRow.appendChild(qtyWrap);
       stack.appendChild(mainRow);
 
-      // Extras (ships only)
-      if (isShip) {
+      // Extras (boats only)
+      if (isBoat) {
         if (item.extras?.length > 0) {
           const extrasWrap = document.createElement("div");
           extrasWrap.className = "cart-extras";
@@ -614,7 +621,7 @@ document.addEventListener("DOMContentLoaded", () => {
             exInput.dataset.extraIdx = j;
             exControls.appendChild(exInput);
             exControls.appendChild(makeBtn("+", { cartAction: "extra-increase", name: item.key, extraIdx: j }, "cart-action-btn cart-action-btn--sm"));
-            exControls.appendChild(makeXBtn({ cartAction: "extra-remove", name: item.key, extraIdx: j }, "cart-extra-remove"));
+            exControls.appendChild(makeXBtn({ cartAction: "extra-remove", name: item.key, extraIdx: j }, "cart-x-btn cart-x-btn--sm"));
 
             exRow.appendChild(exInfo);
             exRow.appendChild(exControls);
@@ -667,34 +674,37 @@ document.addEventListener("DOMContentLoaded", () => {
       totalRow.appendChild(totalVal);
       stack.appendChild(totalRow);
 
-      const preorder = getPreorderInfo(item.key);
+      const preorder = preorderInfoByKey.get(item.key) || null;
       const cardStock = getCardStock(item.key);
       const overStock = cardStock !== null && item.qty > cardStock && cardStock > 0;
       const key = item.key;
       if (preorder) {
-        const preorderRow = document.createElement("div");
-        preorderRow.className = "cart-item-preorder";
-        const preorderIcon = document.createElement("span");
-        preorderIcon.className = "cart-item-preorder-icon";
-        preorderIcon.setAttribute("aria-hidden", "true");
-        preorderIcon.textContent = "!";
-        const preorderText = document.createElement("p");
-        const preorderLead = document.createElement("strong");
-        preorderLead.textContent = "Pre-order!";
-        preorderText.appendChild(preorderLead);
-        preorderText.appendChild(document.createTextNode(
-          preorder.weeks
-            ? ` Estimated delivery: ${preorder.weeks} week${preorder.weeks !== 1 ? "s" : ""}.`
-            : " Delivery estimate unavailable. We'll get started on it!"
-        ));
-        preorderRow.appendChild(preorderIcon);
-        preorderRow.appendChild(preorderText);
-        stack.appendChild(preorderRow);
+        // Suppressed per-item when consolidating — see the box above the total.
+        if (!consolidatePreorders) {
+          const preorderRow = document.createElement("div");
+          preorderRow.className = "cart-warning cart-warning--preorder";
+          const preorderIcon = document.createElement("span");
+          preorderIcon.className = "cart-warning-icon";
+          preorderIcon.setAttribute("aria-hidden", "true");
+          preorderIcon.textContent = "!";
+          const preorderText = document.createElement("p");
+          const preorderLead = document.createElement("strong");
+          preorderLead.textContent = "Pre-order!";
+          preorderText.appendChild(preorderLead);
+          preorderText.appendChild(document.createTextNode(
+            preorder.weeks
+              ? ` Estimated delivery: ${preorder.weeks} week${preorder.weeks !== 1 ? "s" : ""}.`
+              : " Delivery estimate unavailable. We'll get started on it!"
+          ));
+          preorderRow.appendChild(preorderIcon);
+          preorderRow.appendChild(preorderText);
+          stack.appendChild(preorderRow);
+        }
       } else if (overStock) {
         const warnRow = document.createElement("div");
-        warnRow.className = "cart-item-preorder";
+        warnRow.className = "cart-warning cart-warning--preorder";
         const icon = document.createElement("span");
-        icon.className = "cart-item-preorder-icon";
+        icon.className = "cart-warning-icon";
         icon.setAttribute("aria-hidden", "true");
         icon.textContent = "!";
         const text = document.createElement("p");
@@ -720,6 +730,31 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     cartItemsEl.querySelectorAll(".cart-item-qty").forEach(resizeQtyInput);
+
+    // Consolidated pre-order box (above the total). Quotes the longest estimate
+    // among the pre-order items; falls back to copy when none have one.
+    if (cartPreorderSummaryEl) {
+      if (consolidatePreorders) {
+        const weeks = [...preorderInfoByKey.values()]
+          .map((info) => info.weeks)
+          .filter((w) => Number.isFinite(w) && w > 0);
+        const maxWeeks = weeks.length ? Math.max(...weeks) : null;
+        if (cartPreorderSummaryTextEl) {
+          cartPreorderSummaryTextEl.textContent = "";
+          const lead = document.createElement("strong");
+          lead.textContent = "Multiple Pre-Orders in cart!";
+          cartPreorderSummaryTextEl.appendChild(lead);
+          cartPreorderSummaryTextEl.appendChild(document.createTextNode(
+            maxWeeks
+              ? ` Expected delivery around ${maxWeeks} week${maxWeeks !== 1 ? "s" : ""}.`
+              : " Delivery estimate unavailable. We'll get started on it!"
+          ));
+        }
+        cartPreorderSummaryEl.hidden = false;
+      } else {
+        cartPreorderSummaryEl.hidden = true;
+      }
+    }
 
     if (cartClearBtn) cartClearBtn.disabled = false;
     if (cartClearNameBtn) cartClearNameBtn.disabled = false;
@@ -837,19 +872,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const value = orderIdGeneratedEl?.textContent?.trim();
       if (!value) return;
       try {
-        if (navigator.clipboard?.writeText) {
-          await navigator.clipboard.writeText(value);
-        } else {
-          const ta = document.createElement("textarea");
-          ta.value = value;
-          ta.setAttribute("readonly", "");
-          ta.style.position = "absolute";
-          ta.style.left = "-9999px";
-          document.body.appendChild(ta);
-          ta.select();
-          document.execCommand("copy");
-          document.body.removeChild(ta);
-        }
+        await navigator.clipboard.writeText(value);
         orderIdCopyBtn.classList.add("cart-orderid-copy--copied");
         setTimeout(() => orderIdCopyBtn.classList.remove("cart-orderid-copy--copied"), 1400);
       } catch (err) {
@@ -938,10 +961,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    const isDevHost =
-      location.protocol === "file:" ||
-      ["localhost", "127.0.0.1", "0.0.0.0", "::1"].includes(location.hostname) ||
-      location.hostname.endsWith(".local");
+    const isDevHost = isLocalHost();
 
     const orderId = generateOrderId();
 
@@ -1003,10 +1023,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    const isDevHost =
-      location.protocol === "file:" ||
-      ["localhost", "127.0.0.1", "0.0.0.0", "::1"].includes(location.hostname) ||
-      location.hostname.endsWith(".local");
+    const isDevHost = isLocalHost();
 
     cartCheckoutNameBtn.disabled = true;
     cartCheckoutNameBtn.textContent = "Verifying…";
@@ -1054,8 +1071,34 @@ document.addEventListener("DOMContentLoaded", () => {
   cartClearNameBtn?.addEventListener("click", clearCart);
   document.addEventListener("shop:product-data-updated", syncCartPricesFromProducts);
 
+  // ── Incoming add intent (?add=<item key>) ──────────────────────────────────────
+  // Home highlight cards link here as shop/?add=<key>. Add that item to the cart
+  // and open the drawer. Unlike an in-store click, this skips the add-to-cart
+  // toast — opening the drawer is feedback enough after a navigation. The
+  // pre-order notice (for out-of-stock items) appears once the stock feed
+  // resolves and re-renders.
+  function handleIncomingAdd() {
+    const params = new URLSearchParams(location.search);
+    const addKey = normalizeName(params.get("add") || "");
+    if (!addKey) return;
+
+    // Strip the param so a refresh doesn't re-add the item.
+    params.delete("add");
+    const query = params.toString();
+    history.replaceState(null, "", location.pathname + (query ? `?${query}` : "") + location.hash);
+
+    const card = cardForKey(addKey);
+    if (!card) return;
+    const product = getProductData(card);
+    if (!product) return;
+
+    addToCart(product, 1);
+    openCart();
+  }
+
   // ── Init ──────────────────────────────────────────────────────────────────────
 
   syncCartPricesFromProducts();
   renderCart();
+  handleIncomingAdd();
 });

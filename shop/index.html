@@ -20,12 +20,12 @@
   <script src="../assets/js/shop-cart.js" defer></script>
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 
-  <meta name="description" content="Browse and buy ships, reaction materials, planetary materials, components and blueprints from Interstellar Systems in EVE Online.">
-  <meta name="keywords" content="EVE Online store, buy ships, blueprints, reaction materials, planetary materials, components, ISK, Interstellar Systems">
+  <meta name="description" content="Browse and buy boats, reaction materials, planetary materials, components and blueprints from Interstellar Systems in EVE Online.">
+  <meta name="keywords" content="EVE Online store, buy boats, blueprints, reaction materials, planetary materials, components, ISK, Interstellar Systems">
   <title>ITS-S Store</title>
 </head>
 
-<body data-stock-endpoint="https://script.google.com/macros/s/AKfycbyme9cJpDCtho9Q22NPgHG2t5m01dt-KkTwMh6qyFLEfcjiXoE_s79i6Q0XfcFDz86l/exec">
+<body data-stock-endpoint="https://script.google.com/macros/s/AKfycbyaaO9WxF6G-KLwVg9_lOvmNbhVlXVCQRTE089G6dYlWnENFArQf_Fk-TPJncUNTETM/exec">
     <header>
       <a class="container-logo" href="../">
         <img src="../assets/images/icons/itss.png" alt="Interstellar Systems logo">
@@ -106,6 +106,12 @@
                 </svg>
                 <p>All prices are in ISK</p>
               </li>
+              <li class="perks-note">
+                <svg class="perks-check" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <p>ME/TE is 10/20, unless stated otherwise.</p>
+              </li>
             </ul>
           </div>
 
@@ -161,7 +167,7 @@
           id="filter-search"
           type="search"
           aria-label="Search items"
-          placeholder="Search items..."
+          placeholder="Cap, Zirnitra, Reaction..."
           autocomplete="off"
         >
       </div>
@@ -173,24 +179,24 @@
 
       <div class="filter-group">
         <div class="filter-row">
-          <input id="filter-ships" type="checkbox" value="ships" data-parent>
-          <label for="filter-ships" class="filter-label">Ships</label>
+          <input id="filter-boats" type="checkbox" value="boats" data-parent>
+          <label for="filter-boats" class="filter-label">Boats</label>
 
           <button
             type="button"
             class="filter-toggle"
-            aria-controls="ships-sub"
+            aria-controls="boats-sub"
             aria-expanded="false"
-            aria-label="Toggle Ships sub-filters"
+            aria-label="Toggle Boats sub-filters"
           ></button>
         </div>
 
-        <div id="ships-sub" class="filter-sub" hidden>
-          <label><input type="checkbox" value="ships:dreadnought" data-child> Dreadnoughts</label>
-          <label><input type="checkbox" value="ships:force-auxiliary" data-child> Force Auxiliaries</label>
-          <label><input type="checkbox" value="ships:carrier" data-child> Carriers</label>
-          <label><input type="checkbox" value="ships:jump-freighter" data-child> Jump Freighters</label>
-          <label><input type="checkbox" value="ships:industrial-capital" data-child> Industrial Capitals</label>
+        <div id="boats-sub" class="filter-sub" hidden>
+          <label><input type="checkbox" value="boats:dreadnought" data-child> Dreadnoughts</label>
+          <label><input type="checkbox" value="boats:force-auxiliary" data-child> Force Auxiliaries</label>
+          <label><input type="checkbox" value="boats:carrier" data-child> Carriers</label>
+          <label><input type="checkbox" value="boats:jump-freighter" data-child> Jump Freighters</label>
+          <label><input type="checkbox" value="boats:industrial-capital" data-child> Industrial Capitals</label>
         </div>
       </div>
 
@@ -209,8 +215,9 @@
         </div>
 
         <div id="blueprints-sub" class="filter-sub" hidden>
-          <label><input type="checkbox" value="blueprints:ships" data-child> Ships</label>
+          <label><input type="checkbox" value="blueprints:boats" data-child> Boats</label>
           <label><input type="checkbox" value="blueprints:modules" data-child> Modules</label>
+          <label><input type="checkbox" value="blueprints:component" data-child> Component</label>
           <label><input type="checkbox" value="blueprints:packs" data-child> Packs</label>
           <label><input type="checkbox" value="blueprints:other" data-child> Other</label>
         </div>
@@ -313,17 +320,22 @@
   <aside class="cart-drawer" id="cart-drawer" hidden aria-label="Shopping cart">
     <div class="cart-drawer-header">
       <button type="button" class="cart-drawer-close" id="cart-drawer-close" aria-label="Close cart">×</button>
-      <span class="cart-drawer-title">Your Cart</span>
+      <span class="cart-drawer-title text-gradient-gold">Your Cart</span>
       <span class="cart-drawer-count" id="cart-item-count">0 items</span>
     </div>
 
     <ul class="cart-items" id="cart-items" aria-live="polite" aria-label="Cart items"></ul>
 
     <div class="cart-drawer-footer">
+      <div class="cart-warning cart-preorder-summary" id="cart-preorder-summary" aria-live="polite" hidden>
+        <span class="cart-warning-icon" aria-hidden="true">!</span>
+        <p id="cart-preorder-summary-text"></p>
+      </div>
+
       <div class="cart-total-row">
         <span class="cart-total-label">Total ISK</span>
         <div class="cart-total-amounts">
-          <span class="cart-total-value" id="cart-total">0</span>
+          <span class="cart-total-value text-gradient-gold" id="cart-total">0</span>
           <span class="cart-total-compact" id="cart-total-compact"></span>
         </div>
       </div>
@@ -346,8 +358,8 @@
               <p class="cart-orderid-expiry">Orders not confirmed within <strong>7 days</strong> will be cancelled.</p>
             </div>
           </div>
-          <div class="cart-char-name-warning">
-            <span class="cart-char-name-warning-icon" aria-hidden="true">!</span>
+          <div class="cart-warning">
+            <span class="cart-warning-icon" aria-hidden="true">!</span>
             <p>Please verify your character name. Incorrect name might prevent us from delivering your order.</p>
           </div>
           <input type="text" id="cart-char-name" class="cart-identity-input" placeholder="Your character name…" autocomplete="off">

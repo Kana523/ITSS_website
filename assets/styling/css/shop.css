@@ -48,7 +48,9 @@
   text-transform: uppercase;
 }
 
-.top-bar-panel-section--promo {
+.top-bar-panel-section--promo,
+.top-bar-panel-section--trade,
+.top-bar-panel-section--last-update {
   flex-direction: row;
   gap: 12px;
 }
@@ -84,32 +86,23 @@
   font-weight: 700;
 }
 
-.perks-list li span {
-  font-family: var(--font-title);
-  font-size: var(--font-medium);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  background: var(--text-gradient-gold);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  line-height: 1.25;
-}
-
 .perks-check {
   width: 20px;
   height: 20px;
   flex-shrink: 0;
-  color: #8fd6a3;
+  color: var(--accent-green);
   filter: drop-shadow(0 0 5px rgba(143, 214, 163, 0.6));
 }
 
-/* Trade */
-.top-bar-panel-section--trade {
-  flex-direction: row;
-  gap: 12px;
+/* Full-width row spanning both perk columns, under the checkmarks. Styled
+   identically to the other perks (green check + bold text); left-aligned so its
+   checkmark lines up under the first column. */
+.perks-note {
+  grid-column: 1 / -1;
+  justify-content: start;
 }
 
+/* Trade */
 .trade-icon {
   width: 36px;
   height: 36px;
@@ -118,7 +111,8 @@
   opacity: 0.9;
 }
 
-.trade-text {
+.trade-text,
+.last-update-text {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -126,15 +120,7 @@
 }
 
 /* Market feed */
-.top-bar-panel-section--last-update {
-  flex-direction: row;
-  gap: 12px;
-}
-
 .last-update-text {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
   gap: 4px;
 }
 
@@ -158,7 +144,7 @@
 }
 
 .market-graph-line {
-  stroke: #8fd6a3;
+  stroke: var(--accent-green);
   stroke-width: 1.4;
   filter: drop-shadow(0 0 4px rgba(143, 214, 163, 0.55));
 }
@@ -199,32 +185,8 @@
   height: 0;
 }
 
-/* Keep out-of-stock cards visually muted without fading tooltip content. */
-.display .item-card.item-card--out-of-stock > h2,
-.display .item-card.item-card--out-of-stock > img,
-.display .item-card.item-card--out-of-stock .item-card-footer > p,
-.display .item-card.item-card--out-of-stock .item-buy-controls {
-  opacity: 0.7;
-}
-
-.item-card--out-of-stock .stock-state[data-next-stock] {
-  cursor: help;
-}
-
-.item-card--out-of-stock .stock-state[data-next-stock]:is(:hover, :focus-visible)::after {
-  content: attr(data-next-stock);
-  position: absolute;
-  left: 50%;
-  bottom: calc(100% + 8px);
-  transform: translateX(-50%);
-  min-width: 100px;
-  padding: 8px 10px;
-  border: var(--border-sm) solid var(--text-gold-bottom);
-  background: var(--surface-850);
-  color: var(--text-gold-mid);
-  font-family: var(--font-text);
-  text-align: center;
-}
+/* Out-of-stock muting, category-colour glow and the corner badge are shared
+   card styles — see base.css (.item-card, .item-card--cat, .card-badge). */
 
 .sort-select {
   width: 100%;
@@ -237,6 +199,11 @@
   align-items: center;
   margin-top: 5px;
   gap: 5px;
+}
+
+/* Mid gold for the bolded result count number. */
+#results-count strong {
+  color: var(--text-gold-mid);
 }
 
 .product-data-status[data-state="warning"] {
@@ -300,18 +267,19 @@ textarea {
   flex-direction: column;
 }
 
-#filter-search {
+#filter-search,
+.filter-select {
   border: var(--border-sm) solid var(--gold-border-alternate);
   background: var(--button-background);
   color: var(--text-gold-mid);
+}
+
+#filter-search {
   padding: clamp(5px, 0.5vw, 10px) clamp(8px, 0.8vw, 14px);
   font-size: clamp(14px, 1.15vw, 20px);
 }
 
 .filter-select {
-  border: var(--border-sm) solid var(--gold-border-alternate);
-  background: var(--button-background);
-  color: var(--text-gold-mid);
   padding: clamp(8px, 0.85vw, 14px) clamp(10px, 1vw, 16px);
   font: inherit;
   font-size: clamp(14px, 1.15vw, 20px);
@@ -379,7 +347,7 @@ textarea {
   height: 18px;
   padding: 0 5px;
   background: var(--text-gold-mid);
-  color: #0a0c12;
+  color: var(--ink-on-gold);
   border-radius: var(--radius-pill);
   font-size: 11px;
   font-family: var(--font-text);
@@ -463,7 +431,8 @@ textarea {
   border-radius: 3px;
   overflow: hidden;
 }
-.cart-toast-img img {
+.cart-toast-img img,
+.cart-item-img img {
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
@@ -496,7 +465,7 @@ textarea {
   flex-shrink: 0;
   width: 28px;
   height: 28px;
-  color: #8fd6a3;
+  color: var(--accent-green);
   filter: drop-shadow(0 0 8px rgba(143, 214, 163, 0.6));
 }
 
@@ -569,16 +538,13 @@ textarea {
   transition: color var(--transition-fast);
 }
 .cart-drawer-close:hover { color: var(--text-gold-top); }
+/* gradient fill comes from the shared .text-gradient-gold class in the markup */
 .cart-drawer-title {
   font-family: var(--font-title);
   font-size: 18px;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  background: var(--text-gradient-gold);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
   flex: 1;
 }
 .cart-drawer-count {
@@ -586,7 +552,7 @@ textarea {
   font-size: 16px;
   font-weight: 700;
   background: var(--text-gold-mid);
-  color: #0a0c12;
+  color: var(--ink-on-gold);
   padding: 3px 10px;
   border-radius: var(--radius-pill);
   white-space: nowrap;
@@ -623,7 +589,7 @@ textarea {
   padding: 13px 15px;
   border-bottom: 1px solid rgba(255, 215, 138, 0.1);
 }
-.cart-item--ship {
+.cart-item--boat {
   padding: 15px 15px;
 }
 
@@ -636,11 +602,6 @@ textarea {
   justify-content: center;
   background: rgba(255, 215, 138, 0.04);
   overflow: hidden;
-}
-.cart-item-img img {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
 }
 
 .cart-item-content {
@@ -668,11 +629,11 @@ textarea {
   white-space: nowrap;
 }
 
-/* red X remove button */
-.cart-remove-btn {
+/* red X button (item remove + extra remove). --sm shrinks it for extras. */
+.cart-x-btn {
   background: none;
-  border: 1px solid rgba(220, 50, 50, 0.6);
-  color: #e07070;
+  border: 1px solid var(--danger-line);
+  color: var(--danger-text);
   width: 25px;
   height: 25px;
   box-sizing: border-box;
@@ -687,9 +648,15 @@ textarea {
   font-family: var(--font-text);
   transition: background var(--transition-fast), color var(--transition-fast);
 }
-.cart-remove-btn:hover {
-  background: rgba(220, 50, 50, 0.18);
-  color: #ef9a9a;
+.cart-x-btn:hover {
+  background: var(--danger-fill-hover);
+  color: var(--danger-text-hover);
+}
+.cart-x-btn--sm {
+  width: 22px;
+  height: 22px;
+  font-size: 13px;
+  margin-left: 4px;
 }
 
 .cart-x-icon {
@@ -777,7 +744,7 @@ textarea {
   padding: 1px 3px;
 }
 
-/* ── Extras (ships only) ───────────────────────────────── */
+/* ── Extras (boats only) ───────────────────────────────── */
 .cart-extras {
   display: flex;
   flex-direction: column;
@@ -827,30 +794,6 @@ textarea {
   align-items: center;
   gap: 3px;
 }
-.cart-extra-remove {
-  background: none;
-  border: 1px solid rgba(220, 50, 50, 0.6);
-  color: #e07070;
-  width: 22px;
-  height: 22px;
-  box-sizing: border-box;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 13px;
-  line-height: 1;
-  flex-shrink: 0;
-  border-radius: 3px;
-  padding: 0;
-  margin-left: 4px;
-  font-family: var(--font-text);
-  transition: background var(--transition-fast), color var(--transition-fast);
-}
-.cart-extra-remove:hover {
-  background: rgba(220, 50, 50, 0.18);
-  color: #ef9a9a;
-}
-
 /* add fitting */
 .cart-add-fit-wrap {
   display: flex;
@@ -902,18 +845,27 @@ textarea {
   color: var(--text-gold-top);
 }
 
-/* ── Pre-order notice ──────────────────────────────────── */
-.cart-item-preorder {
+/* ── Red warning notice (pre-order, over-stock, character-name) ─────────── */
+.cart-warning {
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  background: rgba(220, 50, 50, 0.1);
-  border: 1px solid rgba(220, 50, 50, 0.6);
+  background: var(--danger-fill);
+  border: 1px solid var(--danger-line);
   border-radius: 3px;
   padding: 8px 12px;
-  margin-top: 4px;
 }
-.cart-item-preorder-icon {
+/* In-list notices (pre-order / over-stock) sit below the total row. */
+.cart-warning--preorder { margin-top: 4px; }
+/* These elements set their own `display`, which beats the UA [hidden] style;
+   restore hiding when the attribute is present (e.g. the consolidated pre-order
+   box, the order-ID copy button, the filter sub-list). */
+.cart-warning[hidden],
+.cart-orderid-copy[hidden],
+.filter-sub[hidden] {
+  display: none !important;
+}
+.cart-warning-icon {
   flex: 0 0 auto;
   display: flex;
   align-items: center;
@@ -921,20 +873,20 @@ textarea {
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  border: 1.5px solid #e03232;
-  color: #e03232;
+  border: 1.5px solid var(--danger-icon);
+  color: var(--danger-icon);
   font-size: 12px;
   font-weight: 700;
   line-height: 1;
   margin-top: 1px;
 }
-.cart-item-preorder p {
+.cart-warning p {
   margin: 0;
   font-family: var(--font-text);
   font-size: 14px;
-  color: #e07070;
+  color: var(--danger-text);
 }
-.cart-item-preorder p strong {
+.cart-warning p strong {
   font-weight: 700;
 }
 
@@ -964,14 +916,11 @@ textarea {
   align-items: flex-end;
   gap: 1px;
 }
+/* gradient fill comes from the shared .text-gradient-gold class in the markup */
 .cart-total-value {
   font-family: var(--font-title);
   font-size: 23px;
   font-weight: 700;
-  background: var(--text-gradient-gold);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
   line-height: 1.1;
 }
 .cart-total-compact {
@@ -1053,36 +1002,6 @@ textarea {
   font-weight: 500;
   letter-spacing: 0.3px;
 }
-.cart-char-name-warning {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  background: rgba(220, 50, 50, 0.1);
-  border: 1px solid rgba(220, 50, 50, 0.6);
-  border-radius: 3px;
-  padding: 8px 12px;
-}
-.cart-char-name-warning-icon {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  border: 1.5px solid #e03232;
-  color: #e03232;
-  font-size: 12px;
-  font-weight: 700;
-  line-height: 1;
-  margin-top: 1px;
-}
-.cart-char-name-warning p {
-  margin: 0;
-  font-family: var(--font-text);
-  font-size: 14px;
-  color: #e07070;
-}
 .cart-orderid-box {
   background: rgba(255, 215, 138, 0.04);
   border: 1px solid var(--gold-border-alternate);
@@ -1153,7 +1072,6 @@ textarea {
   user-select: all;
   text-shadow: 0 0 8px rgba(255, 215, 138, 0.2);
 }
-.cart-orderid-copy[hidden] { display: none !important; }
 .cart-orderid-copy {
   position: relative;
   flex: 0 0 auto;
@@ -1185,7 +1103,7 @@ textarea {
   position: absolute;
   top: 50%;
   left: 50%;
-  color: #8fd6a3;
+  color: var(--accent-green);
   opacity: 0;
   transform: translate(-50%, -50%) scale(0.6);
 }
@@ -1214,7 +1132,7 @@ textarea {
 .cart-orderid-generate-error {
   font-family: var(--font-text);
   font-size: 14px;
-  color: #f08a8a;
+  color: var(--danger-error);
 }
 
 /* footer action buttons */
@@ -1228,9 +1146,9 @@ textarea {
   font-size: 18px;
 }
 .cart-clear {
-  border: 1px solid rgba(220, 50, 50, 0.6);
+  border: 1px solid var(--danger-line);
   background: var(--button-background);
-  color: #e07070;
+  color: var(--danger-text);
   font-family: var(--font-text);
   font-size: 20px;
   padding: 9px 15px;
@@ -1238,7 +1156,7 @@ textarea {
   white-space: nowrap;
   transition: background var(--transition-fast);
 }
-.cart-clear:hover { background: rgba(220, 50, 50, 0.18); }
+.cart-clear:hover { background: var(--danger-fill-hover); }
 .cart-clear:disabled { opacity: 0.38; cursor: not-allowed; }
 
 .filter label {
@@ -1302,11 +1220,6 @@ textarea {
   margin-top: 4px;
 }
 
-/* Ensure hidden actually hides even if .filter-sub sets display */
-.filter-sub[hidden]{
-  display: none !important;
-}
-
 @media (max-width: 780px) {
   .grid-container {
     grid-template-columns: 1fr;
@@ -1317,57 +1230,5 @@ textarea {
   }
 }
 
-/* ── Item card category badge ─────────────────────────── */
-.item-card {
-  position: relative;
-  --cat: var(--text-gold-mid);
-}
-
-.item-card::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 1;
-  box-shadow:
-    inset 0 16px 24px -10px color-mix(in oklch, var(--cat) 80%, transparent),
-    inset 0 -10px 16px -10px color-mix(in oklch, var(--cat) 50%, transparent),
-    inset 10px 0 16px -10px color-mix(in oklch, var(--cat) 5%, transparent),
-    inset -10px 0 16px -10px color-mix(in oklch, var(--cat) 5%, transparent);
-}
-
-.item-card > img { order: 1; }
-.item-card > h2  { order: 2; }
-.item-card > .text { order: 3; }
-
-.item-card[data-category="ships"]       { --cat: #B878E2; }
-.item-card[data-category="blueprints"]  { --cat: #6AC0FC; }
-.item-card[data-category="structures"]  { --cat: #EB2345; }
-.item-card[data-category="materials"]   { --cat: #EDCB40; }
-.item-card[data-category="misc"]        { --cat: #69FF69; }
-
-.item-card.item-card--out-of-stock { border-color: var(--text-gold-dark); }
-.item-card.item-card--out-of-stock[data-category="ships"]       { --cat: #6A219C; }
-.item-card.item-card--out-of-stock[data-category="blueprints"]  { --cat: #0361A0; }
-.item-card.item-card--out-of-stock[data-category="structures"]  { --cat: #911D1F; }
-.item-card.item-card--out-of-stock[data-category="materials"]   { --cat: #806E00; }
-.item-card.item-card--out-of-stock[data-category="misc"]        { --cat: #007500; }
-
-.card-badge {
-  position: absolute;
-  top: 0;
-  right: 0;
-  z-index: 2;
-  padding: 4px 9px;
-  font-family: var(--font-title);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--cat);
-  background: color-mix(in oklch, var(--cat) 14%, var(--surface-850));
-  border-left: 1px solid color-mix(in oklch, var(--cat) 40%, transparent);
-  border-bottom: 1px solid color-mix(in oklch, var(--cat) 40%, transparent);
-  text-shadow: 0 0 6px color-mix(in oklch, var(--cat) 75%, transparent);
-  box-shadow: 0 0 10px color-mix(in oklch, var(--cat) 25%, transparent);
-}
+/* Shop product cards opt into category colours via .item-card--cat (applied by
+   shop-catalog.js). The badge, glow and category palette live in base.css. */

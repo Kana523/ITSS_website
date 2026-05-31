@@ -84,5 +84,15 @@
     return String(value || "").trim().toLowerCase().replace(/\s+/g, " ");
   }
 
-  window.ShopUtils = { formatPrice, formatPriceLong, formatPriceCompact, parsePriceToIsk, normalizeName };
+  // True on local dev hosts (file://, localhost, loopback, *.local). Callers use
+  // it to bypass the fresh-cache short-circuit and to skip Turnstile + server
+  // submit during local development. Read at call time, not module load.
+  function isLocalHost() {
+    const host = (location.hostname || "").toLowerCase();
+    return location.protocol === "file:" ||
+      ["localhost", "127.0.0.1", "0.0.0.0", "::1", "[::1]"].includes(host) ||
+      host.endsWith(".local");
+  }
+
+  window.ShopUtils = { formatPrice, formatPriceLong, formatPriceCompact, parsePriceToIsk, normalizeName, isLocalHost };
 })();

@@ -130,20 +130,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const REFRESH_MIN_INTERVAL_MS = 5 * 60 * 1000;
 
-  // Local dev (file://, localhost, 127.0.0.1, *.local) bypasses the fresh-cache
-  // short-circuit so feed changes are visible on every reload.
-  const isLocalHost =
-    location.protocol === "file:" ||
-    /^(localhost|127\.0\.0\.1|\[::1\])$/i.test(location.hostname) ||
-    /\.local$/i.test(location.hostname);
-
   async function loadRemoteStock() {
     const cachedSnapshot = ShopAPI.loadCachedSnapshot({ allowStale: true });
     const cachedStockMap = cachedSnapshot?.records || null;
     const hasCachedStock = cachedStockMap instanceof Map && cachedStockMap.size > 0;
     const cachedAt = Number(cachedSnapshot?.cachedAt);
+    // Local dev bypasses the fresh-cache short-circuit so feed changes show on every reload.
     const hasFreshCache =
-      !isLocalHost &&
+      !ShopUtils.isLocalHost() &&
       Number.isFinite(cachedAt) && Date.now() - cachedAt < REFRESH_MIN_INTERVAL_MS;
 
     if (hasCachedStock) {
@@ -417,7 +411,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (resultsCountEl) {
       const noun = shownCount === 1 ? "item" : "items";
-      resultsCountEl.textContent = `Showing ${shownCount} ${noun}`;
+      resultsCountEl.innerHTML = `Showing <strong>${shownCount}</strong> ${noun}`;
     }
 
     balanceCardRows();
