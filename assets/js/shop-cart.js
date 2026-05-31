@@ -318,7 +318,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function syncCartPricesFromProducts() {
     let changed = false;
-    document.querySelectorAll(".display .item-card").forEach((card) => {
+    document.querySelectorAll(".item-card").forEach((card) => {
       const product = getProductData(card);
       if (!product || !cart[product.key]) return;
       const entry = cart[product.key];
@@ -341,7 +341,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function cardForKey(key) {
-    return document.querySelector(`.display .item-card[data-name="${CSS.escape(key)}"]`);
+    return document.querySelector(`.item-card[data-name="${CSS.escape(key)}"]`);
   }
 
   function getPreorderInfo(key) {
@@ -907,7 +907,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const adj = adjustedByName.get(key);
       const acceptedQty = adj && typeof adj.acceptedQty === "number" ? adj.acceptedQty : item.qty;
       if (acceptedQty <= 0) continue;
-      const card = document.querySelector(`.display .item-card[data-name="${CSS.escape(key)}"]`);
+      const card = document.querySelector(`.item-card[data-name="${CSS.escape(key)}"]`);
       const stockEl = card?.querySelector(".stock-state-count");
       if (!stockEl) continue;
       const current = Number.parseInt(stockEl.dataset.stockRaw || "0", 10);
@@ -1072,11 +1072,12 @@ document.addEventListener("DOMContentLoaded", () => {
   document.addEventListener("shop:product-data-updated", syncCartPricesFromProducts);
 
   // ── Incoming add intent (?add=<item key>) ──────────────────────────────────────
-  // Home highlight cards link here as shop/?add=<key>. Add that item to the cart
-  // and open the drawer. Unlike an in-store click, this skips the add-to-cart
-  // toast — opening the drawer is feedback enough after a navigation. The
-  // pre-order notice (for out-of-stock items) appears once the stock feed
-  // resolves and re-renders.
+  // Deep links of the form <page>/?add=<key> add that item to the cart and open
+  // the drawer (used for cross-page "add this item" links). Requires a matching
+  // product card on the page. Unlike an in-store click, this skips the
+  // add-to-cart toast — opening the drawer is feedback enough after a
+  // navigation. The pre-order notice (for out-of-stock items) appears once the
+  // stock feed resolves and re-renders.
   function handleIncomingAdd() {
     const params = new URLSearchParams(location.search);
     const addKey = normalizeName(params.get("add") || "");

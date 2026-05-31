@@ -1,9 +1,9 @@
 // Home "Highlights" row. Renders a random assortment of capital boats into
 // .container-items, reusing the shop's shared catalog (window.ShopCatalog) and
 // stock feed (window.ShopAPI). In-stock capitals are shown first; the rest are
-// filled with random capitals (rendered as pre-order). Cards link to the store
-// with an ?add= intent so the store adds the clicked item to the cart and opens
-// it — behaviour matching a click on the store page itself.
+// filled with random capitals (rendered as pre-order). Cards are full
+// add-to-cart cards (same as the store): clicking ADD TO CART / PRE-ORDER adds
+// the item to the shared cart and fires the toast (wired by shop-cart.js).
 document.addEventListener("DOMContentLoaded", () => {
   const container = document.querySelector("[data-highlights]");
   if (!container) return;
@@ -51,25 +51,23 @@ document.addEventListener("DOMContentLoaded", () => {
     return [...inStock, ...fillers].slice(0, HIGHLIGHT_COUNT);
   }
 
-  // Build a highlight card via the shared catalog builder. Home cards are link
-  // cards (the whole card navigates to the store with an ?add= intent). They use
-  // the same category colours as the store but never the muted out-of-stock
-  // state, so they always show the bright in-stock treatment regardless of stock.
+  // Build a highlight card via the shared catalog builder. Home cards are
+  // interactive add-to-cart cards (same behaviour as the store). They use the
+  // same category colours as the store but never the muted out-of-stock state,
+  // so they always show the bright in-stock treatment regardless of stock;
+  // out-of-stock items still add to the cart, labelled PRE-ORDER.
   function renderCard(entry) {
     const { item, stock, price, outOfStock } = entry;
     return createCard(item, {
-      tag: "a",
-      href: `shop/?add=${encodeURIComponent(normalizeName(item.name))}`,
       imageRoot: IMG_ROOT,
       categorized: true,
-      action: "span",
-      actionLabel: outOfStock ? "PRE-ORDER" : "BUY",
+      action: "button",
+      actionLabel: outOfStock ? "PRE-ORDER" : "ADD TO CART",
       priceText: formatPrice(price),
       stockText: formatPrice(stock),
       stockValue: stock,
       outOfStock: false,
       extraClass: "highlight-card",
-      ariaLabel: `${item.name} — ${outOfStock ? "pre-order in store" : "add to cart"}`,
     });
   }
 
@@ -78,6 +76,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const frag = document.createDocumentFragment();
     entries.forEach((entry) => frag.appendChild(renderCard(entry)));
     container.insertBefore(frag, storeMoreCard || null);
+    // Let the cart re-sync prices of any in-cart item after a live-feed refresh.
+    document.dispatchEvent(new CustomEvent("shop:product-data-updated"));
   }
 
   function cachedSnapshot() {
