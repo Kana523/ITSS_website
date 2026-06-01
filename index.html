@@ -5,17 +5,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" href="assets/images/icons/itssfav.ico" type="image/x-icon">
   <link rel="stylesheet" href="assets/styling/css/base.css">
+  <link rel="stylesheet" href="assets/styling/css/cart.css">
   <link rel="stylesheet" href="assets/styling/css/home.css">
 
-  <!-- Highlights row reuses the shop catalog + stock feed:
+  <!-- Highlights row + shared cart reuse the shop catalog, stock feed and cart:
        shop-utils.js    → window.ShopUtils (formatters)
-       shop-api.js      → window.ShopAPI (stock feed cache/fetch)
-       shop-catalog.js  → window.ShopCatalog (shared product data, no-ops rendering off-shop)
-       home-highlights.js → renders capital-boat highlight cards into .container-items -->
+       shop-api.js      → window.ShopAPI (stock feed cache/fetch, order submit, Turnstile)
+       shop-catalog.js  → window.ShopCatalog (shared product data + card builder)
+       home-highlights.js → renders capital-boat add-to-cart cards into .container-items
+       cart-dom.js      → injects the shared cart markup (nav button, backdrop, drawer)
+       shop-cart.js     → cart state + drawer behaviour, shared with the store -->
   <script src="assets/js/shop-utils.js" defer></script>
   <script src="assets/js/shop-api.js" defer></script>
   <script src="assets/js/shop-catalog.js" defer></script>
   <script src="assets/js/home-highlights.js" defer></script>
+  <script src="assets/js/cart-dom.js" defer></script>
+  <script src="assets/js/shop-cart.js" defer></script>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 
   <meta name="description" content="Interstellar Systems — an EVE Online corporation selling boats, materials, blueprints and more. Organically grown space boats.">
   <meta name="keywords" content="EVE Online, corporation, boats, blueprints, materials, ISK, store, space boats, Interstellar Systems">
@@ -48,7 +54,7 @@
 
         <!-- Capital-boat highlight cards are injected before the "Store has more"
              card by home-highlights.js. In-stock capitals come first, the rest
-             are random fillers. Each card links to the store with ?add= intent. -->
+             are random fillers. Each card adds to the shared cart in place. -->
         <div class="container-items" data-highlights>
 
           <a class="store-more-card" href="shop/" aria-label="Visit the store for more items">
@@ -70,7 +76,7 @@
 
         <div class="container-items">
 
-          <article class="item-card" data-price="6400000" data-category="materials" data-sub="planetary">
+          <article class="item-card" data-name="capital ancillary current router ii" data-price="6400000" data-category="materials" data-sub="planetary">
             <h2>Capital Ancillary Current Router II</h2>
             <p>Materials</p>
             <img src="assets/images/items/boats/zirnitra-render-128.avif" alt="Tritanium image" width="128" height="128" loading="lazy" decoding="async">
@@ -91,7 +97,7 @@
             </div>
           </article>
 
-          <article class="item-card" data-price="6400000" data-category="materials" data-sub="planetary">
+          <article class="item-card" data-name="capital ancillary current router ii" data-price="6400000" data-category="materials" data-sub="planetary">
             <h2>Capital Ancillary Current Router II</h2>
             <p>Materials</p>
             <img src="assets/images/items/boats/zirnitra-render-128.avif" alt="Tritanium image" width="128" height="128" loading="lazy" decoding="async">
@@ -112,7 +118,7 @@
             </div>
           </article>
 
-          <article class="item-card" data-price="6400000" data-category="materials" data-sub="planetary">
+          <article class="item-card" data-name="capital ancillary current router ii" data-price="6400000" data-category="materials" data-sub="planetary">
             <h2>Capital Ancillary Current Router II</h2>
             <p>Materials</p>
             <img src="assets/images/items/boats/zirnitra-render-128.avif" alt="Tritanium image" width="128" height="128" loading="lazy" decoding="async">

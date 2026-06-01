@@ -81,7 +81,9 @@
 
   function badgeText(item) {
     const raw = item.sub || item.category || "";
-    return raw.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+    const label = raw.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+    // Blueprints are sold as copies — tag the badge "BPC" (e.g. "Component BPC").
+    return item.category === "blueprints" ? `${label} BPC` : label;
   }
 
   // Icons live alongside items (…/images/items/ ↔ …/images/icons/), so derive
@@ -137,6 +139,9 @@
     badge.className = "card-badge";
     badge.textContent = badgeText(item);
 
+    const media = document.createElement("div");
+    media.className = "item-media";
+
     const img = document.createElement("img");
     img.src = imagePath(item, imageRoot);
     img.alt = item.name;
@@ -144,9 +149,33 @@
     img.height = 128;
     img.loading = "lazy";
     img.decoding = "async";
+    media.appendChild(img);
+
+    // Blueprints carry a research box (ME/TE, e.g. "10/20") straddling the
+    // bottom edge of the art. Defaults to 10/20; per-item `research` overrides.
+    if (item.category === "blueprints") {
+      const research = item.research || "10/20";
+      const bp = document.createElement("span");
+      bp.className = "bp-research";
+      bp.textContent = research;
+      bp.setAttribute("aria-label", `Material/time efficiency ${research}`);
+      media.appendChild(bp);
+    }
 
     const heading = document.createElement("h2");
-    heading.textContent = item.name;
+    // Blueprint cards drop the redundant " Blueprint" suffix from the visible
+    // title (the badge already reads "… BPC"), but keep it in textContent so the
+    // cart/filter/order still see the canonical name.
+    const bpSuffix = item.category === "blueprints" && / Blueprint$/.test(item.name);
+    if (bpSuffix) {
+      heading.appendChild(document.createTextNode(item.name.replace(/ Blueprint$/, "")));
+      const suffix = document.createElement("span");
+      suffix.className = "bp-title-suffix";
+      suffix.textContent = " Blueprint";
+      heading.appendChild(suffix);
+    } else {
+      heading.textContent = item.name;
+    }
 
     const text = document.createElement("div");
     text.className = "text";
@@ -199,7 +228,7 @@
     // Badge is absolutely positioned, so DOM order here is the visual order:
     // image, heading, then the price/stock/action block.
     card.appendChild(badge);
-    card.appendChild(img);
+    card.appendChild(media);
     card.appendChild(heading);
     card.appendChild(text);
     return card;

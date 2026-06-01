@@ -76,10 +76,8 @@
 
   /* accent / status */
   --accent: var(--green);             /* in-stock / success */
-  --danger: #e03232;
-  --danger-strong: #f08a8a;
-  --danger-text: #e07070;
-  --danger-text-hover: #ef9a9a;
+  --danger-text: #e07070;          /* resting red text */
+  --danger-text-strong: #ef9a9a;   /* brightened red text (errors, hover) */
   --danger-line: color-mix(in oklch, var(--red) 60%, transparent);
   --danger-bg: color-mix(in oklch, var(--red) 10%, transparent);
   --danger-bg-hover: color-mix(in oklch, var(--red) 18%, transparent);
@@ -89,12 +87,11 @@
   --glow-green: var(--accent);
 
   /* ── Format ── */
-  --radius-pill: 999px;
   --border-sm: 1px;
   --border-md: 2px;
   --transition-fast: 0.15s ease;
   --font-small: 14px;
-  --font-medium: 20px;
+  --font-medium: 22px;
   --font-large: 30px;
 }
 
@@ -106,6 +103,34 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  cursor: default;
+}
+
+/* Site-wide cursor policy: default arrow everywhere; pointer for actionable
+   controls; text I-beam for typeable inputs. Overrides per-element rules. */
+button,
+a,
+label,
+select,
+summary,
+[role="button"],
+input[type="checkbox"],
+input[type="radio"],
+input[type="submit"],
+input[type="button"],
+input[type="reset"] {
+  cursor: pointer;
+}
+
+input[type="text"],
+input[type="search"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="tel"],
+input[type="url"],
+textarea {
+  cursor: text;
 }
 
 /* Galaxy backdrop pinned to the viewport (not the document) so cover sizing
@@ -183,6 +208,8 @@ nav {
     display: flex;
     align-items: center;
     font-weight: normal;
+    /* Push nav + the injected cart button into one group on the right. */
+    margin-right: auto;
 }
 
 .container-logo-name-motto {
@@ -221,7 +248,7 @@ nav a[aria-current="page"] {
 
 .buy-button {
   background: transparent;
-  border-radius: var(--radius-pill);
+  border-radius: 4px;
   padding: 10px;
   min-width: 70px;
 
@@ -290,16 +317,52 @@ nav a[aria-current="page"] {
 
 .item-card h2 {
   text-align: center;
+  font-size: var(--font-medium);
 }
 
-/* Product image only (direct child) — not the small stock icon nested in the
-   footer. Fixed 128×128 box reserves layout space (no shift as images load) and
+/* Hidden in the visible title but kept in textContent so the cart/order read
+   the canonical "… Blueprint" name. */
+.bp-title-suffix {
+  display: none;
+}
+
+/* Wraps the product image so badges (e.g. the blueprint research box) can
+   anchor to the art's edges. Shrinks to the image so the box centres on it. */
+.item-media {
+  position: relative;
+}
+
+/* Product image only — not the small stock icon nested in the footer. Fixed
+   128×128 box reserves layout space (no shift as images load) and
    object-fit: contain keeps non-square art undistorted. */
-.item-card > img {
+.item-media > img {
   width: 128px;
   height: 128px;
   object-fit: contain;
   padding: 2px 0;
+}
+
+/* Blueprint ME/TE box: straddles the bottom-centre of the art (half over the
+   image, half below). Inherits the card's blueprint --cat colour. */
+.bp-research {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translate(-50%, 15%);
+  z-index: 2;
+  padding: 4px 12px;
+  font-family: var(--font-title);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  color: var(--text);
+  background: color-mix(in oklch, var(--cat) 14%, var(--surface));
+  border: var(--border-sm) solid color-mix(in oklch, var(--cat) 40%, transparent);
+  border-radius: 4px;
+  white-space: nowrap;
+  text-shadow: 0 0 6px color-mix(in oklch, var(--cat) 75%, transparent);
+  box-shadow: 0 0 10px color-mix(in oklch, var(--cat) 25%, transparent);
 }
 
 .text {

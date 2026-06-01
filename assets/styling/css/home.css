@@ -3,6 +3,15 @@ section{
   flex-direction: column;
 }
 
+/* Vertically centre the page content (main + the evemail note) between the
+   sticky header and the footer. Body is a 100vh flex column (base.css); the two
+   auto margins below split the leftover space evenly above and below the group.
+   When content is taller than the viewport the autos collapse to 0 and the page
+   simply scrolls. */
+main {
+  margin-top: auto;
+}
+
 /* Space between stacked content sections (e.g. Highlights → Sell your materials). */
 main section + section {
   margin-top: 50px;
@@ -18,6 +27,7 @@ main section + section {
 .evemail {
   text-align: center;
   margin-top: 15px;
+  margin-bottom: auto;
   font-size: var(--font-medium);
 }
 
@@ -90,7 +100,7 @@ main section + section {
   justify-content: center;
   padding: 10px 22px;
   border: var(--border-sm) solid var(--text-strong);
-  border-radius: var(--radius-pill);
+  border-radius: 4px;
   background: var(--surface-control);
   color: var(--text-strong);
   font-family: var(--font-text);
