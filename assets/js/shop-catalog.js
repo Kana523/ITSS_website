@@ -9,24 +9,27 @@
   //     (e.g. "Carbon Polymers" → carbon_polymers.avif,
   //      "Nano-Factory"    → nano_factory.avif)
   //   - non-materials without `image` will render a broken <img> (must specify)
+  // Boats/structures carry a `fittings` list (fitting names, resolved against the
+  // `kind: "fitting"` entries below) offered in the card-flip configurator.
+  // Blueprints carry `maxRuns` (cap for the runs-per-BPC control; default below).
   const CATALOG = [
-    { name: "Zirnitra",                  category: "boats",      sub: "dreadnought",        price: 4_400_000_000, image: "boats/zirnitra-render-256.avif" },
-    { name: "Moros",                     category: "boats",      sub: "dreadnought",        price:             0, image: "boats/moros-render-256.avif" },
-    { name: "Naglfar",                   category: "boats",      sub: "dreadnought",        price:             0, image: "boats/naglfar-render-256.avif" },
-    { name: "Phoenix",                   category: "boats",      sub: "dreadnought",        price:             0, image: "boats/phoenix-render-256.avif" },
-    { name: "Revelation",                category: "boats",      sub: "dreadnought",        price:             0, image: "boats/revelation-render-256.avif" },
-    { name: "Apostle",                   category: "boats",      sub: "force-auxiliary",    price:             0, image: "boats/apostle-render-256.avif" },
-    { name: "Minokawa",                  category: "boats",      sub: "force-auxiliary",    price:             0, image: "boats/minokawa-render-256.avif" },
-    { name: "Ninazu",                    category: "boats",      sub: "force-auxiliary",    price:             0, image: "boats/ninazu-render-256.avif" },
-    { name: "Lif",                       category: "boats",      sub: "force-auxiliary",    price:             0, image: "boats/lif-render-256.avif" },
-    { name: "Ark",                       category: "boats",      sub: "jump-freighter",     price:             0, image: "boats/ark-render-256.avif" },
-    { name: "Rhea",                      category: "boats",      sub: "jump-freighter",     price:             0, image: "boats/rhea-render-256.avif" },
-    { name: "Anshar",                    category: "boats",      sub: "jump-freighter",     price:             0, image: "boats/anshar-render-256.avif" },
-    { name: "Nomad",                     category: "boats",      sub: "jump-freighter",     price:             0, image: "boats/nomad-render-256.avif" },
-    { name: "Rorqual",                   category: "boats",      sub: "industrial-capital", price:             0, image: "boats/rorqual-render-256.avif" },
-    { name: "Astrahus",                  category: "structures", sub: "citadel",            price:             0, image: "structures/astrahus-render-256.avif" },
-    { name: "Raitaru",                   category: "structures", sub: "engineering",        price:             0, image: "structures/raitaru-render-256.avif" },
-    { name: "Athanor",                   category: "structures", sub: "refinery",           price:             0, image: "structures/athanor-render-256.avif" },
+    { name: "Zirnitra",                  category: "boats",      sub: "dreadnought",        price: 4_400_000_000, image: "boats/zirnitra-render-256.avif",   fittings: ["Siege Fit", "Gank Fit", "Shield Tank"] },
+    { name: "Moros",                     category: "boats",      sub: "dreadnought",        price:             0, image: "boats/moros-render-256.avif",      fittings: ["Siege Fit", "Armor Tank", "Gank Fit"] },
+    { name: "Naglfar",                   category: "boats",      sub: "dreadnought",        price:             0, image: "boats/naglfar-render-256.avif",    fittings: ["Siege Fit", "Shield Tank", "Tackle Fit"] },
+    { name: "Phoenix",                   category: "boats",      sub: "dreadnought",        price:             0, image: "boats/phoenix-render-256.avif",    fittings: ["Siege Fit", "Shield Tank"] },
+    { name: "Revelation",                category: "boats",      sub: "dreadnought",        price:             0, image: "boats/revelation-render-256.avif", fittings: ["Siege Fit", "Armor Tank"] },
+    { name: "Apostle",                   category: "boats",      sub: "force-auxiliary",    price:             0, image: "boats/apostle-render-256.avif",    fittings: ["Triage Fit", "Armor Tank"] },
+    { name: "Minokawa",                  category: "boats",      sub: "force-auxiliary",    price:             0, image: "boats/minokawa-render-256.avif",   fittings: ["Triage Fit", "Shield Tank"] },
+    { name: "Ninazu",                    category: "boats",      sub: "force-auxiliary",    price:             0, image: "boats/ninazu-render-256.avif",     fittings: ["Triage Fit", "Armor Tank"] },
+    { name: "Lif",                       category: "boats",      sub: "force-auxiliary",    price:             0, image: "boats/lif-render-256.avif",        fittings: ["Triage Fit", "Shield Tank"] },
+    { name: "Ark",                       category: "boats",      sub: "jump-freighter",     price:             0, image: "boats/ark-render-256.avif",        fittings: ["Travel Fit", "Cargo Fit", "Armor Tank"] },
+    { name: "Rhea",                      category: "boats",      sub: "jump-freighter",     price:             0, image: "boats/rhea-render-256.avif",       fittings: ["Travel Fit", "Cargo Fit", "Shield Tank"] },
+    { name: "Anshar",                    category: "boats",      sub: "jump-freighter",     price:             0, image: "boats/anshar-render-256.avif",     fittings: ["Travel Fit", "Cargo Fit"] },
+    { name: "Nomad",                     category: "boats",      sub: "jump-freighter",     price:             0, image: "boats/nomad-render-256.avif",      fittings: ["Travel Fit", "Cargo Fit"] },
+    { name: "Rorqual",                   category: "boats",      sub: "industrial-capital", price:             0, image: "boats/rorqual-render-256.avif",    fittings: ["Mining Fit", "PANIC Fit", "Shield Tank"] },
+    { name: "Astrahus",                  category: "structures", sub: "citadel",            price:             0, image: "structures/astrahus-render-256.avif", fittings: ["Defense Fit"] },
+    { name: "Raitaru",                   category: "structures", sub: "engineering",        price:             0, image: "structures/raitaru-render-256.avif",  fittings: ["Industry Fit"] },
+    { name: "Athanor",                   category: "structures", sub: "refinery",           price:             0, image: "structures/athanor-render-256.avif",  fittings: ["Reaction Fit"] },
     { name: "Fermionic Condensates",     category: "materials",  sub: "reaction",  price:             0 },
     { name: "Hypersynaptic Fibers",      category: "materials",  sub: "reaction",  price:             0 },
     { name: "Nanotransistors",           category: "materials",  sub: "reaction",  price:             0 },
@@ -52,21 +55,79 @@
     { name: "Self-Harmonizing Power Core", category: "materials",  sub: "planetary", price:             0 },
     { name: "Sterile Conduits",            category: "materials",  sub: "planetary", price:      4_700_000 },
     { name: "Wetware Mainframe",           category: "materials",  sub: "planetary", price:      9_300_000 },
-    { name: "Capital Capacitor Battery Blueprint",    category: "blueprints", sub: "component", price: 0, image: "blueprints/component/capital_capacitor_battery_blueprint.avif" },
-    { name: "Capital Computer System Blueprint",      category: "blueprints", sub: "component", price: 0, image: "blueprints/component/capital_computer_system_blueprint.avif" },
-    { name: "Capital Construction Parts Blueprint",   category: "blueprints", sub: "component", price: 0, image: "blueprints/component/capital_construction_parts_blueprint.avif" },
-    { name: "Capital Corporate Hangar Bay Blueprint", category: "blueprints", sub: "component", price: 0, image: "blueprints/component/capital_corporate_hangar_bay_blueprint.avif" },
-    { name: "Capital Drone Bay Blueprint",            category: "blueprints", sub: "component", price: 0, image: "blueprints/component/capital_drone_bay_blueprint.avif" },
-    { name: "Capital Power Generator Blueprint",      category: "blueprints", sub: "component", price: 0, image: "blueprints/component/capital_power_generator_blueprint.avif" },
-    { name: "Capital Propulsion Engine Blueprint",    category: "blueprints", sub: "component", price: 0, image: "blueprints/component/capital_propulsion_engine_blueprint.avif" },
-    { name: "Capital Sensor Cluster Blueprint",       category: "blueprints", sub: "component", price: 0, image: "blueprints/component/capital_sensor_cluster_blueprint.avif" },
-    { name: "Capital Shield Emitter Blueprint",       category: "blueprints", sub: "component", price: 0, image: "blueprints/component/capital_shield_emitter_blueprint.avif" },
-    { name: "Capital Ship Maintenance Bay Blueprint", category: "blueprints", sub: "component", price: 0, image: "blueprints/component/capital_ship_maintenance_bay_blueprint.avif" },
+    { name: "Capital Capacitor Battery Blueprint",    category: "blueprints", sub: "component", price: 0, image: "blueprints/component/capital_capacitor_battery_blueprint.avif",    maxRuns: 20 },
+    { name: "Capital Computer System Blueprint",      category: "blueprints", sub: "component", price: 0, image: "blueprints/component/capital_computer_system_blueprint.avif",      maxRuns: 20 },
+    { name: "Capital Construction Parts Blueprint",   category: "blueprints", sub: "component", price: 0, image: "blueprints/component/capital_construction_parts_blueprint.avif",   maxRuns: 30 },
+    { name: "Capital Corporate Hangar Bay Blueprint", category: "blueprints", sub: "component", price: 0, image: "blueprints/component/capital_corporate_hangar_bay_blueprint.avif", maxRuns: 10 },
+    { name: "Capital Drone Bay Blueprint",            category: "blueprints", sub: "component", price: 0, image: "blueprints/component/capital_drone_bay_blueprint.avif",            maxRuns: 10 },
+    { name: "Capital Power Generator Blueprint",      category: "blueprints", sub: "component", price: 0, image: "blueprints/component/capital_power_generator_blueprint.avif",      maxRuns: 20 },
+    { name: "Capital Propulsion Engine Blueprint",    category: "blueprints", sub: "component", price: 0, image: "blueprints/component/capital_propulsion_engine_blueprint.avif",    maxRuns: 20 },
+    { name: "Capital Sensor Cluster Blueprint",       category: "blueprints", sub: "component", price: 0, image: "blueprints/component/capital_sensor_cluster_blueprint.avif",       maxRuns: 10 },
+    { name: "Capital Shield Emitter Blueprint",       category: "blueprints", sub: "component", price: 0, image: "blueprints/component/capital_shield_emitter_blueprint.avif",       maxRuns: 20 },
+    { name: "Capital Ship Maintenance Bay Blueprint", category: "blueprints", sub: "component", price: 0, image: "blueprints/component/capital_ship_maintenance_bay_blueprint.avif", maxRuns: 10 },
+
+    // ── Fittings ────────────────────────────────────────────────────────────
+    // Add-ons offered in the card-flip configurator for boats/structures
+    // (referenced by name in an item's `fittings`). `kind: "fitting"` keeps them
+    // out of the rendered grid and the filters — they never get a card.
+    { name: "Shield Tank",  price:   250_000_000, kind: "fitting" },
+    { name: "Armor Tank",   price:   240_000_000, kind: "fitting" },
+    { name: "Siege Fit",    price:   600_000_000, kind: "fitting" },
+    { name: "Triage Fit",   price:   550_000_000, kind: "fitting" },
+    { name: "Gank Fit",     price:   820_000_000, kind: "fitting" },
+    { name: "Tackle Fit",   price:    90_000_000, kind: "fitting" },
+    { name: "Travel Fit",   price:   140_000_000, kind: "fitting" },
+    { name: "Cargo Fit",    price:   160_000_000, kind: "fitting" },
+    { name: "Mining Fit",   price:   320_000_000, kind: "fitting" },
+    { name: "PANIC Fit",    price:   210_000_000, kind: "fitting" },
+    { name: "Defense Fit",  price: 1_200_000_000, kind: "fitting" },
+    { name: "Industry Fit", price:   700_000_000, kind: "fitting" },
+    { name: "Reaction Fit", price:   650_000_000, kind: "fitting" },
   ];
 
-  const { normalizeName } = window.ShopUtils;
+  const { normalizeName, formatPrice } = window.ShopUtils;
 
   const SHOP_IMAGE_ROOT = "../assets/images/items/";
+
+  // Runs cap used when a blueprint omits `maxRuns`. Runs-per-BPC defaults to the
+  // cap (see the card-flip configurator + shop-cart).
+  const DEFAULT_MAX_RUNS = 10;
+
+  // Short flavour heading on the flipped configurator face (riffs on the motto,
+  // "Organically grown space boats!").
+  const FLIP_TITLE = "Spice it up";
+
+  // Fittings live in CATALOG as `kind: "fitting"` rows; resolve them into a flat
+  // list + a by-name lookup, and pre-resolve each item's `fittings` names.
+  const FITTINGS = CATALOG
+    .filter((i) => i.kind === "fitting")
+    .map((i) => ({ name: i.name, price: i.price }));
+  const fittingByName = new Map(FITTINGS.map((f) => [normalizeName(f.name), f]));
+  const fittingsByItem = new Map();
+  CATALOG.forEach((item) => {
+    if (!Array.isArray(item.fittings) || item.fittings.length === 0) return;
+    const resolved = item.fittings
+      .map((name) => fittingByName.get(normalizeName(name)))
+      .filter(Boolean);
+    if (resolved.length) fittingsByItem.set(normalizeName(item.name), resolved);
+  });
+
+  // Resolved fittings for an item (boats/structures), or [] when it has none.
+  function fittingsFor(itemName) {
+    return fittingsByItem.get(normalizeName(itemName)) || [];
+  }
+  // A single fitting record by name, or null.
+  function getFittingByName(name) {
+    return fittingByName.get(normalizeName(name)) || null;
+  }
+
+  // Terse element builder for the flip configurator markup below.
+  function el(tag, className, text) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text != null) node.textContent = text;
+    return node;
+  }
 
   // `root` is the path prefix to images/items/ for the current page. Shop pages
   // sit one level deep so default to "../"; the home page passes its own root.
@@ -92,6 +153,99 @@
     return imageRoot.replace(/items\/?$/, "icons/");
   }
 
+  // A +/- stepper with a numeric input, used on the flipped configurator for
+  // quantity (`target: "qty"`) and runs-per-BPC (`target: "runs"`). shop-cart
+  // reads/writes the input by its data hook and clamps on change.
+  function flipStepper(target, value, max) {
+    const wrap = el("div", "flip-stepper");
+    const isRuns = target === "runs";
+
+    const minus = el("button", "flip-step-btn", "−");
+    minus.type = "button";
+    minus.dataset.flipStep = "";
+    minus.dataset.flipTarget = target;
+    minus.dataset.flipDir = "-1";
+    minus.setAttribute("aria-label", isRuns ? "Fewer runs" : "Decrease quantity");
+
+    const input = el("input", "flip-num");
+    input.type = "text";
+    input.inputMode = "numeric";
+    input.value = String(value);
+    input.dataset[isRuns ? "flipRunsInput" : "flipQtyInput"] = "";
+    input.setAttribute("aria-label", isRuns ? "Runs per copy" : "Quantity");
+    if (isRuns && max) input.dataset.flipMax = String(max);
+
+    const plus = el("button", "flip-step-btn", "+");
+    plus.type = "button";
+    plus.dataset.flipStep = "";
+    plus.dataset.flipTarget = target;
+    plus.dataset.flipDir = "1";
+    plus.setAttribute("aria-label", isRuns ? "More runs" : "Increase quantity");
+
+    wrap.appendChild(minus);
+    wrap.appendChild(input);
+    wrap.appendChild(plus);
+    return wrap;
+  }
+
+  // Back face of the flip card — the add-to-cart configurator. Boats/structures
+  // get a fitting dropdown, blueprints a runs-per-BPC stepper, everything a
+  // quantity stepper. The add-to-cart + Config/Close buttons live in the
+  // persistent action row outside the flip (built in createCard), not here;
+  // shop-cart reads these controls when the (shared) ADD button is clicked.
+  function createFlipBack(item, fittings) {
+    const cat = item.category;
+    const back = el("div", "item-card-face item-card-face--back");
+    back.setAttribute("aria-hidden", "true");
+
+    const head = el("div", "flip-back-head");
+    head.appendChild(el("p", "flip-title", FLIP_TITLE));
+    back.appendChild(head);
+
+    back.appendChild(el("p", "flip-item-name", item.name));
+
+    // Fitting dropdown — boats + structures.
+    if ((cat === "boats" || cat === "structures") && fittings.length) {
+      const field = el("div", "flip-field");
+      field.appendChild(el("label", "flip-label", "Fitting(s):"));
+      const select = el("select", "flip-select");
+      select.dataset.flipFitting = "";
+      select.setAttribute("aria-label", `Fitting for ${item.name}`);
+      const none = el("option", null, "None");
+      none.value = "";
+      select.appendChild(none);
+      fittings.forEach((f) => {
+        const opt = el("option", null, `${f.name} — +${formatPrice(f.price)} ISK`);
+        opt.value = f.name;
+        opt.dataset.price = String(f.price);
+        select.appendChild(opt);
+      });
+      field.appendChild(select);
+      const price = el("p", "flip-fit-price", "+0 ISK");
+      price.dataset.flipFitPrice = "";
+      field.appendChild(price);
+      back.appendChild(field);
+    }
+
+    // Runs per BPC — blueprints. Defaults to the cap.
+    if (cat === "blueprints") {
+      const max = item.maxRuns || DEFAULT_MAX_RUNS;
+      const field = el("div", "flip-field");
+      field.appendChild(el("label", "flip-label", "Runs per BPC"));
+      field.appendChild(flipStepper("runs", max, max));
+      back.appendChild(field);
+    }
+
+    // Quantity — all variants. Sits at the bottom of the configurator, just
+    // above the persistent action row.
+    const qtyField = el("div", "flip-field flip-qty-field");
+    qtyField.appendChild(el("label", "flip-label", "Quantity"));
+    qtyField.appendChild(flipStepper("qty", 1));
+    back.appendChild(qtyField);
+
+    return back;
+  }
+
   // Generalized product card, shared across the shop, the home highlights row,
   // and any other page that loads shop-utils + shop-catalog. Options cover the
   // per-page differences; defaults produce the interactive shop card.
@@ -106,6 +260,7 @@
   //   outOfStock      — apply the muted out-of-stock treatment (shop only)
   //   extraClass      — extra class(es) on the card (e.g. "highlight-card")
   //   ariaLabel       — accessible label for link cards
+  //   flip            — build the add-to-cart configurator back face (store/home)
   function createCard(item, opts = {}) {
     const {
       tag = "article",
@@ -120,6 +275,7 @@
       outOfStock = false,
       extraClass = "",
       ariaLabel = null,
+      flip = false,
     } = opts;
 
     const card = document.createElement(tag);
@@ -134,6 +290,8 @@
     card.dataset.price = String(item.price);
     card.dataset.category = item.category;
     if (item.sub) card.dataset.sub = item.sub;
+    // Runs cap for the configurator + cart (blueprints). Read by shop-cart.
+    if (item.category === "blueprints") card.dataset.maxRuns = String(item.maxRuns || DEFAULT_MAX_RUNS);
 
     const badge = document.createElement("span");
     badge.className = "card-badge";
@@ -208,11 +366,15 @@
     footer.appendChild(priceP);
     footer.appendChild(stockState);
 
+    // Action row. The primary add-to-cart button is filled (--primary) to read
+    // as the important action; flip cards get a secondary Config button beside
+    // it (relabelled Close while flipped). The row lives outside the flip so
+    // both buttons stay put — and visible — when the card flips.
     const controls = document.createElement("div");
     controls.className = "item-buy-controls";
     if (action !== "none") {
       const actionEl = document.createElement(action === "button" ? "button" : "span");
-      actionEl.className = "buy-button";
+      actionEl.className = action === "button" ? "buy-button buy-button--primary" : "buy-button";
       actionEl.textContent = actionLabel;
       if (action === "button") {
         actionEl.type = "button";
@@ -220,17 +382,42 @@
         actionEl.setAttribute("aria-label", `Add ${item.name} to cart`);
       }
       controls.appendChild(actionEl);
+
+      if (flip && action === "button") {
+        const cfg = document.createElement("button");
+        cfg.type = "button";
+        cfg.className = "buy-button buy-button--secondary";
+        cfg.textContent = "Config";
+        cfg.setAttribute("data-flip-toggle", "");
+        cfg.setAttribute("aria-label", `Configure ${item.name}`);
+        controls.appendChild(cfg);
+      }
     }
 
     text.appendChild(footer);
-    text.appendChild(controls);
 
     // Badge is absolutely positioned, so DOM order here is the visual order:
-    // image, heading, then the price/stock/action block.
-    card.appendChild(badge);
-    card.appendChild(media);
-    card.appendChild(heading);
-    card.appendChild(text);
+    // image, heading, then the price/stock block. The action row is appended
+    // after (outside the flip for flip cards) so it doesn't rotate.
+    const frontChildren = [badge, media, heading, text];
+
+    if (flip) {
+      // Wrap the front content + configurator back face in the rotating flip
+      // element; shop-cart reads the back controls when ADD is clicked.
+      const flipEl = document.createElement("div");
+      flipEl.className = "item-card-flip";
+      const front = document.createElement("div");
+      front.className = "item-card-face item-card-face--front";
+      front.setAttribute("aria-hidden", "false");
+      frontChildren.forEach((child) => front.appendChild(child));
+      flipEl.appendChild(front);
+      flipEl.appendChild(createFlipBack(item, fittingsFor(item.name)));
+      card.appendChild(flipEl);
+      card.appendChild(controls);
+    } else {
+      frontChildren.forEach((child) => card.appendChild(child));
+      if (action !== "none") card.appendChild(controls);
+    }
     return card;
   }
 
@@ -238,14 +425,22 @@
     const display = document.querySelector(".display");
     if (!display) return;
     const frag = document.createDocumentFragment();
-    CATALOG.forEach((item) => frag.appendChild(createCard(item)));
+    // Fittings are add-ons (kind:"fitting") — they never get a card of their own.
+    CATALOG.forEach((item) => {
+      if (item.kind === "fitting") return;
+      frag.appendChild(createCard(item, { flip: true }));
+    });
     display.appendChild(frag);
   }
 
   // Shared product data + helpers, consumed by the home highlights row and any
   // page that wants product cards. (renderCatalog no-ops where there is no
-  // .display, e.g. the home page.)
-  window.ShopCatalog = { CATALOG, imagePath, badgeText, createCard };
+  // .display, e.g. the home page.) fittingsFor / fittingByName back the cart's
+  // per-item fitting dropdowns; FITTINGS is the flat add-on list.
+  window.ShopCatalog = {
+    CATALOG, imagePath, badgeText, createCard,
+    fittingsFor, fittingByName: getFittingByName, FITTINGS,
+  };
 
   renderCatalog();
 })();

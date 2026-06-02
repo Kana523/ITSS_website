@@ -30,7 +30,13 @@ document.addEventListener("DOMContentLoaded", () => {
     console.error("shop-cart.js: window.ShopAPI missing — shop-api.js failed to load.");
     return;
   }
+  if (!window.ShopCatalog) {
+    console.error("shop-cart.js: window.ShopCatalog missing — shop-catalog.js failed to load.");
+    return;
+  }
   const { formatPrice, formatPriceLong, formatPriceCompact, parsePriceToIsk, normalizeName, isLocalHost } = window.ShopUtils;
+  // Per-item fitting lists + by-name lookup live in the catalog (boats/structures).
+  const { fittingsFor, fittingByName } = window.ShopCatalog;
   const CART_STORAGE_KEY = "itss_shop_cart_v1";
   const ORDER_ID_LENGTH = 20;
   const ORDER_ID_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -44,12 +50,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     return out;
   }
-
-  const FITTINGS = [
-    { name: "Bork 1", price:  50000000 },
-    { name: "Bork 2", price: 120000000 },
-    { name: "Bork 3", price: 275000000 },
-  ];
 
   let cart = loadCart();
 
@@ -71,15 +71,29 @@ document.addEventListener("DOMContentLoaded", () => {
         const safePrice = parsePriceToIsk(item.price, item.priceLabel);
         if (!safeKey || !safeName || !Number.isFinite(safeQty) || safeQty < 1) return;
 
+        const category = String(item.category || "").trim();
+
+        // Blueprints carry runs-per-BPC (capped at maxRuns); restore both,
+        // clamping runs into [1, maxRuns] and defaulting to the cap.
+        let bp = {};
+        if (category.toLowerCase() === "blueprints") {
+          const m   = Math.floor(Number(item.maxRuns));
+          const max = Number.isFinite(m) && m >= 1 ? m : 1;
+          const r   = Math.floor(Number(item.runs));
+          const runs = Number.isFinite(r) && r >= 1 ? Math.min(r, max) : max;
+          bp = { maxRuns: max, runs };
+        }
+
         normalized[safeKey] = {
           key:        safeKey,
           name:       safeName,
           qty:        Math.floor(safeQty),
           price:      Number.isFinite(safePrice) ? safePrice : 0,
           priceLabel: formatPrice(Number.isFinite(safePrice) ? safePrice : 0),
-          category:   String(item.category || "").trim(),
+          category,
           img:        String(item.img       || "").trim(),
           extras:     Array.isArray(item.extras) ? item.extras : [],
+          ...bp,
         };
       });
       return normalized;
@@ -103,7 +117,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const category = String(card.dataset.category || "").trim();
     const imgEl    = card.querySelector("img");
     const img      = imgEl ? imgEl.src : "";
-    return { key, name, price, category, img };
+    const maxRunsRaw = Number.parseInt(card.dataset.maxRuns || "", 10);
+    const maxRuns  = Number.isFinite(maxRunsRaw) ? maxRunsRaw : null;
+    return { key, name, price, category, img, maxRuns };
   }
 
   const MAX_QTY = 999999999;
@@ -129,6 +145,21 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!input) return;
     const digits = Math.max(1, String(input.value || "").length);
     input.style.width = `${Math.min(14, digits + 1)}ch`;
+  }
+
+  // Clamp a runs value into [1, max] (digits-only input tolerated).
+  function clampRunsTo(raw, max) {
+    const m = Math.max(1, Number(max) || 1);
+    const n = Number.parseInt(parseQtyDigits(raw) || "0", 10);
+    if (!Number.isFinite(n) || n < 1) return 1;
+    return Math.min(n, m);
+  }
+
+  // Per-unit price including the runs multiplier for blueprints (price scales
+  // with runs-per-BPC); everything else is just its price.
+  function effectivePrice(item) {
+    const runs = item.category === "blueprints" ? Math.max(1, Number(item.runs) || 1) : 1;
+    return item.price * runs;
   }
 
   // ── Drawer open / close ──────────────────────────────────────────────────────
@@ -299,7 +330,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ── Cart mutations ───────────────────────────────────────────────────────────
 
-  function addToCart(product, qtyToAdd = 1) {
+  // opts (from the card-flip configurator):
+  //   runs    — runs-per-BPC for blueprints (defaults to maxRuns)
+  //   maxRuns — runs cap (else read from product/existing entry)
+  //   fitting — { name, price } to add as an extra (boats/structures)
+  function addToCart(product, qtyToAdd = 1, opts = {}) {
     if (!product) return;
     const { key } = product;
     if (!cart[key]) {
@@ -308,10 +343,37 @@ document.addEventListener("DOMContentLoaded", () => {
     cart[key].price    = product.price;
     cart[key].category = product.category || cart[key].category;
     cart[key].img      = product.img      || cart[key].img;
+
+    if (cart[key].category === "blueprints") {
+      const max = Math.max(1, Number(opts.maxRuns ?? product.maxRuns ?? cart[key].maxRuns) || 1);
+      let runs = Number(opts.runs);
+      if (!Number.isFinite(runs) || runs < 1) runs = max;   // default to the cap
+      cart[key].maxRuns = max;
+      cart[key].runs = Math.min(Math.max(1, Math.floor(runs)), max);
+    }
+
     const desired = cart[key].qty + clampQty(qtyToAdd);
     const next = clampQtyToStock(key, desired);
     cart[key].qty = next > 0 ? next : 0;
-    if (cart[key].qty === 0) delete cart[key];
+    if (cart[key].qty === 0) {
+      delete cart[key];
+      saveCart();
+      renderCart();
+      return;
+    }
+
+    // Selected fitting rides along as an extra (the cart drawer can adjust it).
+    if (opts.fitting && opts.fitting.name) {
+      if (!cart[key].extras) cart[key].extras = [];
+      const existing = cart[key].extras.find((e) => e.name === opts.fitting.name);
+      if (existing) {
+        existing.qty += 1;
+        if (Number.isFinite(opts.fitting.price)) existing.price = opts.fitting.price;
+      } else {
+        cart[key].extras.push({ name: opts.fitting.name, price: opts.fitting.price, qty: 1 });
+      }
+    }
+
     saveCart();
     renderCart();
   }
@@ -386,6 +448,22 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!cart[key]) return;
     cart[key].qty = clampQtyToStock(key, clampQty(qty));
     if (cart[key].qty <= 0) delete cart[key];
+    saveCart();
+    renderCart();
+  }
+
+  // Runs-per-BPC adjustment (blueprints), clamped to the item's cap.
+  function changeRuns(key, delta) {
+    if (!cart[key]) return;
+    const max = Math.max(1, Number(cart[key].maxRuns) || 1);
+    cart[key].runs = Math.min(max, Math.max(1, (Number(cart[key].runs) || 1) + delta));
+    saveCart();
+    renderCart();
+  }
+
+  function setRuns(key, raw) {
+    if (!cart[key]) return;
+    cart[key].runs = clampRunsTo(raw, cart[key].maxRuns);
     saveCart();
     renderCart();
   }
@@ -487,7 +565,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let totalValue = 0;
     for (const item of items) {
       totalItems += item.qty;
-      totalValue += item.price * item.qty;
+      totalValue += effectivePrice(item) * item.qty;
       item.extras?.forEach((ex) => {
         if (Number.isFinite(ex.price)) totalValue += ex.price * ex.qty;
       });
@@ -527,9 +605,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const consolidatePreorders = preorderInfoByKey.size > 2;
 
     items.forEach((item) => {
-      const isBoat = item.category === "boats";
+      const itemFittings = fittingsFor(item.name);
+      const supportsFittings = itemFittings.length > 0;   // boats + structures
+      const isBlueprint = item.category === "blueprints";
       const li = document.createElement("li");
-      li.className = `cart-item${isBoat ? " cart-item--boat" : ""}`;
+      li.className = `cart-item${supportsFittings ? " cart-item--boat" : ""}`;
 
       // ── Image ──
       const imgWrap = document.createElement("div");
@@ -566,7 +646,9 @@ document.addEventListener("DOMContentLoaded", () => {
       mainRow.className = "cart-controls-row";
       const priceEl = document.createElement("span");
       priceEl.className = "cart-item-price";
-      priceEl.innerHTML = `${formatPrice(item.price)}<span class="cart-price-label"> / item</span>`;
+      // Blueprint price already folds in the runs multiplier (price per copy).
+      const unitLabel = isBlueprint ? " / copy" : " / item";
+      priceEl.innerHTML = `${formatPrice(effectivePrice(item))}<span class="cart-price-label">${unitLabel}</span>`;
       const qtyWrap = makeQtyWrap(
         item.qty,
         "lg",
@@ -578,8 +660,27 @@ document.addEventListener("DOMContentLoaded", () => {
       mainRow.appendChild(qtyWrap);
       stack.appendChild(mainRow);
 
-      // Extras (boats only)
-      if (isBoat) {
+      // Runs-per-BPC control (blueprints). Changing it rescales the price above.
+      if (isBlueprint) {
+        const runsRow = document.createElement("div");
+        runsRow.className = "cart-controls-row cart-runs-row";
+        const runsLabel = document.createElement("span");
+        runsLabel.className = "cart-runs-label";
+        runsLabel.textContent = "Runs / BPC";
+        const runsWrap = makeQtyWrap(
+          Math.max(1, Number(item.runs) || 1),
+          "sm",
+          { cartAction: "runs-decrease", name: item.key },
+          { cartAction: "runs-increase", name: item.key },
+          { cartRunsInput: item.key }
+        );
+        runsRow.appendChild(runsLabel);
+        runsRow.appendChild(runsWrap);
+        stack.appendChild(runsRow);
+      }
+
+      // Extras + fitting picker (boats + structures)
+      if (supportsFittings) {
         if (item.extras?.length > 0) {
           const extrasWrap = document.createElement("div");
           extrasWrap.className = "cart-extras";
@@ -646,7 +747,7 @@ document.addEventListener("DOMContentLoaded", () => {
         placeholder.selected = true;
         fitSelect.appendChild(placeholder);
 
-        FITTINGS.forEach((f) => {
+        itemFittings.forEach((f) => {
           const opt = document.createElement("option");
           opt.value = f.name;
           opt.textContent = `${f.name} — ${formatPrice(f.price)} ISK`;
@@ -665,7 +766,7 @@ document.addEventListener("DOMContentLoaded", () => {
       totalLabel.textContent = "Total";
       const totalVal = document.createElement("span");
       totalVal.className = "cart-item-total-value";
-      let itemLineTotal = item.price * item.qty;
+      let itemLineTotal = effectivePrice(item) * item.qty;
       item.extras?.forEach((ex) => {
         if (Number.isFinite(ex.price)) itemLineTotal += ex.price * ex.qty;
       });
@@ -770,57 +871,205 @@ document.addEventListener("DOMContentLoaded", () => {
   cartDrawerClose?.addEventListener("click", closeCart);
   cartBackdrop?.addEventListener("click", closeCart);
 
+  // ── Card-flip configurator (store/home) ──────────────────────────────────────
+  // Cards built with `flip` carry a back face (qty / fitting / runs controls).
+  // The Config button flips to it (relabelling itself Close); the shared ADD
+  // button adds — with the chosen options when flipped, with defaults when not.
+
+  function openFlip(card) {
+    if (!card) return;
+    // One open configurator at a time.
+    document.querySelectorAll(".item-card.is-flipped").forEach((c) => { if (c !== card) flipCardBack(c); });
+    card.querySelector(".item-card-face--front")?.setAttribute("aria-hidden", "true");
+    card.querySelector(".item-card-face--back")?.setAttribute("aria-hidden", "false");
+    const toggle = card.querySelector("[data-flip-toggle]");
+    if (toggle) toggle.textContent = "Close";
+    card.classList.add("is-flipped");
+    (card.querySelector(".item-card-face--back select, .item-card-face--back input") || toggle)?.focus();
+  }
+
+  function flipCardBack(card) {
+    if (!card || !card.classList.contains("is-flipped")) return;
+    card.classList.remove("is-flipped");
+    card.querySelector(".item-card-face--front")?.setAttribute("aria-hidden", "false");
+    card.querySelector(".item-card-face--back")?.setAttribute("aria-hidden", "true");
+    const toggle = card.querySelector("[data-flip-toggle]");
+    if (toggle) toggle.textContent = "Config";
+    resetFlipControls(card);
+  }
+
+  function resetFlipControls(card) {
+    const qty = card.querySelector("[data-flip-qty-input]");
+    if (qty) qty.value = "1";
+    const runs = card.querySelector("[data-flip-runs-input]");
+    if (runs) runs.value = card.dataset.maxRuns || runs.dataset.flipMax || "1";
+    const fit = card.querySelector("[data-flip-fitting]");
+    if (fit) { fit.value = ""; updateFlipFitPrice(fit); }
+  }
+
+  function readFlipControls(card) {
+    const qtyInput = card.querySelector("[data-flip-qty-input]");
+    const qty = qtyInput ? clampQty(qtyInput.value) : 1;
+
+    let runs = null, maxRuns = null;
+    if ((card.dataset.category || "") === "blueprints") {
+      maxRuns = Math.max(1, Number.parseInt(card.dataset.maxRuns || "1", 10) || 1);
+      const runsInput = card.querySelector("[data-flip-runs-input]");
+      runs = runsInput ? clampRunsTo(runsInput.value, maxRuns) : maxRuns;
+    }
+
+    let fitting = null;
+    const fitSelect = card.querySelector("[data-flip-fitting]");
+    if (fitSelect && fitSelect.value) {
+      const opt = fitSelect.selectedOptions[0];
+      const price = Number(opt?.dataset.price);
+      fitting = { name: fitSelect.value, price: Number.isFinite(price) ? price : 0 };
+    }
+    return { qty, runs, maxRuns, fitting };
+  }
+
+  function stepFlipInput(btn) {
+    const card = btn.closest(".item-card");
+    if (!card) return;
+    const dir = Number(btn.dataset.flipDir) || 0;
+    if (btn.dataset.flipTarget === "runs") {
+      const input = card.querySelector("[data-flip-runs-input]");
+      if (!input) return;
+      const max = Math.max(1, Number.parseInt(card.dataset.maxRuns || "1", 10) || 1);
+      input.value = String(Math.min(max, Math.max(1, clampRunsTo(input.value, max) + dir)));
+    } else {
+      const input = card.querySelector("[data-flip-qty-input]");
+      if (!input) return;
+      input.value = formatQty(Math.max(1, clampQty(input.value) + dir));
+    }
+  }
+
+  function updateFlipFitPrice(select) {
+    const priceEl = select.closest(".flip-field")?.querySelector("[data-flip-fit-price]");
+    if (!priceEl) return;
+    const price = Number(select.selectedOptions[0]?.dataset.price) || 0;
+    priceEl.textContent = price > 0 ? `+${formatPrice(price)} ISK` : "+0 ISK";
+  }
+
   document.addEventListener("click", (e) => {
-    // Add to cart buttons on product cards
+    // Shared ADD button: add with the configurator's values (defaults when the
+    // card is sitting on its front face, the user's picks when flipped), then
+    // flip back if it was open. readFlipControls returns sensible defaults for
+    // cards without a back face too.
     const addBtn = e.target.closest("[data-cart-add]");
     if (addBtn) {
       const card = addBtn.closest(".item-card");
       const product = getProductData(card);
       if (product) {
-        addToCart(product, 1);
+        const sel = readFlipControls(card);
+        addToCart(product, sel.qty, { runs: sel.runs, maxRuns: sel.maxRuns, fitting: sel.fitting });
         showAddToCartToast(product);
       }
+      if (card?.classList.contains("is-flipped")) flipCardBack(card);
       return;
     }
 
-    // Cart action buttons
+    // Config / Close: toggle the configurator open or shut.
+    const flipToggle = e.target.closest("[data-flip-toggle]");
+    if (flipToggle) {
+      const card = flipToggle.closest(".item-card");
+      if (card?.classList.contains("is-flipped")) flipCardBack(card);
+      else openFlip(card);
+      return;
+    }
+
+    // +/- steppers inside the configurator (qty / runs).
+    const flipStepBtn = e.target.closest("[data-flip-step]");
+    if (flipStepBtn) { stepFlipInput(flipStepBtn); return; }
+
+    // Cart drawer action buttons.
     const actionBtn = e.target.closest("[data-cart-action]");
-    if (!actionBtn) return;
-    const action = actionBtn.dataset.cartAction;
-    const key    = String(actionBtn.dataset.name || "").trim();
+    if (actionBtn) {
+      const action = actionBtn.dataset.cartAction;
+      const key    = String(actionBtn.dataset.name || "").trim();
 
-    if (action === "decrease"       && key) changeQty(key, -1);
-    if (action === "increase"       && key) changeQty(key,  1);
-    if (action === "remove"         && key) removeItem(key);
+      if (action === "decrease"       && key) changeQty(key, -1);
+      if (action === "increase"       && key) changeQty(key,  1);
+      if (action === "remove"         && key) removeItem(key);
 
-    if (action === "extra-decrease" && key) changeExtraQty(key, Number(actionBtn.dataset.extraIdx), -1);
-    if (action === "extra-increase" && key) changeExtraQty(key, Number(actionBtn.dataset.extraIdx),  1);
-    if (action === "extra-remove"   && key) removeExtra(key, Number(actionBtn.dataset.extraIdx));
+      if (action === "runs-decrease"  && key) changeRuns(key, -1);
+      if (action === "runs-increase"  && key) changeRuns(key,  1);
+
+      if (action === "extra-decrease" && key) changeExtraQty(key, Number(actionBtn.dataset.extraIdx), -1);
+      if (action === "extra-increase" && key) changeExtraQty(key, Number(actionBtn.dataset.extraIdx),  1);
+      if (action === "extra-remove"   && key) removeExtra(key, Number(actionBtn.dataset.extraIdx));
+      return;
+    }
+
+    // A click anywhere outside an open configurator returns it to the front.
+    document.querySelectorAll(".item-card.is-flipped").forEach((card) => {
+      if (!card.contains(e.target)) flipCardBack(card);
+    });
+  });
+
+  // Escape returns any open configurator to its front.
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape") return;
+    document.querySelectorAll(".item-card.is-flipped").forEach((card) => flipCardBack(card));
   });
 
   document.addEventListener("input", (e) => {
-    if (e.target.dataset.cartQtyInput !== undefined || e.target.dataset.cartExtraQtyInput !== undefined) {
-      const digits = parseQtyDigits(e.target.value).slice(0, 9);
-      e.target.value = digits ? formatQty(Number.parseInt(digits, 10)) : "";
-      resizeQtyInput(e.target);
+    const t = e.target;
+    if (t.dataset.cartQtyInput !== undefined || t.dataset.cartExtraQtyInput !== undefined) {
+      const digits = parseQtyDigits(t.value).slice(0, 9);
+      t.value = digits ? formatQty(Number.parseInt(digits, 10)) : "";
+      resizeQtyInput(t);
+      return;
+    }
+    if (t.dataset.cartRunsInput !== undefined) {
+      t.value = parseQtyDigits(t.value).slice(0, 4);
+      resizeQtyInput(t);
+      return;
+    }
+    if (t.hasAttribute("data-flip-qty-input")) {
+      const digits = parseQtyDigits(t.value).slice(0, 9);
+      t.value = digits ? formatQty(Number.parseInt(digits, 10)) : "";
+      return;
+    }
+    if (t.hasAttribute("data-flip-runs-input")) {
+      t.value = parseQtyDigits(t.value).slice(0, 4);
     }
   });
 
   document.addEventListener("change", (e) => {
-    if (e.target.dataset.cartQtyInput !== undefined) {
-      setQty(e.target.dataset.cartQtyInput, e.target.value);
+    const t = e.target;
+    if (t.dataset.cartQtyInput !== undefined) {
+      setQty(t.dataset.cartQtyInput, t.value);
       return;
     }
-    if (e.target.dataset.cartExtraQtyInput !== undefined) {
-      setExtraQty(e.target.dataset.cartExtraQtyInput, Number(e.target.dataset.extraIdx), e.target.value);
+    if (t.dataset.cartExtraQtyInput !== undefined) {
+      setExtraQty(t.dataset.cartExtraQtyInput, Number(t.dataset.extraIdx), t.value);
       return;
     }
-    if (e.target.dataset.fittingSelect) {
-      const key = e.target.dataset.fittingSelect;
-      const fittingName = e.target.value;
-      e.target.value = "";
+    if (t.dataset.cartRunsInput !== undefined) {
+      setRuns(t.dataset.cartRunsInput, t.value);
+      return;
+    }
+    if (t.hasAttribute("data-flip-qty-input")) {
+      t.value = formatQty(clampQty(t.value));
+      return;
+    }
+    if (t.hasAttribute("data-flip-runs-input")) {
+      const card = t.closest(".item-card");
+      const max = Math.max(1, Number.parseInt(card?.dataset.maxRuns || "1", 10) || 1);
+      t.value = String(clampRunsTo(t.value, max));
+      return;
+    }
+    if (t.hasAttribute("data-flip-fitting")) {
+      updateFlipFitPrice(t);
+      return;
+    }
+    if (t.dataset.fittingSelect) {
+      const key = t.dataset.fittingSelect;
+      const fittingName = t.value;
+      t.value = "";
       if (!fittingName) return;
-      const fitting = FITTINGS.find((f) => f.name === fittingName);
+      const fitting = fittingByName(fittingName);
       if (fitting) addExtra(key, fitting);
     }
   });
@@ -888,7 +1137,8 @@ document.addEventListener("DOMContentLoaded", () => {
       name: item.name,
       category: item.category || "",
       qty: item.qty,
-      price: item.price,
+      price: item.price,   // per-copy base; runs multiplier applied server-side
+      ...(item.category === "blueprints" ? { runs: Math.max(1, Number(item.runs) || 1) } : {}),
       extras: (item.extras || []).map((ex) => ({
         name: ex.name,
         price: Number.isFinite(ex.price) ? ex.price : 0,

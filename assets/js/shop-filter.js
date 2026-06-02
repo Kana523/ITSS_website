@@ -199,7 +199,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (actionButton) {
-      actionButton.textContent = outOfStock ? "PRE-ORDER" : "ADD TO CART";
+      actionButton.textContent = outOfStock ? "ORDER" : "ADD TO CART";
     }
   }
 

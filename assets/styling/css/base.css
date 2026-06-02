@@ -46,7 +46,7 @@
   --cat-materials: #EDCB40;
   --cat-misc: #69FF69;
   --cat-boats-dim: #6A219C;
-  --cat-blueprints-dim: #0361A0;
+  --cat-blueprints-dim: #034A78;
   --cat-structures-dim: #911D1F;
   --cat-materials-dim: #806E00;
   --cat-misc-dim: #007500;
@@ -263,6 +263,27 @@ nav a[aria-current="page"] {
   background-color: var(--surface-hover);
 }
 
+/* Primary CTA (add-to-cart): dark gold-tinted fill with a gold edge — important
+   via the outline/fill contrast, but easy on the eyes (no bright fill/glow). */
+.buy-button--primary {
+  background: color-mix(in oklch, var(--gold-300) 18%, var(--surface));
+  border-color: var(--gold-200);
+  color: var(--text-muted);
+}
+.buy-button--primary:hover,
+.buy-button--primary:focus-visible {
+  background: color-mix(in oklch, var(--gold-300) 30%, var(--surface));
+  border-color: var(--text-strong);
+  color: var(--text-strong);
+}
+
+/* Secondary action (Config / Close): quieter outline, no fill, so it sits
+   below the primary in the hierarchy while sharing the rest of .buy-button. */
+.buy-button--secondary {
+  border-color: var(--border-subtle);
+  color: var(--text-muted);
+}
+
 /* ── Shared layout utilities ─────────────────────────────────────────────── */
 
 /* Gold-bordered content panel (about cards, legal sections, …). Pages add their
@@ -291,6 +312,10 @@ nav a[aria-current="page"] {
 /*Card CSS */
 .item-card {
   position: relative;
+  /* Uniform 1.2× scale of the whole card (image, text, padding, glow). zoom is
+     layout-aware — flex-wrap reflows and shop-filter's row-balancer reads the
+     scaled width — so nothing else needs adjusting. */
+  zoom: 1.2;
   --cat: var(--text-muted);
   display: flex;
   flex-direction: column;
@@ -300,24 +325,32 @@ nav a[aria-current="page"] {
   max-width: 220px;
   border: var(--border-md) solid var(--text);
   padding: 5px 0;
-  transition: transform var(--transition-fast);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
-/* Slight zoom on hover for every card, site-wide. */
+/* Highlight on hover for every card, site-wide: brighten the border to the
+   card's category colour and add a matching outer glow. No scale → no blur
+   through the flip configurator's 3D context. */
 .item-card:hover,
 .item-card:focus-visible {
-  transform: scale(1.03);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .item-card { transition: none; }
-  .item-card:hover,
-  .item-card:focus-visible { transform: none; }
+  border-color: var(--cat);
+  box-shadow: 0 0 16px -2px color-mix(in oklch, var(--cat) 45%, transparent);
 }
 
 .item-card h2 {
   text-align: center;
-  font-size: var(--font-medium);
+  font-size: 19px;
+  /* Fill the gap between the (fixed) image and the (bottom-pinned) footer, and
+     centre the title within it. Cards in a row are equal height with a fixed
+     image + footer, so this region matches across the row — a short 1-line
+     title sits vertically centred over the height a 2–3 line title occupies.
+     align-self override lets the title use the full card width so it still
+     wraps at the card edge rather than shrinking to its content. */
+  align-self: stretch;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 /* Hidden in the visible title but kept in textContent so the cart/order read
@@ -369,6 +402,8 @@ nav a[aria-current="page"] {
   display: flex;
   flex-direction: column;
   width: 100%;
+  /* The title (h2) above grows to absorb the slack, so this price/stock/button
+     block lands at the card bottom and lines up across the row. */
 }
 
 .item-card-footer {
@@ -377,6 +412,10 @@ nav a[aria-current="page"] {
   justify-content: center;
   gap: 10px;
 }
+/* Price + stock readout — bumped up slightly from the inherited 16px. */
+.item-card-footer p {
+  font-size: 17px;
+}
 
 .stock-state {
   display: flex;
@@ -384,11 +423,36 @@ nav a[aria-current="page"] {
   gap: 5px;
   position: relative;
 }
+/* Stock icon — source is 64×64 (enhanced so it stays sharp under the card
+   zoom); cap the display size so it sits at icon scale beside the count. */
+.stock-state img {
+  width: 32px;
+  height: 32px;
+}
 
+/* Persistent action row (outside the flip): primary add-to-cart + optional
+   secondary Config/Close. Stays put and visible while the card flips. */
 .item-buy-controls {
   display: flex;
   justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 0 8px;
+  box-sizing: border-box;
   margin-top: 6px;
+}
+.item-buy-controls .buy-button {
+  flex: 0 0 auto;            /* size to label — primary is a normal-width CTA, not the full row */
+  min-width: 0;
+  padding: 8px 10px;
+  font-size: var(--font-small);
+  white-space: nowrap;
+}
+/* Secondary (Config/Close) sits to the left of the primary; the fixed min-width
+   holds its size across the Config↔Close relabel so nothing reflows on flip. */
+.item-buy-controls .buy-button--secondary {
+  order: -1;
+  min-width: 70px;
 }
 
 /* ── Category badge (corner). Gold by default; category colour on --cat cards ── */
@@ -419,11 +483,22 @@ nav a[aria-current="page"] {
   inset: 0;
   pointer-events: none;
   z-index: 1;
+  transition: box-shadow var(--transition-fast);
   box-shadow:
     inset 0 16px 24px -10px color-mix(in oklch, var(--cat) 80%, transparent),
     inset 0 -10px 16px -10px color-mix(in oklch, var(--cat) 50%, transparent),
     inset 10px 0 16px -10px color-mix(in oklch, var(--cat) 5%, transparent),
     inset -10px 0 16px -10px color-mix(in oklch, var(--cat) 5%, transparent);
+}
+
+/* Intensify the inset glow on hover (pairs with the border/outer glow). */
+.item-card--cat:hover::after,
+.item-card--cat:focus-visible::after {
+  box-shadow:
+    inset 0 16px 28px -8px color-mix(in oklch, var(--cat) 100%, transparent),
+    inset 0 -12px 20px -8px color-mix(in oklch, var(--cat) 70%, transparent),
+    inset 12px 0 18px -10px color-mix(in oklch, var(--cat) 12%, transparent),
+    inset -12px 0 18px -10px color-mix(in oklch, var(--cat) 12%, transparent);
 }
 
 .item-card--cat[data-category="boats"]       { --cat: var(--cat-boats); }
@@ -440,6 +515,21 @@ nav a[aria-current="page"] {
 .item-card--cat.item-card--out-of-stock[data-category="structures"]  { --cat: var(--cat-structures-dim); }
 .item-card--cat.item-card--out-of-stock[data-category="materials"]   { --cat: var(--cat-materials-dim); }
 .item-card--cat.item-card--out-of-stock[data-category="misc"]        { --cat: var(--cat-misc-dim); }
+
+/* Dim the artwork + readout so the whole card reads inactive, not just the
+   accent colour — otherwise the (full-brightness) image dominates and the card
+   looks in-stock, most noticeably for blueprints. The badge and ORDER
+   button stay legible (the action row sits outside the flip). */
+.item-card--out-of-stock .item-media {
+  opacity: 0.45;   /* dims the art + the blueprint ME/TE box together */
+}
+.item-card--out-of-stock .item-media > img {
+  filter: grayscale(0.5);
+}
+.item-card--out-of-stock h2,
+.item-card--out-of-stock .text {
+  opacity: 0.6;
+}
 
 .item-card--out-of-stock .stock-state[data-next-stock] {
   cursor: help;
@@ -460,3 +550,161 @@ nav a[aria-current="page"] {
   text-align: center;
 }
 /*End of Card CSS */
+
+/* ── Card flip: add-to-cart configurator (store/home) ──────────────────────
+   The bordered frame (.item-card) stays put; its inner content rotates. The
+   front face drives height (in normal flow); the back face overlays it
+   absolutely, pre-rotated 180°, and backface-visibility hides whichever is
+   turned away. Back content is designed to fit within the front's height. */
+.item-card {
+  perspective: 1200px;
+}
+
+.item-card-flip {
+  position: relative;
+  width: 100%;
+  /* Grow to fill the card (which stretches to the row's tallest), and lay the
+     front face out as a column so it can fill in turn → button bottoms align. */
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  transform-style: preserve-3d;
+  /* Keep this on its own compositing layer permanently. Otherwise the layer is
+     torn down when the flip-back transition ends and the contents re-snap to
+     the pixel grid — a visible ~1px nudge, made consistent by the card's zoom. */
+  will-change: transform;
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.item-card.is-flipped .item-card-flip {
+  transform: rotateY(180deg);
+}
+
+.item-card-face {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.item-card-face--front {
+  position: relative;          /* in flow → sizes the flip; anchors card badge */
+  flex: 1 1 auto;              /* fill the flip so .text's margin-top:auto bottoms the button */
+}
+.item-card-face--back {
+  position: absolute;
+  inset: 0;
+  transform: rotateY(180deg);
+  justify-content: flex-start;
+  gap: 6px;
+  padding: 6px 10px 4px;
+  box-sizing: border-box;
+  overflow: auto;              /* safety if a back face ever exceeds the front */
+  text-align: center;
+  pointer-events: none;        /* not interactive until flipped to */
+}
+.item-card.is-flipped .item-card-face--front { pointer-events: none; }
+.item-card.is-flipped .item-card-face--back  { pointer-events: auto; }
+
+@media (prefers-reduced-motion: reduce) {
+  .item-card-flip { transition: none; }
+}
+
+/* back-face header: flavour title (close lives in the persistent action row) */
+.flip-back-head {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+.flip-title {
+  font-family: var(--font-title);
+  font-size: 18px;
+  letter-spacing: 0.06em;
+  color: var(--text-strong);
+}
+
+.flip-item-name {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-text);
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.flip-field {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  width: 100%;
+}
+/* quantity sits at the bottom of the configurator, above the action row */
+.flip-qty-field {
+  margin-top: auto;
+}
+.flip-label {
+  font-family: var(--font-text);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  color: var(--text);
+}
+
+.flip-select {
+  width: 100%;
+  max-width: 190px;
+  padding: 4px 8px;
+  border: var(--border-sm) solid var(--border-subtle);
+  border-radius: 3px;
+  background: var(--surface-control);
+  color: var(--text-muted);
+  font-family: var(--font-text);
+  font-size: 14px;
+}
+.flip-select option {
+  background: var(--surface);
+  color: var(--text-muted);
+}
+.flip-fit-price {
+  font-family: var(--font-text);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-strong);
+}
+
+.flip-stepper {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.flip-step-btn {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: var(--border-sm) solid var(--text-strong);
+  border-radius: 3px;
+  background: var(--surface-control);
+  color: var(--text-muted);
+  font-family: var(--font-text);
+  font-size: 18px;
+  transition: background var(--transition-fast);
+}
+.flip-step-btn:hover { background: var(--surface-hover); }
+.flip-num {
+  width: 48px;
+  box-sizing: border-box;
+  padding: 3px 4px;
+  text-align: center;
+  border: var(--border-sm) solid var(--border-subtle);
+  border-radius: 2px;
+  background: var(--surface-control);
+  color: var(--text-muted);
+  font-family: var(--font-text);
+  font-size: 16px;
+}
+
