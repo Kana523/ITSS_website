@@ -651,3 +651,25 @@ nav a[aria-current="page"] {
   font-size: 16px;
 }
 
+/* materials coarse-step row in the configurator (±100k / ±1m) */
+.flip-bigstep-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.flip-bigstep-btn {
+  height: 26px;
+  padding: 0 6px;
+  border: var(--border-sm) solid var(--text-strong);
+  border-radius: 3px;
+  background: var(--surface-control);
+  color: var(--text-muted);
+  font-family: var(--font-text);
+  font-size: 12px;
+  white-space: nowrap;
+  transition: background var(--transition-fast);
+}
+.flip-bigstep-btn:hover { background: var(--surface-hover); }
+

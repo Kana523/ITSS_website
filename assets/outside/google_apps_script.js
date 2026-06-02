@@ -4,7 +4,8 @@ const ARCHIVE_SHEET_NAME  = "WebOrdersArchive";
 
 // WebOrders columns (1-indexed): orderId, status, customerRef, timestamp,
 // key, name, category, qty, unitPrice, lineTotal, orderTotal, isExtra.
-// `key` = normalized name (lookup), `name` = display; extras use the parent key.
+// `key` = normalized name (lookup), `name` = display. A line's fitting (boats/
+// structures) is written as a second row (isExtra=true) under the parent key.
 const WEBORDERS_HEADERS = [
   "orderId", "status", "customerRef", "timestamp",
   "key", "name", "category", "qty",
@@ -42,7 +43,7 @@ function readStockData(sheet) {
 
 // sums reserved qty per item key (orders with status New / In progress). Status
 // is on each order's first row, so scan twice: map orderId→status, then sum
-// (skipping extras). Reads col F (name) for back-compat with old col E SKUs.
+// (skipping isExtra fitting rows). Reads col F (name) for back-compat with old col E SKUs.
 function computeReservations(ordersSheet) {
   const reserved = new Map();
   if (!ordersSheet || ordersSheet.getLastRow() < 2) return reserved;
@@ -259,13 +260,24 @@ function doPost(e) {
       }
       if (acceptedQty <= 0) continue;
 
+      // Single fitting add-on (boats/structures), priced per unit with qty == the
+      // line qty. Prefer the sheet price if the fitting is stocked, else trust the
+      // catalog price the client sent.
+      let fitting = null;
+      if (item.fitting && item.fitting.name) {
+        const fitName = String(item.fitting.name).trim();
+        const sheet = stockData.get(normalizeName(fitName));
+        const fitPrice = sheet ? (sheet.price || 0) : (toNumber(item.fitting.price) || 0);
+        fitting = { name: fitName, price: fitPrice };
+      }
+
       lineSpecs.push({
         key,
         name,
         category: String(item.category || "").trim(),
         qty: acceptedQty,
         unitPrice: info.price || 0,
-        extras: Array.isArray(item.extras) ? item.extras : []
+        fitting
       });
     }
 
@@ -275,12 +287,8 @@ function doPost(e) {
 
     // orderTotal computed AFTER clamping
     const orderTotal = lineSpecs.reduce((sum, line) => {
-      let total = line.unitPrice * line.qty;
-      line.extras.forEach(ex => {
-        const exPrice = stockData.get(normalizeName(ex.name))?.price || 0;
-        total += exPrice * toInt(ex.qty);
-      });
-      return sum + total;
+      const fitTotal = line.fitting ? line.fitting.price * line.qty : 0;
+      return sum + line.unitPrice * line.qty + fitTotal;
     }, 0);
 
     // build rows; status only on the first row. Col E = key, col F = display name.
@@ -294,14 +302,12 @@ function doPost(e) {
         line.unitPrice, lineTotal, orderTotal, false
       ]);
       isFirst = false;
-      for (const ex of line.extras) {
-        const exName  = String(ex.name || "").trim();
-        const exQty   = toInt(ex.qty);
-        const exPrice = stockData.get(normalizeName(exName))?.price || 0;
+      if (line.fitting) {
+        // Fitting rides under the parent key; qty matches the line (one per unit).
         rows.push([
           orderId, "", customerRef, timestamp,
-          line.key, exName, line.category, exQty,
-          exPrice, exPrice * exQty, orderTotal, true
+          line.key, line.fitting.name, line.category, line.qty,
+          line.fitting.price, line.fitting.price * line.qty, orderTotal, true
         ]);
       }
     }

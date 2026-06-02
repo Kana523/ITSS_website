@@ -311,7 +311,7 @@
   white-space: nowrap;
 }
 
-/* red X button (remove); --sm shrinks for extras */
+/* red X button (remove) */
 .cart-x-btn {
   background: none;
   border: 1px solid var(--danger-line);
@@ -334,13 +334,6 @@
   background: var(--danger-bg-hover);
   color: var(--danger-text-strong);
 }
-.cart-x-btn--sm {
-  width: 22px;
-  height: 22px;
-  font-size: 13px;
-  margin-left: 4px;
-}
-
 .cart-x-icon {
   width: 78%;
   height: 78%;
@@ -379,7 +372,6 @@
   align-items: center;
   gap: 4px;
 }
-.cart-qty-wrap--sm { gap: 3px; }
 
 /* +/- square buttons */
 .cart-action-btn {
@@ -399,11 +391,6 @@
   flex-shrink: 0;
 }
 .cart-action-btn:hover { background: var(--surface-hover); }
-.cart-action-btn--sm {
-  width: 22px;
-  height: 22px;
-  font-size: 16px;
-}
 
 /* qty number input */
 .cart-item-qty {
@@ -419,98 +406,77 @@
   box-sizing: border-box;
   border-radius: 2px;
 }
-.cart-item-qty--sm {
-  min-width: 34px;
-  width: auto;
-  font-size: 16px;
-  padding: 1px 3px;
-}
-
-/* runs-per-BPC row (blueprints) */
+/* blueprint "Total runs" label + stepper group */
 .cart-runs-label {
   font-family: var(--font-text);
   font-size: 15px;
   color: var(--text);
   letter-spacing: 0.04em;
 }
-
-/* ── Extras (boats only) ───────────────────────────────── */
-.cart-extras {
+.cart-qty-group {
   display: flex;
-  flex-direction: column;
-  gap: 5px;
-  padding-left: 10px;
-  border-left: 1.5px solid color-mix(in oklch, var(--glow-gold) 18%, transparent);
+  align-items: center;
+  gap: 8px;
 }
-.cart-extra-row {
+
+/* ── Fitting selector (boats/structures) ───────────────── */
+.cart-fitting-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
 }
-.cart-extra-info {
-  display: flex;
-  flex-direction: column;
+.cart-fitting-select {
   flex: 1;
   min-width: 0;
-  gap: 2px;
-}
-.cart-extra-name {
-  font-family: var(--font-text);
-  font-size: 16px;
-  color: var(--text);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.cart-extra-price {
-  display: inline-flex;
-  align-items: baseline;
-  font-family: var(--font-text);
-  font-size: 13px;
-  color: var(--text);
-}
-.cart-extra-price-value {
-  font-weight: bold;
-  color: var(--text-strong);
-}
-.cart-extra-price-label {
-  font-weight: normal;
-  color: var(--text);
-  opacity: 0.75;
-}
-.cart-extra-controls {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-}
-/* add fitting */
-.cart-add-fit-wrap {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  padding-left: 10px;
-}
-.cart-fitting-select {
-  background: transparent;
-  border: 1px dashed var(--border-subtle);
-  color: var(--text);
+  background: var(--surface-control);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
   font-family: var(--font-text);
   font-size: 15px;
-  padding: 3px 10px;
+  padding: 4px 8px;
   border-radius: 3px;
-  align-self: flex-start;
   transition: border-color var(--transition-fast), color var(--transition-fast);
 }
 .cart-fitting-select:hover {
   border-color: var(--text-muted);
-  color: var(--text-muted);
+  color: var(--text-strong);
 }
 .cart-fitting-select option {
   background: var(--surface);
   color: var(--text-muted);
   font-family: var(--font-text);
 }
+.cart-fitting-price {
+  flex-shrink: 0;
+  font-family: var(--font-text);
+  font-size: 13px;
+  font-weight: bold;
+  color: var(--text-strong);
+  white-space: nowrap;
+}
+
+/* ── Materials coarse-step row (±100k / ±1m) ───────────── */
+.cart-bigstep-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5px;
+}
+.cart-bigstep-btn {
+  flex-shrink: 0;
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid var(--text-strong);
+  background: var(--surface-control);
+  color: var(--text-muted);
+  font-family: var(--font-text);
+  font-size: 13px;
+  border-radius: 3px;
+  white-space: nowrap;
+  transition: background var(--transition-fast);
+}
+.cart-bigstep-btn:hover { background: var(--surface-hover); }
 
 /* ── Item total row ────────────────────────────────────── */
 .cart-item-total-row {

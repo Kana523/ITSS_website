@@ -3,7 +3,8 @@
 (function () {
   // Item fields: `image` (rooted at assets/images/items/) else materials derive
   // materials/<sub>/<name_underscored>.avif; `fittings` (boats/structures, names
-  // resolved against kind:"fitting" rows); `maxRuns` (blueprints runs cap).
+  // resolved against kind:"fitting" rows). Blueprints are ordered by total runs
+  // (the legacy per-item `maxRuns` field is no longer read).
   const CATALOG = [
     { name: "Zirnitra",                  category: "boats",      sub: "dreadnought",        price: 4_400_000_000, image: "boats/zirnitra-render-256.avif",   fittings: ["Siege Fit", "Gank Fit", "Shield Tank"] },
     { name: "Moros",                     category: "boats",      sub: "dreadnought",        price:             0, image: "boats/moros-render-256.avif",      fittings: ["Siege Fit", "Armor Tank", "Gank Fit"] },
@@ -79,9 +80,6 @@
 
   const SHOP_IMAGE_ROOT = "../assets/images/items/";
 
-  // runs cap when a blueprint omits `maxRuns` (runs default to the cap)
-  const DEFAULT_MAX_RUNS = 10;
-
   // flavour heading on the configurator face
   const FLIP_TITLE = "Spice it up";
 
@@ -141,33 +139,29 @@
     return imageRoot.replace(/items\/?$/, "icons/");
   }
 
-  // +/- stepper for quantity (target:"qty") and runs-per-BPC (target:"runs");
-  // shop-cart reads/clamps the input by its data hook
-  function flipStepper(target, value, max) {
+  // ±1 qty stepper; shop-cart reads/clamps [data-flip-qty-input]. Used for every
+  // category (blueprints' qty == total runs).
+  function flipStepper(value) {
     const wrap = el("div", "flip-stepper");
-    const isRuns = target === "runs";
 
     const minus = el("button", "flip-step-btn", "−");
     minus.type = "button";
     minus.dataset.flipStep = "";
-    minus.dataset.flipTarget = target;
     minus.dataset.flipDir = "-1";
-    minus.setAttribute("aria-label", isRuns ? "Fewer runs" : "Decrease quantity");
+    minus.setAttribute("aria-label", "Decrease quantity");
 
     const input = el("input", "flip-num");
     input.type = "text";
     input.inputMode = "numeric";
     input.value = String(value);
-    input.dataset[isRuns ? "flipRunsInput" : "flipQtyInput"] = "";
-    input.setAttribute("aria-label", isRuns ? "Runs per copy" : "Quantity");
-    if (isRuns && max) input.dataset.flipMax = String(max);
+    input.dataset.flipQtyInput = "";
+    input.setAttribute("aria-label", "Quantity");
 
     const plus = el("button", "flip-step-btn", "+");
     plus.type = "button";
     plus.dataset.flipStep = "";
-    plus.dataset.flipTarget = target;
     plus.dataset.flipDir = "1";
-    plus.setAttribute("aria-label", isRuns ? "More runs" : "Increase quantity");
+    plus.setAttribute("aria-label", "Increase quantity");
 
     wrap.appendChild(minus);
     wrap.appendChild(input);
@@ -175,25 +169,39 @@
     return wrap;
   }
 
-  // Flip back face — the configurator. Boats/structures get a fitting dropdown,
-  // blueprints a runs stepper, all a qty stepper. Add/Config buttons live in the
-  // action row (createCard), not here; shop-cart reads these on ADD.
+  // Coarse ±100k / ±1m qty button (materials); shares the qty stepper's hook.
+  function flipBigBtn(label, dir, amount) {
+    const b = el("button", "flip-bigstep-btn", label);
+    b.type = "button";
+    b.dataset.flipStep = "";
+    b.dataset.flipDir = String(dir);
+    b.dataset.flipAmount = String(amount);
+    b.setAttribute("aria-label", `${dir < 0 ? "Decrease" : "Increase"} quantity by ${amount.toLocaleString("en-US")}`);
+    return b;
+  }
+
+  // Flip back face — the configurator. Boats/structures get a fitting dropdown;
+  // all get a qty stepper (blueprints label it "Total runs", materials add
+  // ±100k / ±1m). Add/Config buttons live in the action row (createCard), not
+  // here; shop-cart reads these on ADD.
   function createFlipBack(item, fittings) {
     const cat = item.category;
+    const isBlueprint = cat === "blueprints";
+    const isMat = cat === "materials";
     const back = el("div", "item-card-face item-card-face--back");
     back.setAttribute("aria-hidden", "true");
 
     back.appendChild(el("p", "flip-title", FLIP_TITLE));
     back.appendChild(el("p", "flip-item-name", item.name));
 
-    // Fitting dropdown — boats + structures.
+    // Fitting dropdown — boats + structures. Always offers "No Fitting".
     if ((cat === "boats" || cat === "structures") && fittings.length) {
       const field = el("div", "flip-field");
-      field.appendChild(el("span", "flip-label", "Fitting(s):"));
+      field.appendChild(el("span", "flip-label", "Fitting:"));
       const select = el("select", "flip-select");
       select.dataset.flipFitting = "";
       select.setAttribute("aria-label", `Fitting for ${item.name}`);
-      const none = el("option", null, "None");
+      const none = el("option", null, "No Fitting");
       none.value = "";
       select.appendChild(none);
       fittings.forEach((f) => {
@@ -209,20 +217,21 @@
       back.appendChild(field);
     }
 
-    // Runs per BPC — blueprints. Defaults to the cap.
-    if (cat === "blueprints") {
-      const max = item.maxRuns || DEFAULT_MAX_RUNS;
-      const field = el("div", "flip-field");
-      field.appendChild(el("span", "flip-label", "Runs per BPC"));
-      field.appendChild(flipStepper("runs", max, max));
-      back.appendChild(field);
-    }
-
-    // Quantity — all variants. Sits at the bottom of the configurator, just
-    // above the persistent action row.
+    // Quantity — all variants. Sits at the bottom, above the action row.
+    // Blueprints: qty == total runs. Materials: ±100k / ±1m coarse steps.
     const qtyField = el("div", "flip-field flip-qty-field");
-    qtyField.appendChild(el("span", "flip-label", "Quantity"));
-    qtyField.appendChild(flipStepper("qty", 1));
+    qtyField.appendChild(el("span", "flip-label", isBlueprint ? "Total runs" : "Quantity"));
+    if (isMat) {
+      const row = el("div", "flip-bigstep-row");
+      row.appendChild(flipBigBtn("-1m", -1, 1000000));
+      row.appendChild(flipBigBtn("-100k", -1, 100000));
+      row.appendChild(flipStepper(1));
+      row.appendChild(flipBigBtn("+100k", 1, 100000));
+      row.appendChild(flipBigBtn("+1m", 1, 1000000));
+      qtyField.appendChild(row);
+    } else {
+      qtyField.appendChild(flipStepper(1));
+    }
     back.appendChild(qtyField);
 
     return back;
@@ -261,8 +270,6 @@
     card.dataset.price = String(item.price);
     card.dataset.category = item.category;
     if (item.sub) card.dataset.sub = item.sub;
-    // Runs cap for the configurator + cart (blueprints). Read by shop-cart.
-    if (item.category === "blueprints") card.dataset.maxRuns = String(item.maxRuns || DEFAULT_MAX_RUNS);
 
     const badge = document.createElement("span");
     badge.className = "card-badge";
