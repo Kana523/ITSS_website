@@ -2,7 +2,7 @@
 // .container-items, reusing the shop's shared catalog (window.ShopCatalog) and
 // stock feed (window.ShopAPI). In-stock capitals are shown first; the rest are
 // filled with random capitals (rendered as pre-order). Cards are full
-// add-to-cart cards (same as the store): clicking ADD TO CART / PRE-ORDER adds
+// add-to-cart cards (same as the store): clicking ADD TO CART / ORDER adds
 // the item to the shared cart and fires the toast (wired by shop-cart.js).
 document.addEventListener("DOMContentLoaded", () => {
   const container = document.querySelector("[data-highlights]");
@@ -55,19 +55,20 @@ document.addEventListener("DOMContentLoaded", () => {
   // interactive add-to-cart cards (same behaviour as the store). They use the
   // same category colours as the store but never the muted out-of-stock state,
   // so they always show the bright in-stock treatment regardless of stock;
-  // out-of-stock items still add to the cart, labelled PRE-ORDER.
+  // out-of-stock items still add to the cart, labelled ORDER.
   function renderCard(entry) {
     const { item, stock, price, outOfStock } = entry;
     return createCard(item, {
       imageRoot: IMG_ROOT,
       categorized: true,
       action: "button",
-      actionLabel: outOfStock ? "PRE-ORDER" : "ADD TO CART",
+      actionLabel: outOfStock ? "ORDER" : "ADD TO CART",
       priceText: formatPrice(price),
       stockText: formatPrice(stock),
       stockValue: stock,
       outOfStock: false,
       extraClass: "highlight-card",
+      flip: true,
     });
   }
 

@@ -429,6 +429,14 @@
   padding: 1px 3px;
 }
 
+/* runs-per-BPC row (blueprints) — same row shape as price/qty */
+.cart-runs-label {
+  font-family: var(--font-text);
+  font-size: 15px;
+  color: var(--text);
+  letter-spacing: 0.04em;
+}
+
 /* ── Extras (boats only) ───────────────────────────────── */
 .cart-extras {
   display: flex;
