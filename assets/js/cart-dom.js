@@ -1,17 +1,13 @@
-// Shared cart markup injector. Builds the header cart button, the backdrop and
-// the drawer so any page that loads it gets a working cart without duplicating
-// the markup. Runs as a deferred IIFE (DOM is parsed by the time it executes,
-// before DOMContentLoaded), so it must be loaded *before* shop-cart.js, which
-// then wires behaviour to these elements by id. Idempotent: no-op if a drawer
-// is already present (e.g. a page that still ships the markup inline).
+// Shared cart markup injector — header button, backdrop, drawer. Deferred IIFE;
+// load before shop-cart.js (which wires behaviour by id). Idempotent: no-op if a
+// drawer already exists.
 (function () {
   if (document.getElementById("cart-drawer")) return;
 
   const TURNSTILE_SITEKEY = "0x4AAAAAADFK_LmTLxebflbr";
 
   // ── Header cart button ──────────────────────────────────────────────────────
-  // Header is `display:flex; justify-content:space-between`; the logo's
-  // `margin-right:auto` (base.css) groups nav + this button on the right.
+  // logo's margin-right:auto (base.css) groups nav + this button on the right
   const header = document.querySelector("header");
   if (header && !document.getElementById("cart-toggle")) {
     const nav = document.createElement("div");

@@ -1,9 +1,6 @@
-// Home "Highlights" row. Renders a random assortment of capital boats into
-// .container-items, reusing the shop's shared catalog (window.ShopCatalog) and
-// stock feed (window.ShopAPI). In-stock capitals are shown first; the rest are
-// filled with random capitals (rendered as pre-order). Cards are full
-// add-to-cart cards (same as the store): clicking ADD TO CART / ORDER adds
-// the item to the shared cart and fires the toast (wired by shop-cart.js).
+// Home "Highlights" row — random capital boats into .container-items, reusing
+// the shop catalog (ShopCatalog) + stock feed (ShopAPI). In-stock first, rest
+// as pre-order fillers. Full add-to-cart cards (same as the store).
 document.addEventListener("DOMContentLoaded", () => {
   const container = document.querySelector("[data-highlights]");
   if (!container) return;
@@ -20,8 +17,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const HIGHLIGHT_COUNT = 3;
   const IMG_ROOT = "assets/images/items/";
 
-  // Capital boats = everything in the "boats" category (dreadnoughts, FAXes,
-  // jump freighters, industrial capitals, …).
+  // capital boats = the "boats" category
   const capitals = CATALOG.filter((item) => item.category === "boats");
   if (capitals.length === 0) return;
 
@@ -51,11 +47,8 @@ document.addEventListener("DOMContentLoaded", () => {
     return [...inStock, ...fillers].slice(0, HIGHLIGHT_COUNT);
   }
 
-  // Build a highlight card via the shared catalog builder. Home cards are
-  // interactive add-to-cart cards (same behaviour as the store). They use the
-  // same category colours as the store but never the muted out-of-stock state,
-  // so they always show the bright in-stock treatment regardless of stock;
-  // out-of-stock items still add to the cart, labelled ORDER.
+  // shared catalog builder; category colours but never the muted OOS state
+  // (always bright; OOS items still add, labelled ORDER)
   function renderCard(entry) {
     const { item, stock, price, outOfStock } = entry;
     return createCard(item, {
@@ -89,9 +82,8 @@ document.addEventListener("DOMContentLoaded", () => {
     return snapshot?.records instanceof Map ? snapshot.records : new Map();
   }
 
-  // First paint from the cache (consistent with the store's pre-feed state:
-  // unknown stock renders as pre-order). The chosen items are locked here so a
-  // later live-feed refresh never swaps them out from under the user.
+  // first paint from cache (unknown stock → pre-order); items locked here so a
+  // later live-feed refresh never swaps them out
   const snapshot = cachedSnapshot();
   let highlighted = pickHighlights(stockMapFrom(snapshot));
   render(highlighted);

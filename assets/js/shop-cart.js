@@ -73,8 +73,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const category = String(item.category || "").trim();
 
-        // Blueprints carry runs-per-BPC (capped at maxRuns); restore both,
-        // clamping runs into [1, maxRuns] and defaulting to the cap.
+        // blueprints: restore runs + maxRuns, clamping runs into [1, maxRuns]
         let bp = {};
         if (category.toLowerCase() === "blueprints") {
           const m   = Math.floor(Number(item.maxRuns));
@@ -155,8 +154,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return Math.min(n, m);
   }
 
-  // Per-unit price including the runs multiplier for blueprints (price scales
-  // with runs-per-BPC); everything else is just its price.
+  // per-unit price × runs for blueprints; just price otherwise
   function effectivePrice(item) {
     const runs = item.category === "blueprints" ? Math.max(1, Number(item.runs) || 1) : 1;
     return item.price * runs;
@@ -237,6 +235,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const img = document.createElement("img");
       img.src = product.img;
       img.alt = "";
+      img.width = 56;
+      img.height = 56;
       imgWrap.appendChild(img);
     }
 
@@ -330,10 +330,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ── Cart mutations ───────────────────────────────────────────────────────────
 
-  // opts (from the card-flip configurator):
-  //   runs    — runs-per-BPC for blueprints (defaults to maxRuns)
-  //   maxRuns — runs cap (else read from product/existing entry)
-  //   fitting — { name, price } to add as an extra (boats/structures)
+  // opts (from configurator): runs (blueprints, default maxRuns), maxRuns (cap),
+  // fitting ({name, price} extra for boats/structures)
   function addToCart(product, qtyToAdd = 1, opts = {}) {
     if (!product) return;
     const { key } = product;
@@ -406,31 +404,29 @@ document.addEventListener("DOMContentLoaded", () => {
     return document.querySelector(`.item-card[data-name="${CSS.escape(key)}"]`);
   }
 
-  function getPreorderInfo(key) {
-    const card = cardForKey(key);
+  // reads off the product card; caller resolves it once (cardForKey) per render
+  function getPreorderInfo(card) {
     if (!card || !card.classList.contains("item-card--out-of-stock")) return null;
     const weeks = Number.parseInt(card.dataset.weeks || "", 10);
     return { weeks: Number.isFinite(weeks) && weeks > 0 ? weeks : null };
   }
 
   // Reads displayed stock from the product card (kept in sync by shop-filter).
-  function getCardStock(key) {
-    const card = cardForKey(key);
+  function getCardStock(card) {
     const raw  = card?.querySelector(".stock-state-count")?.dataset.stockRaw;
     const n    = Number.parseInt(raw || "", 10);
     return Number.isFinite(n) ? n : null;
   }
 
-  function isMaterial(key) {
-    const card = cardForKey(key);
+  function isMaterial(card) {
     return (card?.dataset.category || "").trim().toLowerCase() === "materials";
   }
 
-  // Material items can't exceed displayed stock. Non-materials are unrestricted
-  // (the cart warning copy explains the delay).
+  // materials can't exceed displayed stock; non-materials are unrestricted
   function clampQtyToStock(key, qty) {
-    if (!isMaterial(key)) return qty;
-    const stock = getCardStock(key);
+    const card = cardForKey(key);
+    if (!isMaterial(card)) return qty;
+    const stock = getCardStock(card);
     if (stock === null) return qty;
     return Math.max(0, Math.min(qty, stock));
   }
@@ -593,13 +589,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     items.sort((a, b) => a.name.localeCompare(b.name));
 
-    // Pre-order tiering: with more than 2 pre-order items the per-item notices
-    // clog the list, so they're suppressed in favour of one consolidated box
-    // above the total (rendered after the loop). The box quotes the longest
-    // delivery estimate among them.
+    // pre-order tiering: >2 pre-order items suppress per-item notices for one
+    // consolidated box above the total (quotes the longest estimate).
+    // Resolve each item's card once for the whole render (one DOM query/item).
+    const cardByKey = new Map(items.map((item) => [item.key, cardForKey(item.key)]));
+
     const preorderInfoByKey = new Map();
     items.forEach((item) => {
-      const info = getPreorderInfo(item.key);
+      const info = getPreorderInfo(cardByKey.get(item.key));
       if (info) preorderInfoByKey.set(item.key, info);
     });
     const consolidatePreorders = preorderInfoByKey.size > 2;
@@ -618,6 +615,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const img = document.createElement("img");
         img.src = item.img;
         img.alt = item.name;
+        img.width = 64;
+        img.height = 64;
         imgWrap.appendChild(img);
       }
 
@@ -776,9 +775,9 @@ document.addEventListener("DOMContentLoaded", () => {
       stack.appendChild(totalRow);
 
       const preorder = preorderInfoByKey.get(item.key) || null;
-      const cardStock = getCardStock(item.key);
+      const itemCard = cardByKey.get(item.key);
+      const cardStock = getCardStock(itemCard);
       const overStock = cardStock !== null && item.qty > cardStock && cardStock > 0;
-      const key = item.key;
       if (preorder) {
         // Suppressed per-item when consolidating — see the box above the total.
         if (!consolidatePreorders) {
@@ -810,7 +809,7 @@ document.addEventListener("DOMContentLoaded", () => {
         icon.textContent = "!";
         const text = document.createElement("p");
         const lead = document.createElement("strong");
-        if (isMaterial(key)) {
+        if (isMaterial(itemCard)) {
           lead.textContent = `Only ${formatQty(cardStock)} available.`;
           text.appendChild(lead);
           text.appendChild(document.createTextNode(" Preorder not available for this item."));
@@ -832,8 +831,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     cartItemsEl.querySelectorAll(".cart-item-qty").forEach(resizeQtyInput);
 
-    // Consolidated pre-order box (above the total). Quotes the longest estimate
-    // among the pre-order items; falls back to copy when none have one.
+    // consolidated pre-order box (above total); quotes the longest estimate
     if (cartPreorderSummaryEl) {
       if (consolidatePreorders) {
         const weeks = [...preorderInfoByKey.values()]
@@ -872,9 +870,8 @@ document.addEventListener("DOMContentLoaded", () => {
   cartBackdrop?.addEventListener("click", closeCart);
 
   // ── Card-flip configurator (store/home) ──────────────────────────────────────
-  // Cards built with `flip` carry a back face (qty / fitting / runs controls).
-  // The Config button flips to it (relabelling itself Close); the shared ADD
-  // button adds — with the chosen options when flipped, with defaults when not.
+  // `flip` cards carry a back face (qty/fitting/runs); Config flips to it (→ Close),
+  // the shared ADD button adds with chosen options when flipped, defaults when not.
 
   function openFlip(card) {
     if (!card) return;
@@ -952,10 +949,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   document.addEventListener("click", (e) => {
-    // Shared ADD button: add with the configurator's values (defaults when the
-    // card is sitting on its front face, the user's picks when flipped), then
-    // flip back if it was open. readFlipControls returns sensible defaults for
-    // cards without a back face too.
+    // Shared ADD: add with configurator values (defaults on front face, picks when
+    // flipped), reset fields but leave the face as-is (closed via Config/click-out/Esc).
+    // readFlipControls defaults for cards without a back face.
     const addBtn = e.target.closest("[data-cart-add]");
     if (addBtn) {
       const card = addBtn.closest(".item-card");
@@ -965,7 +961,7 @@ document.addEventListener("DOMContentLoaded", () => {
         addToCart(product, sel.qty, { runs: sel.runs, maxRuns: sel.maxRuns, fitting: sel.fitting });
         showAddToCartToast(product);
       }
-      if (card?.classList.contains("is-flipped")) flipCardBack(card);
+      resetFlipControls(card);
       return;
     }
 
@@ -1147,9 +1143,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }));
   }
 
-  // After a successful submit, reduce displayed card stock by acceptedQty so
-  // the page reflects the new reservation immediately, then trigger a silent
-  // background refresh so the sheet's authoritative value catches up.
+  // post-submit: drop displayed card stock by acceptedQty for instant feedback,
+  // then a silent background refresh reconciles with the sheet's value
   function applyOrderSideEffects(response, submittedItems) {
     const adjustedByName = new Map((response?.adjusted || []).map(a => [normalizeName(a.name), a]));
     for (const item of submittedItems) {
@@ -1322,12 +1317,8 @@ document.addEventListener("DOMContentLoaded", () => {
   document.addEventListener("shop:product-data-updated", syncCartPricesFromProducts);
 
   // ── Incoming add intent (?add=<item key>) ──────────────────────────────────────
-  // Deep links of the form <page>/?add=<key> add that item to the cart and open
-  // the drawer (used for cross-page "add this item" links). Requires a matching
-  // product card on the page. Unlike an in-store click, this skips the
-  // add-to-cart toast — opening the drawer is feedback enough after a
-  // navigation. The pre-order notice (for out-of-stock items) appears once the
-  // stock feed resolves and re-renders.
+  // <page>/?add=<key> adds that item + opens the drawer (cross-page "add" links);
+  // needs a matching card. Skips the toast (the drawer is feedback enough).
   function handleIncomingAdd() {
     const params = new URLSearchParams(location.search);
     const addKey = normalizeName(params.get("add") || "");

@@ -4,24 +4,21 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" href="assets/images/icons/itssfav.ico" type="image/x-icon">
+  <link rel="preload" href="assets/styling/fonts/space-grotesk-v22-latin-regular.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/styling/fonts/Roboto-Regular.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="assets/styling/css/base.css">
-  <link rel="stylesheet" href="assets/styling/css/cart.css">
+  <!-- cart.css styles only the JS-injected cart (off-screen at first paint) → load non-blocking -->
+  <link rel="stylesheet" href="assets/styling/css/cart.css" media="print" onload="this.media='all'">
   <link rel="stylesheet" href="assets/styling/css/home.css">
 
-  <!-- Highlights row + shared cart reuse the shop catalog, stock feed and cart:
-       shop-utils.js    → window.ShopUtils (formatters)
-       shop-api.js      → window.ShopAPI (stock feed cache/fetch, order submit, Turnstile)
-       shop-catalog.js  → window.ShopCatalog (shared product data + card builder)
-       home-highlights.js → renders capital-boat add-to-cart cards into .container-items
-       cart-dom.js      → injects the shared cart markup (nav button, backdrop, drawer)
-       shop-cart.js     → cart state + drawer behaviour, shared with the store -->
+  <!-- Reuse shop catalog/stock/cart. Order matters: utils → api → catalog →
+       home-highlights (renders cards) → cart-dom (injects cart) → shop-cart. -->
   <script src="assets/js/shop-utils.js" defer></script>
   <script src="assets/js/shop-api.js" defer></script>
   <script src="assets/js/shop-catalog.js" defer></script>
   <script src="assets/js/home-highlights.js" defer></script>
   <script src="assets/js/cart-dom.js" defer></script>
   <script src="assets/js/shop-cart.js" defer></script>
-  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 
   <meta name="description" content="Interstellar Systems — an EVE Online corporation selling boats, materials, blueprints and more. Organically grown space boats.">
   <meta name="keywords" content="EVE Online, corporation, boats, blueprints, materials, ISK, store, space boats, Interstellar Systems">
@@ -32,7 +29,7 @@
 <body data-stock-endpoint="https://script.google.com/macros/s/AKfycbyaaO9WxF6G-KLwVg9_lOvmNbhVlXVCQRTE089G6dYlWnENFArQf_Fk-TPJncUNTETM/exec">
     <header>
       <a class="container-logo" href="./">
-        <img src="assets/images/icons/itss.png" alt="Interstellar Systems logo">
+        <img src="assets/images/icons/itss.avif" alt="Interstellar Systems logo" width="64" height="64">
           <div class="container-logo-name-motto">
             <h2>Interstellar Systems</h2>
             <p>Organically grown space boats!</p>
@@ -52,15 +49,13 @@
       <section>
         <h1>Highlights</h1>
 
-        <!-- Capital-boat highlight cards are injected before the "Store has more"
-             card by home-highlights.js. In-stock capitals come first, the rest
-             are random fillers. Each card adds to the shared cart in place. -->
+        <!-- home-highlights.js injects capital-boat cards before this one (in-stock first, then random) -->
         <div class="container-items" data-highlights>
 
           <a class="store-more-card" href="shop/" aria-label="Visit the store for more items">
             <h2>Store has more</h2>
             <div class="store-more-body">
-              <img src="assets/images/icons/container.avif" alt="" aria-hidden="true">
+              <img src="assets/images/icons/container.avif" alt="" aria-hidden="true" width="128" height="128">
               <p>More organically grown space boats and materials await.</p>
             </div>
             <span class="store-more-cta">
@@ -86,7 +81,7 @@
                 <p><strong>Price:</strong> 6.4mil</p>
 
                 <div class="stock-state" aria-label="In stock: 12">
-                  <img src="assets/images/icons/stock.png" alt="stock icon" aria-hidden="true">
+                  <img src="assets/images/icons/stock.avif" alt="stock icon" aria-hidden="true" width="64" height="64">
                   <p class="stock-state-count" aria-hidden="true">12</p>
                 </div>
               </div>
@@ -107,7 +102,7 @@
                 <p><strong>Price:</strong> 6.4mil</p>
 
                 <div class="stock-state" aria-label="In stock: 12">
-                  <img src="assets/images/icons/stock.png" alt="stock icon" aria-hidden="true">
+                  <img src="assets/images/icons/stock.avif" alt="stock icon" aria-hidden="true" width="64" height="64">
                   <p class="stock-state-count" aria-hidden="true">12</p>
                 </div>
               </div>
@@ -128,7 +123,7 @@
                 <p><strong>Price:</strong> 6.4mil</p>
 
                 <div class="stock-state" aria-label="In stock: 12">
-                  <img src="assets/images/icons/stock.png" alt="stock icon" aria-hidden="true">
+                  <img src="assets/images/icons/stock.avif" alt="stock icon" aria-hidden="true" width="64" height="64">
                   <p class="stock-state-count" aria-hidden="true">12</p>
                 </div>
               </div>

@@ -6,7 +6,7 @@ main.legal-layout {
   gap: 20px;
 }
 
-/* gold border + gradient fill come from the shared .panel class in the markup */
+/* border + fill from shared .panel */
 main.legal-layout section {
   padding: 15px;
 }

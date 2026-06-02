@@ -3,16 +3,12 @@ section{
   flex-direction: column;
 }
 
-/* Vertically centre the page content (main + the evemail note) between the
-   sticky header and the footer. Body is a 100vh flex column (base.css); the two
-   auto margins below split the leftover space evenly above and below the group.
-   When content is taller than the viewport the autos collapse to 0 and the page
-   simply scrolls. */
+/* centre content vertically; autos collapse to 0 when taller than viewport */
 main {
   margin-top: auto;
 }
 
-/* Space between stacked content sections (e.g. Highlights → Sell your materials). */
+/* gap between stacked sections */
 main section + section {
   margin-top: 50px;
 }
@@ -31,7 +27,7 @@ main section + section {
   font-size: var(--font-medium);
 }
 
-/* "Store has more" highlight card. */
+/* "Store has more" card */
 .store-more-card {
   display: flex;
   flex-direction: column;
@@ -122,10 +118,8 @@ main section + section {
   background: var(--surface-hover);
 }
 
-/* ── Highlight cards (capital boats, injected by home-highlights.js) ──
-   Structure, the gold corner badge and hover come from the shared .item-card
-   styles in base.css. Home cards omit .item-card--cat, so they render in the
-   default gold treatment regardless of stock (never the muted store state). */
+/* Highlight cards (home-highlights.js) — base.css .item-card styles; no
+   .item-card--cat, so always the gold treatment regardless of stock */
 .highlight-card .buy-button {
   text-align: center;
 }

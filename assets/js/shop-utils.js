@@ -39,7 +39,7 @@
     return `~${sign}${text}${suffix}`;
   }
 
-  function parsePriceToIsk(rawValue, fallbackLabel = "") {
+  function parsePriceToIsk(rawValue) {
     const multipliers = {
       k: 1000,
       thousand: 1000,
@@ -54,39 +54,30 @@
       trillion: 1000000000000
     };
 
-    const candidates = [rawValue, fallbackLabel];
-    for (const candidate of candidates) {
-      const text = String(candidate || "").trim();
-      if (!text) continue;
+    const text = String(rawValue || "").trim();
+    if (!text) return 0;
 
-      const direct = Number(text.replace(/,/g, ""));
-      if (Number.isFinite(direct) && direct > 0) return direct;
+    const direct = Number(text.replace(/,/g, ""));
+    if (Number.isFinite(direct) && direct > 0) return direct;
 
-      const match = text.match(/^([\d.,]+)\s*([a-zA-Z]+)?\s*(?:isk)?$/i);
-      if (!match) continue;
+    const match = text.match(/^([\d.,]+)\s*([a-zA-Z]+)?\s*(?:isk)?$/i);
+    if (!match) return 0;
 
-      const numericValue = Number(match[1].replace(/,/g, ""));
-      if (!Number.isFinite(numericValue) || numericValue <= 0) continue;
+    const numericValue = Number(match[1].replace(/,/g, ""));
+    if (!Number.isFinite(numericValue) || numericValue <= 0) return 0;
 
-      const unit = String(match[2] || "").toLowerCase();
-      const multiplier = unit ? (multipliers[unit] || 1) : 1;
-      return numericValue * multiplier;
-    }
-
-    return 0;
+    const unit = String(match[2] || "").toLowerCase();
+    const multiplier = unit ? (multipliers[unit] || 1) : 1;
+    return numericValue * multiplier;
   }
 
-  // Canonical lookup key for an item name. Trim, lowercase, collapse internal
-  // whitespace. Hyphens are preserved (EVE has items like "Nano-Factory").
-  // Used identically on both ends (frontend catalog ↔ Apps Script sheet) so
-  // string matches work regardless of casing or stray spaces.
+  // canonical lookup key — trim, lowercase, collapse whitespace (keep hyphens);
+  // identical on frontend + Apps Script sheet so matches survive casing/spacing
   function normalizeName(value) {
     return String(value || "").trim().toLowerCase().replace(/\s+/g, " ");
   }
 
-  // True on local dev hosts (file://, localhost, loopback, *.local). Callers use
-  // it to bypass the fresh-cache short-circuit and to skip Turnstile + server
-  // submit during local development. Read at call time, not module load.
+  // true on local dev hosts (file://, localhost, loopback, *.local); read at call time
   function isLocalHost() {
     const host = (location.hostname || "").toLowerCase();
     return location.protocol === "file:" ||

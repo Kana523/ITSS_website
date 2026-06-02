@@ -1,6 +1,7 @@
+/* Regular faces only — `bold` is browser-synthesized; keep CSS to normal/bold. */
 @font-face {
   font-family: 'Space_Grotesk';
-  src: url(../../styling/fonts/space_grotesk/static/SpaceGrotesk-Regular.ttf);
+  src: url(../../styling/fonts/space-grotesk-v22-latin-regular.woff2) format('woff2');
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -8,16 +9,8 @@
 
 @font-face {
   font-family: 'Roboto';
-  src: url(../../styling/fonts/roboto/Roboto-Regular.woff2);
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Roboto';
-  src: url(../../styling/fonts/roboto/Roboto-Bold.woff2);
-  font-weight: 700;
+  src: url(../../styling/fonts/Roboto-Regular.woff2) format('woff2');
+  font-weight: normal;
   font-style: normal;
   font-display: swap;
 }
@@ -36,7 +29,7 @@
   --red: #dc3232;
   --ink: #0a0c12;
   --space-900: #080b12;
-  --space-700: #161c30;   /* merges former 22,28,48 / 23,30,46 / 17,23,43 / 19,24,40 */
+  --space-700: #161c30;
   --space-500: #22304a;
 
   /* category hues — in-stock / dimmed out-of-stock (hand-picked) */
@@ -58,7 +51,6 @@
   --text-strong: var(--gold-100);     /* active nav, headings, emphasis */
   --text-disabled: var(--gold-400);   /* out-of-stock */
   --text-on-gold: var(--ink);
-  --text-gradient: linear-gradient(to bottom, var(--gold-100), var(--gold-300));
 
   /* surface */
   --surface: color-mix(in oklch, var(--space-900) 86%, transparent);
@@ -82,7 +74,7 @@
   --danger-bg: color-mix(in oklch, var(--red) 10%, transparent);
   --danger-bg-hover: color-mix(in oklch, var(--red) 18%, transparent);
 
-  /* glow (drives the surviving coloured shadows) */
+  /* glow */
   --glow-gold: var(--gold-100);
   --glow-green: var(--accent);
 
@@ -93,6 +85,8 @@
   --font-small: 14px;
   --font-medium: 22px;
   --font-large: 30px;
+  --font-card-title: 19px;   /* product card title */
+  --font-card-meta: 17px;    /* product card price + stock */
 }
 
 *{
@@ -106,8 +100,7 @@ body {
   cursor: default;
 }
 
-/* Site-wide cursor policy: default arrow everywhere; pointer for actionable
-   controls; text I-beam for typeable inputs. Overrides per-element rules. */
+/* cursor: pointer for controls, text for inputs, default elsewhere */
 button,
 a,
 label,
@@ -133,9 +126,7 @@ textarea {
   cursor: text;
 }
 
-/* Galaxy backdrop pinned to the viewport (not the document) so cover sizing
-   stays near the image's native scale — sharp and identical on every page
-   regardless of length or scroll. */
+/* galaxy backdrop pinned to the viewport so cover sizing stays sharp per page */
 body::before {
   content: "";
   position: fixed;
@@ -144,14 +135,10 @@ body::before {
   background: url(../../images/backgrounds/galaxybg.avif) center / cover no-repeat;
 }
 
-/* Gold gradient-clipped text. Shared by headings and any element opting in via
-   the utility class (cart drawer title, cart total, …). */
+/* gold emphasis: headings + .text-gradient-gold opt-ins (flat, no gradient) */
 :is(h1, h2, h3),
 .text-gradient-gold {
-  background: var(--text-gradient);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: var(--text-muted);
 }
 
 :is(h1, h2, h3) {
@@ -181,7 +168,7 @@ a {
   font-weight: bold;
 }
 
-/* Start of header*/
+/* header */
 header {
   position: sticky;
   top: 0;
@@ -203,12 +190,12 @@ nav {
     align-items: center;
 }
 
-/* Container for the top left logo, title and subtitle */
+/* top-left logo + title + subtitle */
 .container-logo  {
     display: flex;
     align-items: center;
     font-weight: normal;
-    /* Push nav + the injected cart button into one group on the right. */
+    /* push nav + cart button into the right group */
     margin-right: auto;
 }
 
@@ -218,8 +205,6 @@ nav {
     padding-left: 5px;
     align-items: center;
 }
-
-/* End of container for the top left logo, title and subtitle */
 
 footer {
   text-align: center;
@@ -258,13 +243,12 @@ nav a[aria-current="page"] {
   cursor: pointer;
 }
 
-/* hover: brighter, more “primary” */
+/* hover */
 .buy-button:hover {
   background-color: var(--surface-hover);
 }
 
-/* Primary CTA (add-to-cart): dark gold-tinted fill with a gold edge — important
-   via the outline/fill contrast, but easy on the eyes (no bright fill/glow). */
+/* primary CTA (add-to-cart): gold-tinted fill + gold edge */
 .buy-button--primary {
   background: color-mix(in oklch, var(--gold-300) 18%, var(--surface));
   border-color: var(--gold-200);
@@ -277,8 +261,7 @@ nav a[aria-current="page"] {
   color: var(--text-strong);
 }
 
-/* Secondary action (Config / Close): quieter outline, no fill, so it sits
-   below the primary in the hierarchy while sharing the rest of .buy-button. */
+/* secondary (Config/Close): quiet outline, no fill */
 .buy-button--secondary {
   border-color: var(--border-subtle);
   color: var(--text-muted);
@@ -286,22 +269,21 @@ nav a[aria-current="page"] {
 
 /* ── Shared layout utilities ─────────────────────────────────────────────── */
 
-/* Gold-bordered content panel (about cards, legal sections, …). Pages add their
-   own padding / box-shadow / grid placement. */
+/* gold-bordered panel (about cards, legal sections); pages add padding/placement */
 .panel {
   border: var(--border-md) solid transparent;
   border-image: var(--border) 1;
   background: linear-gradient(145deg, var(--surface), var(--surface-raised));
 }
 
-/* Small uppercase eyebrow label above a heading. */
+/* uppercase eyebrow label */
 .kicker {
   font-size: 0.8rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
 }
 
-/* Centred narrow page column (about, trade). Pages set max-width + gap. */
+/* centred narrow page column; pages set max-width + gap */
 .page-narrow {
   width: calc(100% - 32px);
   margin: 28px auto 40px;
@@ -312,9 +294,7 @@ nav a[aria-current="page"] {
 /*Card CSS */
 .item-card {
   position: relative;
-  /* Uniform 1.2× scale of the whole card (image, text, padding, glow). zoom is
-     layout-aware — flex-wrap reflows and shop-filter's row-balancer reads the
-     scaled width — so nothing else needs adjusting. */
+  /* uniform 1.2× card scale; zoom is layout-aware (reflow + row-balancer just work) */
   zoom: 1.2;
   --cat: var(--text-muted);
   display: flex;
@@ -328,9 +308,7 @@ nav a[aria-current="page"] {
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
-/* Highlight on hover for every card, site-wide: brighten the border to the
-   card's category colour and add a matching outer glow. No scale → no blur
-   through the flip configurator's 3D context. */
+/* hover: border → category colour + matching outer glow (no scale) */
 .item-card:hover,
 .item-card:focus-visible {
   border-color: var(--cat);
@@ -339,13 +317,8 @@ nav a[aria-current="page"] {
 
 .item-card h2 {
   text-align: center;
-  font-size: 19px;
-  /* Fill the gap between the (fixed) image and the (bottom-pinned) footer, and
-     centre the title within it. Cards in a row are equal height with a fixed
-     image + footer, so this region matches across the row — a short 1-line
-     title sits vertically centred over the height a 2–3 line title occupies.
-     align-self override lets the title use the full card width so it still
-     wraps at the card edge rather than shrinking to its content. */
+  font-size: var(--font-card-title);
+  /* fill space between image and footer, centre title; full width so it wraps at the card edge */
   align-self: stretch;
   flex: 1 1 auto;
   display: flex;
@@ -353,21 +326,17 @@ nav a[aria-current="page"] {
   justify-content: center;
 }
 
-/* Hidden in the visible title but kept in textContent so the cart/order read
-   the canonical "… Blueprint" name. */
+/* hidden but in textContent so cart/order read the full "… Blueprint" name */
 .bp-title-suffix {
   display: none;
 }
 
-/* Wraps the product image so badges (e.g. the blueprint research box) can
-   anchor to the art's edges. Shrinks to the image so the box centres on it. */
+/* wraps the image so badges anchor to the art edges */
 .item-media {
   position: relative;
 }
 
-/* Product image only — not the small stock icon nested in the footer. Fixed
-   128×128 box reserves layout space (no shift as images load) and
-   object-fit: contain keeps non-square art undistorted. */
+/* product image; fixed 128×128 reserves space, contain keeps art undistorted */
 .item-media > img {
   width: 128px;
   height: 128px;
@@ -375,8 +344,7 @@ nav a[aria-current="page"] {
   padding: 2px 0;
 }
 
-/* Blueprint ME/TE box: straddles the bottom-centre of the art (half over the
-   image, half below). Inherits the card's blueprint --cat colour. */
+/* blueprint ME/TE box: straddles bottom-centre of the art; inherits --cat */
 .bp-research {
   position: absolute;
   left: 50%;
@@ -386,7 +354,7 @@ nav a[aria-current="page"] {
   padding: 4px 12px;
   font-family: var(--font-title);
   font-size: 16px;
-  font-weight: 700;
+  font-weight: bold;
   letter-spacing: 0.08em;
   line-height: 1;
   color: var(--text);
@@ -402,8 +370,7 @@ nav a[aria-current="page"] {
   display: flex;
   flex-direction: column;
   width: 100%;
-  /* The title (h2) above grows to absorb the slack, so this price/stock/button
-     block lands at the card bottom and lines up across the row. */
+  /* h2 absorbs slack so this block sits at the card bottom, aligned across the row */
 }
 
 .item-card-footer {
@@ -412,9 +379,9 @@ nav a[aria-current="page"] {
   justify-content: center;
   gap: 10px;
 }
-/* Price + stock readout — bumped up slightly from the inherited 16px. */
+/* price + stock readout */
 .item-card-footer p {
-  font-size: 17px;
+  font-size: var(--font-card-meta);
 }
 
 .stock-state {
@@ -423,15 +390,13 @@ nav a[aria-current="page"] {
   gap: 5px;
   position: relative;
 }
-/* Stock icon — source is 64×64 (enhanced so it stays sharp under the card
-   zoom); cap the display size so it sits at icon scale beside the count. */
+/* stock icon (64×64 source, capped to icon scale) */
 .stock-state img {
   width: 32px;
   height: 32px;
 }
 
-/* Persistent action row (outside the flip): primary add-to-cart + optional
-   secondary Config/Close. Stays put and visible while the card flips. */
+/* persistent action row (outside flip): primary add + optional Config/Close */
 .item-buy-controls {
   display: flex;
   justify-content: center;
@@ -442,20 +407,19 @@ nav a[aria-current="page"] {
   margin-top: 6px;
 }
 .item-buy-controls .buy-button {
-  flex: 0 0 auto;            /* size to label — primary is a normal-width CTA, not the full row */
+  flex: 0 0 auto;            /* size to label */
   min-width: 0;
   padding: 8px 10px;
   font-size: var(--font-small);
   white-space: nowrap;
 }
-/* Secondary (Config/Close) sits to the left of the primary; the fixed min-width
-   holds its size across the Config↔Close relabel so nothing reflows on flip. */
+/* sits left of primary; fixed min-width avoids reflow on Config↔Close relabel */
 .item-buy-controls .buy-button--secondary {
   order: -1;
   min-width: 70px;
 }
 
-/* ── Category badge (corner). Gold by default; category colour on --cat cards ── */
+/* ── Category badge (corner) ── */
 .card-badge {
   position: absolute;
   top: 0;
@@ -464,7 +428,7 @@ nav a[aria-current="page"] {
   padding: 4px 9px;
   font-family: var(--font-title);
   font-size: 12px;
-  font-weight: 700;
+  font-weight: bold;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--cat);
@@ -475,8 +439,7 @@ nav a[aria-current="page"] {
   box-shadow: 0 0 10px color-mix(in oklch, var(--cat) 25%, transparent);
 }
 
-/* ── Category-coloured cards (shop/trade). Opt-in via .item-card--cat; home
-      omits it so its cards keep the default gold treatment. ── */
+/* ── Category-coloured cards (shop/trade); opt-in via .item-card--cat ── */
 .item-card--cat::after {
   content: "";
   position: absolute;
@@ -491,7 +454,7 @@ nav a[aria-current="page"] {
     inset -10px 0 16px -10px color-mix(in oklch, var(--cat) 5%, transparent);
 }
 
-/* Intensify the inset glow on hover (pairs with the border/outer glow). */
+/* intensify inset glow on hover */
 .item-card--cat:hover::after,
 .item-card--cat:focus-visible::after {
   box-shadow:
@@ -507,8 +470,7 @@ nav a[aria-current="page"] {
 .item-card--cat[data-category="materials"]   { --cat: var(--cat-materials); }
 .item-card--cat[data-category="misc"]        { --cat: var(--cat-misc); }
 
-/* ── Out-of-stock treatment. Home never sets this class, so home cards stay
-      gold/full-opacity regardless of stock. ── */
+/* ── Out-of-stock treatment (home never sets this class) ── */
 .item-card.item-card--out-of-stock { border-color: var(--text-disabled); }
 .item-card--cat.item-card--out-of-stock[data-category="boats"]       { --cat: var(--cat-boats-dim); }
 .item-card--cat.item-card--out-of-stock[data-category="blueprints"]  { --cat: var(--cat-blueprints-dim); }
@@ -516,12 +478,9 @@ nav a[aria-current="page"] {
 .item-card--cat.item-card--out-of-stock[data-category="materials"]   { --cat: var(--cat-materials-dim); }
 .item-card--cat.item-card--out-of-stock[data-category="misc"]        { --cat: var(--cat-misc-dim); }
 
-/* Dim the artwork + readout so the whole card reads inactive, not just the
-   accent colour — otherwise the (full-brightness) image dominates and the card
-   looks in-stock, most noticeably for blueprints. The badge and ORDER
-   button stay legible (the action row sits outside the flip). */
+/* dim art + readout so the whole card reads inactive (esp. blueprints) */
 .item-card--out-of-stock .item-media {
-  opacity: 0.45;   /* dims the art + the blueprint ME/TE box together */
+  opacity: 0.45;   /* art + ME/TE box together */
 }
 .item-card--out-of-stock .item-media > img {
   filter: grayscale(0.5);
@@ -549,34 +508,24 @@ nav a[aria-current="page"] {
   font-family: var(--font-text);
   text-align: center;
 }
-/*End of Card CSS */
-
-/* ── Card flip: add-to-cart configurator (store/home) ──────────────────────
-   The bordered frame (.item-card) stays put; its inner content rotates. The
-   front face drives height (in normal flow); the back face overlays it
-   absolutely, pre-rotated 180°, and backface-visibility hides whichever is
-   turned away. Back content is designed to fit within the front's height. */
-.item-card {
-  perspective: 1200px;
-}
-
+/* ── Card flip configurator (store/home): frame stays put, inner content
+   rotates; back face overlays the front pre-rotated 180°; flat (no perspective) ── */
 .item-card-flip {
   position: relative;
   width: 100%;
-  /* Grow to fill the card (which stretches to the row's tallest), and lay the
-     front face out as a column so it can fill in turn → button bottoms align. */
+  /* fill the card; column layout so front face fills → button bottoms align */
   flex: 1 1 auto;
   display: flex;
   flex-direction: column;
   transform-style: preserve-3d;
-  /* Keep this on its own compositing layer permanently. Otherwise the layer is
-     torn down when the flip-back transition ends and the contents re-snap to
-     the pixel grid — a visible ~1px nudge, made consistent by the card's zoom. */
-  will-change: transform;
   transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .item-card.is-flipped .item-card-flip {
   transform: rotateY(180deg);
+}
+/* compositing layer only while interacting: crisp text at rest, survives flip-back */
+.item-card:is(:hover, :focus-within, .is-flipped) .item-card-flip {
+  will-change: transform;
 }
 
 .item-card-face {
@@ -610,13 +559,7 @@ nav a[aria-current="page"] {
   .item-card-flip { transition: none; }
 }
 
-/* back-face header: flavour title (close lives in the persistent action row) */
-.flip-back-head {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-}
+/* back-face title (centred by the back face) */
 .flip-title {
   font-family: var(--font-title);
   font-size: 18px;
@@ -641,7 +584,7 @@ nav a[aria-current="page"] {
   gap: 3px;
   width: 100%;
 }
-/* quantity sits at the bottom of the configurator, above the action row */
+/* qty sits at the bottom, above the action row */
 .flip-qty-field {
   margin-top: auto;
 }
@@ -670,7 +613,7 @@ nav a[aria-current="page"] {
 .flip-fit-price {
   font-family: var(--font-text);
   font-size: 13px;
-  font-weight: 700;
+  font-weight: bold;
   color: var(--text-strong);
 }
 

@@ -5,3 +5,4 @@ desktop.ini
 *.log
 .claude/settings.local.json
 CLAUDE.md
+.comments-archive/

@@ -4,24 +4,21 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" href="../assets/images/icons/itssfav.ico" type="image/x-icon">
+  <link rel="preload" href="../assets/styling/fonts/space-grotesk-v22-latin-regular.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="../assets/styling/fonts/Roboto-Regular.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="../assets/styling/css/base.css">
-  <link rel="stylesheet" href="../assets/styling/css/cart.css">
+  <!-- cart.css styles only the JS-injected cart (off-screen at first paint) → load non-blocking -->
+  <link rel="stylesheet" href="../assets/styling/css/cart.css" media="print" onload="this.media='all'">
   <link rel="stylesheet" href="../assets/styling/css/shop.css">
 
-  <!-- Load order matters:
-       shop-utils.js  → defines window.ShopUtils (price formatters/parsers)
-       shop-api.js    → defines window.ShopAPI (stock feed, order submit, Turnstile)
-       shop-catalog.js → renders product cards into .display (must run before filter/cart read the DOM)
-       shop-filter.js → fires shop:product-data-updated which shop-cart.js listens to
-       cart-dom.js    → injects the shared cart markup (nav button, backdrop, drawer)
-       shop-cart.js   → uses ShopUtils + ShopAPI; wires the injected cart markup -->
+  <!-- Load order matters: utils → api → catalog (renders cards into .display) →
+       filter → cart-dom (injects cart) → shop-cart. -->
   <script src="../assets/js/shop-utils.js" defer></script>
   <script src="../assets/js/shop-api.js" defer></script>
   <script src="../assets/js/shop-catalog.js" defer></script>
   <script src="../assets/js/shop-filter.js" defer></script>
   <script src="../assets/js/cart-dom.js" defer></script>
   <script src="../assets/js/shop-cart.js" defer></script>
-  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 
   <meta name="description" content="Browse and buy boats, reaction materials, planetary materials, components and blueprints from Interstellar Systems in EVE Online.">
   <meta name="keywords" content="EVE Online store, buy boats, blueprints, reaction materials, planetary materials, components, ISK, Interstellar Systems">
@@ -31,7 +28,7 @@
 <body data-stock-endpoint="https://script.google.com/macros/s/AKfycbyaaO9WxF6G-KLwVg9_lOvmNbhVlXVCQRTE089G6dYlWnENFArQf_Fk-TPJncUNTETM/exec">
     <header>
       <a class="container-logo" href="../">
-        <img src="../assets/images/icons/itss.png" alt="Interstellar Systems logo">
+        <img src="../assets/images/icons/itss.avif" alt="Interstellar Systems logo" width="64" height="64">
           <div class="container-logo-name-motto">
             <h2>Interstellar Systems</h2>
             <p>Organically grown space boats!</p>
@@ -57,7 +54,7 @@
         <div class="top-bar-sections">
 
           <div class="top-bar-panel-section top-bar-panel-section--promo">
-            <img src="../assets/images/icons/discount.png" alt="discounts icon" aria-hidden="true">
+            <img src="../assets/images/icons/discount.avif" alt="discounts icon" aria-hidden="true" width="64" height="64">
             <div>
               <h2>Active Promotions</h2>
               <p>10% off all cruisers this week.</p>

@@ -4,22 +4,20 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" href="../assets/images/icons/itssfav.ico" type="image/x-icon">
+  <link rel="preload" href="../assets/styling/fonts/space-grotesk-v22-latin-regular.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="../assets/styling/fonts/Roboto-Regular.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="../assets/styling/css/base.css">
-  <link rel="stylesheet" href="../assets/styling/css/cart.css">
+  <!-- cart.css styles only the JS-injected cart (off-screen at first paint) → load non-blocking -->
+  <link rel="stylesheet" href="../assets/styling/css/cart.css" media="print" onload="this.media='all'">
   <link rel="stylesheet" href="../assets/styling/css/trade.css">
 
-  <!-- Shared cart (drawer openable here; future trade cards add to it):
-       shop-utils.js   → window.ShopUtils (formatters)
-       shop-api.js     → window.ShopAPI (stock feed, order submit, Turnstile)
-       shop-catalog.js → window.ShopCatalog (card builder for future trade cards)
-       cart-dom.js     → injects the shared cart markup (nav button, backdrop, drawer)
-       shop-cart.js    → cart state + drawer behaviour, shared across pages -->
+  <!-- Shared cart (drawer openable here). Order: utils → api → catalog →
+       cart-dom (injects cart) → shop-cart. -->
   <script src="../assets/js/shop-utils.js" defer></script>
   <script src="../assets/js/shop-api.js" defer></script>
   <script src="../assets/js/shop-catalog.js" defer></script>
   <script src="../assets/js/cart-dom.js" defer></script>
   <script src="../assets/js/shop-cart.js" defer></script>
-  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 
   <meta name="description" content="Trade materials with Interstellar Systems. Bring your materials and earn ISK through our EVE Online trade program.">
   <meta name="keywords" content="EVE Online trade, materials, ISK, Interstellar Systems, buy materials, moon ore, planetary">
@@ -29,7 +27,7 @@
   <div class="page">
     <header>
       <a class="container-logo" href="../">
-        <img src="../assets/images/icons/itss.png" alt="Interstellar Systems logo">
+        <img src="../assets/images/icons/itss.avif" alt="Interstellar Systems logo" width="64" height="64">
         <div class="container-logo-name-motto">
           <h2>Interstellar Systems</h2>
           <p>Organically grown space boats!</p>

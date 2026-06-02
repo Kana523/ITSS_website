@@ -198,11 +198,24 @@
     return document.querySelector(TURNSTILE_CONTAINER_SELECTOR)?.dataset.sitekey || "";
   }
 
+  // Inject the Cloudflare script on demand (first cart-open/checkout) instead of
+  // on every page load, so it stays off the initial-load path. Idempotent.
+  const TURNSTILE_SCRIPT_SRC = "https://challenges.cloudflare.com/turnstile/v0/api.js";
+  function loadTurnstileScript() {
+    if (window.turnstile || document.querySelector(`script[src="${TURNSTILE_SCRIPT_SRC}"]`)) return;
+    const s = document.createElement("script");
+    s.src = TURNSTILE_SCRIPT_SRC;
+    s.async = true;
+    s.defer = true;
+    document.head.appendChild(s);
+  }
+
   function ensureTurnstileRendered() {
     if (turnstileWidgetId !== null) return Promise.resolve();
     if (!document.querySelector(TURNSTILE_CONTAINER_SELECTOR) || !turnstileSitekey()) {
       return Promise.reject(new Error("Turnstile container missing"));
     }
+    loadTurnstileScript();
     return new Promise((resolve, reject) => {
       const start = Date.now();
       const tick = () => {

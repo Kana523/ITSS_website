@@ -219,8 +219,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const priceEl = card.querySelector(".item-card-footer p");
 
-    // Use parsePriceToIsk so formatted strings like "1.5 mil ISK" in HTML are handled correctly.
-    // Normalize the attribute to a plain number so subsequent reads (cart, sorting) are consistent.
+    // parse "1.5 mil ISK"-style strings, then normalize data-price to a plain number
     const price = parsePriceToIsk(card.dataset.price);
     card.dataset.price = String(price);
     updatePriceEl(priceEl, price);
@@ -418,30 +417,39 @@ document.addEventListener("DOMContentLoaded", () => {
     display?.classList.add("is-ready");
   }
 
-  function balanceCardRows() {
-    if (!display) return;
+  // Cards-per-row depends only on card + container width, so it changes only on
+  // resize. Measure once and cache; re-measure on resize. Filter/sort calls then
+  // reuse the cache and do no layout reads (no per-interaction reflow).
+  let cachedMaxPerRow = null;
 
-    display.querySelectorAll(".row-break").forEach((el) => el.remove());
-
-    const visibleCards = Array.from(display.querySelectorAll(".item-card")).filter((c) => c.style.display !== "none");
-    const n = visibleCards.length;
-    if (n <= 1) return;
-
-    const cardWidth = visibleCards[0].getBoundingClientRect().width;
-    if (!cardWidth) return;
-
+  // Layout reads (card width, gap, container width) → cards per row. Needs a
+  // laid-out, visible card for the width.
+  function measureMaxPerRow(sampleCard) {
+    const cardWidth = sampleCard.getBoundingClientRect().width;
+    if (!cardWidth) return null;
     const styles = getComputedStyle(display);
     const gap = parseFloat(styles.columnGap || styles.gap) || 0;
     const padX =
       (parseFloat(styles.paddingLeft) || 0) +
       (parseFloat(styles.paddingRight) || 0);
     const innerWidth = display.clientWidth - padX;
+    return Math.max(1, Math.floor((innerWidth + gap) / (cardWidth + gap)));
+  }
 
-    const maxPerRow = Math.max(
-      1,
-      Math.floor((innerWidth + gap) / (cardWidth + gap))
-    );
-    if (n <= maxPerRow) return;
+  function balanceCardRows() {
+    if (!display) return;
+
+    const visibleCards = Array.from(display.querySelectorAll(".item-card")).filter((c) => c.style.display !== "none");
+    const n = visibleCards.length;
+
+    // measure once (cached); self-heals if the first call runs pre-layout
+    if (cachedMaxPerRow === null && visibleCards.length) {
+      cachedMaxPerRow = measureMaxPerRow(visibleCards[0]);
+    }
+    const maxPerRow = cachedMaxPerRow;
+
+    display.querySelectorAll(".row-break").forEach((el) => el.remove());
+    if (n <= 1 || !maxPerRow || n <= maxPerRow) return;
 
     const rows = Math.ceil(n / maxPerRow);
     const perRow = Math.ceil(n / rows);
@@ -456,6 +464,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let resizeFrame = 0;
   window.addEventListener("resize", () => {
+    cachedMaxPerRow = null;   // viewport changed → re-measure on the next frame
     if (resizeFrame) cancelAnimationFrame(resizeFrame);
     resizeFrame = requestAnimationFrame(balanceCardRows);
   });
@@ -482,13 +491,11 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // Initial paint: reveal cards before async stock work so we never leave
-  // them CSS-hidden when there is no cache or endpoint to drive applyFilters.
+  // initial paint before async stock work, so cards are never left CSS-hidden
   applyFilters();
   void loadRemoteStock();
 
-  // External components (e.g. shop-cart after a successful order) can ask us
-  // to re-apply a freshly fetched stock map without redoing the cache logic.
+  // let other components (e.g. shop-cart post-order) re-apply a fresh stock map
   document.addEventListener("shop:stock-refresh", (e) => {
     const map = e.detail?.stockMap;
     if (!(map instanceof Map) || map.size === 0) return;

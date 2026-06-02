@@ -1,10 +1,7 @@
-/* Shared cart component — drawer, backdrop, header nav button, add-to-cart
-   toast. Loaded on every page that carries the cart (home/store/trade); the
-   markup is injected by cart-dom.js and wired by shop-cart.js. Keep cart-only
-   styles here, not in per-page sheets. */
+/* Shared cart component (drawer, backdrop, nav button, toast). Injected by
+   cart-dom.js, wired by shop-cart.js. Keep cart-only styles here. */
 
-/* Cart nav widget in header. Injected as a direct header child (after nav);
-   the header sets no gap, so add a small left margin to clear the nav. */
+/* cart nav widget; injected after nav, small left margin to clear it */
 .cart-nav {
   display: flex;
   align-items: center;
@@ -41,7 +38,7 @@
   border-radius: 4px;
   font-size: 11px;
   font-family: var(--font-text);
-  font-weight: 700;
+  font-weight: bold;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -134,7 +131,7 @@
 .cart-toast-name {
   font-family: var(--font-text);
   font-size: 16px;
-  font-weight: 700;
+  font-weight: bold;
   color: var(--text-strong);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -223,11 +220,11 @@
   transition: color var(--transition-fast);
 }
 .cart-drawer-close:hover { color: var(--text-strong); }
-/* gradient fill comes from the shared .text-gradient-gold class in the markup */
+/* gold fill from shared .text-gradient-gold */
 .cart-drawer-title {
   font-family: var(--font-title);
   font-size: 18px;
-  font-weight: 600;
+  font-weight: bold;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   flex: 1;
@@ -235,7 +232,7 @@
 .cart-drawer-count {
   font-family: var(--font-text);
   font-size: 16px;
-  font-weight: 700;
+  font-weight: bold;
   background: var(--text-muted);
   color: var(--text-on-gold);
   padding: 3px 10px;
@@ -307,14 +304,14 @@
 .cart-item-name {
   font-family: var(--font-title);
   font-size: 23px;
-  font-weight: 400;
+  font-weight: normal;
   color: var(--text-strong);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-/* red X button (item remove + extra remove). --sm shrinks it for extras. */
+/* red X button (remove); --sm shrinks for extras */
 .cart-x-btn {
   background: none;
   border: 1px solid var(--danger-line);
@@ -367,12 +364,12 @@
 .cart-item-price {
   font-family: var(--font-text);
   font-size: 17px;
-  font-weight: 700;
+  font-weight: bold;
   color: var(--text-strong);
 }
 .cart-price-label {
   font-size: 13px;
-  font-weight: 400;
+  font-weight: normal;
   color: var(--text);
 }
 
@@ -429,7 +426,7 @@
   padding: 1px 3px;
 }
 
-/* runs-per-BPC row (blueprints) — same row shape as price/qty */
+/* runs-per-BPC row (blueprints) */
 .cart-runs-label {
   font-family: var(--font-text);
   font-size: 15px;
@@ -474,11 +471,11 @@
   color: var(--text);
 }
 .cart-extra-price-value {
-  font-weight: 700;
+  font-weight: bold;
   color: var(--text-strong);
 }
 .cart-extra-price-label {
-  font-weight: 400;
+  font-weight: normal;
   color: var(--text);
   opacity: 0.75;
 }
@@ -534,7 +531,7 @@
 .cart-item-total-value {
   font-family: var(--font-title);
   font-size: 16px;
-  font-weight: 700;
+  font-weight: bold;
   color: var(--text-strong);
 }
 
@@ -548,14 +545,12 @@
   border-radius: 3px;
   padding: 8px 12px;
 }
-/* In-list notices (pre-order / over-stock) sit below the total row. */
+/* in-list notices sit below the total row */
 .cart-warning--preorder { margin-top: 4px; }
-/* These elements set their own `display`, which beats the UA [hidden] style;
-   restore hiding when the attribute is present (consolidated pre-order box and
-   the order-ID copy button). */
+/* [hidden] out-specifies the author display rule to restore hiding (no !important) */
 .cart-warning[hidden],
 .cart-orderid-copy[hidden] {
-  display: none !important;
+  display: none;
 }
 .cart-warning-icon {
   flex: 0 0 auto;
@@ -568,7 +563,7 @@
   border: 1.5px solid var(--red);
   color: var(--red);
   font-size: 12px;
-  font-weight: 700;
+  font-weight: bold;
   line-height: 1;
   margin-top: 1px;
 }
@@ -579,7 +574,7 @@
   color: var(--danger-text);
 }
 .cart-warning p strong {
-  font-weight: 700;
+  font-weight: bold;
 }
 
 /* ── Drawer footer ─────────────────────────────────────── */
@@ -608,17 +603,17 @@
   align-items: flex-end;
   gap: 1px;
 }
-/* gradient fill comes from the shared .text-gradient-gold class in the markup */
+/* gold fill from shared .text-gradient-gold */
 .cart-total-value {
   font-family: var(--font-title);
   font-size: 23px;
-  font-weight: 700;
+  font-weight: bold;
   line-height: 1.1;
 }
 .cart-total-compact {
   font-family: var(--font-text);
   font-size: 20px;
-  font-weight: 500;
+  font-weight: normal;
   color: var(--text-muted);
 
 }
@@ -662,8 +657,9 @@
   flex-direction: column;
   gap: 7px;
 }
+/* inactive panel stays laid out (grid-area overlap) so the drawer doesn't resize; just hidden */
 .cart-identity-panel[hidden] {
-  display: flex !important;
+  display: flex;
   visibility: hidden;
   pointer-events: none;
 }
@@ -673,7 +669,7 @@
   color: var(--text-strong);
   font-family: var(--font-text);
   font-size: 18px;
-  font-weight: 600;
+  font-weight: bold;
   letter-spacing: 0.4px;
   padding: 9px 13px;
   width: 100%;
@@ -689,7 +685,7 @@
 .cart-identity-input::placeholder {
   color: var(--text-strong);
   opacity: 0.85;
-  font-weight: 500;
+  font-weight: normal;
   letter-spacing: 0.3px;
 }
 .cart-orderid-box {
@@ -722,10 +718,11 @@
 }
 .cart-orderid-box strong {
   color: var(--text-strong);
-  font-weight: 700;
+  font-weight: bold;
 }
-.cart-orderid-expiry {
-  font-size: 15px !important;
+/* beats .cart-orderid-box p so the smaller expiry size wins */
+.cart-orderid-box .cart-orderid-expiry {
+  font-size: 15px;
   opacity: 0.65;
 }
 .cart-orderid-generate-box {
@@ -754,7 +751,7 @@
   flex: 1;
   font-family: var(--font-text), monospace;
   font-size: 19px;
-  font-weight: 700;
+  font-weight: bold;
   letter-spacing: 1.8px;
   color: var(--text-strong);
   word-break: break-all;

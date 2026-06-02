@@ -4,8 +4,7 @@ const ARCHIVE_SHEET_NAME  = "WebOrdersArchive";
 
 // WebOrders columns (1-indexed): orderId, status, customerRef, timestamp,
 // key, name, category, qty, unitPrice, lineTotal, orderTotal, isExtra.
-// `key` is the normalized item name (lookup form). `name` is the display
-// name (original casing). On extra rows, `key` is the parent line's key.
+// `key` = normalized name (lookup), `name` = display; extras use the parent key.
 const WEBORDERS_HEADERS = [
   "orderId", "status", "customerRef", "timestamp",
   "key", "name", "category", "qty",
@@ -15,9 +14,8 @@ const STATUS_VALUES = ["New", "In progress", "Fulfilled", "Cancelled"];
 const RESERVED_STATUSES = new Set(["new", "in progress"]);
 const COMPLETED_STATUSES = new Set(["fulfilled", "cancelled"]);
 
-// Canonical lookup key. Mirrors window.ShopUtils.normalizeName on the frontend.
-// Trim, lowercase, collapse internal whitespace. Hyphens preserved (EVE has
-// items like "Nano-Factory").
+// canonical lookup key — mirrors ShopUtils.normalizeName (trim, lowercase,
+// collapse whitespace, keep hyphens)
 function normalizeName(value) {
   return String(value == null ? "" : value).trim().toLowerCase().replace(/\s+/g, " ");
 }
@@ -42,12 +40,9 @@ function readStockData(sheet) {
   return out;
 }
 
-// Sums qty per item key across all WebOrders rows whose order is currently
-// reserved (status ∈ New / In progress). Status lives on the first row of
-// each order only; this scans twice — once to map orderId→status, then to
-// accumulate qty for reserved orders, skipping extras.
-// Reads from col F (name) so existing rows with the old dash-SKU in col E
-// stay forward-compatible — display name has always been canonical.
+// sums reserved qty per item key (orders with status New / In progress). Status
+// is on each order's first row, so scan twice: map orderId→status, then sum
+// (skipping extras). Reads col F (name) for back-compat with old col E SKUs.
 function computeReservations(ordersSheet) {
   const reserved = new Map();
   if (!ordersSheet || ordersSheet.getLastRow() < 2) return reserved;
@@ -81,9 +76,8 @@ function generateInternalOrderId() {
   return bytes.join("");
 }
 
-// One-time setup. Writes WEBORDERS_HEADERS to row 1 of WebOrders and
-// WebOrdersArchive (creating the archive sheet if missing). Run manually
-// from the Apps Script editor before going live.
+// one-time: write headers to row 1 of WebOrders + WebOrdersArchive (creates the
+// archive if missing). Run manually before going live.
 function setupOrdersSheets() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const orders = ss.getSheetByName(ORDERS_SHEET_NAME);
@@ -97,9 +91,8 @@ function setupOrdersSheets() {
   Logger.log("Headers written to WebOrders and WebOrdersArchive.");
 }
 
-// Moves any order whose first-row status is Fulfilled or Cancelled into
-// WebOrdersArchive. Runs on a time trigger or manually. Holds the script
-// lock so it can't race with doPost. Header row in WebOrders is preserved.
+// moves Fulfilled/Cancelled orders into WebOrdersArchive (time trigger or manual).
+// Holds the script lock so it can't race doPost; preserves the header row.
 function archiveCompletedOrders() {
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(15000)) { Logger.log("Archive: couldn't acquire lock."); return; }
@@ -181,12 +174,10 @@ function doGet() {
   return jsonResponse(payload);
 }
 
-// Order submission. Frontend POSTs text/plain JSON:
-//   { action: "order", turnstileToken, items, [orderId | charName] }
-// The script generates its own short internal orderId for grouping; the value
-// the customer supplied (20-char client ID or charName) goes into customerRef.
-// Material lines are clamped to (Stock!B − active reservations); non-materials
-// are accepted as-is. Response includes `adjusted` for any clamped lines.
+// Order submission. POST text/plain JSON: { action:"order", turnstileToken,
+// items, [orderId|charName] }. Generates an internal orderId; the customer's
+// value (client ID or charName) goes to customerRef. Materials clamped to
+// (Stock!B − reservations); response carries `adjusted` for clamped lines.
 function doPost(e) {
   let body;
   try {
@@ -292,8 +283,7 @@ function doPost(e) {
       return sum + total;
     }, 0);
 
-    // Build rows. Status goes only on the FIRST row of the order. Col E
-    // stores the normalized key (lookup form); col F stores the display name.
+    // build rows; status only on the first row. Col E = key, col F = display name.
     const rows = [];
     let isFirst = true;
     for (const line of lineSpecs) {
@@ -340,8 +330,8 @@ function doPost(e) {
   }
 }
 
-// Verifies a Cloudflare Turnstile token. Secret comes from Script Properties (TURNSTILE_SECRET).
-// Returns true on success, false on any failure (network, missing secret, rejected token).
+// verifies a Turnstile token (secret in Script Properties TURNSTILE_SECRET);
+// true on success, false on any failure
 function verifyTurnstile(token) {
   const secret = PropertiesService.getScriptProperties().getProperty("TURNSTILE_SECRET");
   if (!secret) {
@@ -388,19 +378,13 @@ function toText(value) {
   return String(value || "").trim();
 }
 
-// Pulls best Buy/Sell prices for item names in column A of the "Stock" sheet
-// from Jita 4-4, Amarr VIII, and C-J6MT Keepstar. Stock!B is overwritten with
-// the count held in the corporation "Sales" hangar across all corp offices.
-// Writes to columns F:K (headers in row 1, data from row 2) plus column B.
-// Columns C–E (price, next_stock, weeks) are never touched.
-// Column A holds the real EVE item names (e.g. "Carbon Polymers",
-// "Nano-Factory") and is sent to ESI as-is. The lookup matches ESI's response
-// by normalizeName so casing/whitespace differences don't break tid resolution.
-// Jita/Amarr: public ESI, no auth. Other columns require ESI OAuth scopes:
+// Pulls best Buy/Sell for Stock!A names from Jita, Amarr, C-J6MT → cols F:K
+// (row 2+); also overwrites Stock!B with the corp "Sales" hangar count. Cols
+// C–E untouched. Names sent to ESI as-is, matched back by normalizeName.
+// Jita/Amarr: public ESI. Auth scopes (see authSetupStep1/2):
 //   esi-markets.structure_markets.v1          (C-J6MT prices)
 //   esi-assets.read_corporation_assets.v1     (Sales hangar)
 //   esi-corporations.read_divisions.v1        (find Sales hangar by name)
-// See authSetupStep1/2.
 const ESI_BASE         = "https://esi.evetech.net/latest";
 const ESI_AUTH_BASE    = "https://login.eveonline.com/v2/oauth";
 const CJ6MT_STRUCTURE  = 1049588174021;
@@ -411,7 +395,7 @@ function pullPrices() {
   if (!src) throw new Error('Missing "' + STOCK_SHEET_NAME + '" sheet.');
   if (src.getLastRow() < 2) throw new Error('"' + STOCK_SHEET_NAME + '" sheet is empty.');
 
-  // Skip header row. Read item names from A2:A.
+  // item names from A2:A
   const lastRow = src.getLastRow();
   const aValues = src.getRange(2, 1, lastRow - 1, 1).getValues().flat();
   const names = [];
@@ -421,8 +405,7 @@ function pullPrices() {
     names.push(name);
   }
 
-  // 1. Resolve names -> type_ids. Send names as-is; key the result map by
-  //    normalizeName so case/whitespace differences don't miss.
+  // 1. resolve names → type_ids (keyed by normalizeName)
   const typeIds = {};
   for (let i = 0; i < names.length; i += 500) {
     const batch = names.slice(i, i + 500);
@@ -439,8 +422,7 @@ function pullPrices() {
     (data.inventory_types || []).forEach(t => typeIds[normalizeName(t.name)] = t.id);
   }
 
-  // 2. Fetch access token once. Used for C-J6MT structure orders and the
-  //    corporation's asset list. If auth fails, both are skipped.
+  // 2. access token (for C-J6MT orders + corp assets); skip both if auth fails
   let accessToken = null;
   let tokenError = null;
   try {
@@ -462,8 +444,7 @@ function pullPrices() {
     }
   }
 
-  // 2b. Corporation "Sales" hangar across all corp offices, used to overwrite
-  //     Stock!B. Needs Director role + the corp asset & divisions scopes.
+  // 2b. corp "Sales" hangar (overwrites Stock!B); needs Director + asset/division scopes
   let salesStockByType = null;  // null = couldn't read (don't overwrite B)
   let salesError = tokenError;
   if (accessToken) {
@@ -493,9 +474,8 @@ function pullPrices() {
     { label: "C-J6MT", structure: true }
   ];
 
-  // 3. Per item: 6 hub prices go to F:K. Stock!B is rewritten to the Sales
-  //    hangar count for every row (if Sales was found). Build the new B by
-  //    starting from current values — atomic single write.
+  // 3. per item: 6 hub prices → F:K; rewrite Stock!B to the Sales count
+  //    (start from current values for one atomic write)
   const currentB = src.getRange(2, 2, names.length, 1).getValues();
   const priceRows = [];
   for (let i = 0; i < names.length; i++) {
@@ -528,11 +508,9 @@ function pullPrices() {
   if (salesError && !cjError) src.getRange(1, 2).setNote("Sales hangar: " + salesError);
 }
 
-// ESI fetch with automatic 420 (rate limit) backoff and error-budget awareness.
-// On 420 it waits for X-Esi-Error-Limit-Reset seconds (capped) and retries.
-// On 502/503/504 (transient upstream errors — ESI can't reach Tranquility) it
-// retries with exponential backoff up to 3 times.
-// If less than 10 errors remain in the budget, it pauses briefly to let it recover.
+// ESI fetch with 420 (rate-limit) + 502/503/504 backoff and error-budget awareness:
+// 420 waits X-Esi-Error-Limit-Reset (capped); 5xx retries with exponential backoff
+// (×3); pauses briefly when <10 errors remain in the budget.
 function esiFetch(url, options) {
   options = options || { muteHttpExceptions: true };
   if (!options.muteHttpExceptions) options.muteHttpExceptions = true;
