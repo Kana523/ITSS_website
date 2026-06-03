@@ -85,8 +85,8 @@
   --font-small: 14px;
   --font-medium: 22px;
   --font-large: 30px;
-  --font-card-title: 19px;   /* product card title */
-  --font-card-meta: 17px;    /* product card price + stock */
+  --font-card-title: 23px;   /* product card title */
+  --font-card-meta: 20px;    /* product card price + stock */
 }
 
 *{
@@ -206,6 +206,14 @@ nav {
     align-items: center;
 }
 
+.container-logo h2 {
+    font-size: var(--font-medium);
+}
+
+.container-logo-name-motto p {
+    font-size: var(--font-small);
+}
+
 footer {
   text-align: center;
   margin-top: auto;
@@ -294,17 +302,18 @@ nav a[aria-current="page"] {
 /*Card CSS */
 .item-card {
   position: relative;
-  /* uniform 1.2× card scale; zoom is layout-aware (reflow + row-balancer just work) */
-  zoom: 1.2;
+  /* Sizes are baked in at the former 1.2× scale. `zoom` was removed: promoting the
+     inner flip layer (will-change: transform) on hover re-rasterized it against the
+     zoomed ancestor, causing a visible jump. */
   --cat: var(--text-muted);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
-  min-width: 220px;
-  max-width: 220px;
+  min-width: 264px;
+  max-width: 264px;
   border: var(--border-md) solid var(--text);
-  padding: 5px 0;
+  padding: 6px 0;
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
@@ -312,7 +321,7 @@ nav a[aria-current="page"] {
 .item-card:hover,
 .item-card:focus-visible {
   border-color: var(--cat);
-  box-shadow: 0 0 16px -2px color-mix(in oklch, var(--cat) 45%, transparent);
+  box-shadow: 0 0 19px -2px color-mix(in oklch, var(--cat) 45%, transparent);
 }
 
 .item-card h2 {
@@ -336,10 +345,10 @@ nav a[aria-current="page"] {
   position: relative;
 }
 
-/* product image; fixed 128×128 reserves space, contain keeps art undistorted */
+/* product image; fixed 154×154 reserves space, contain keeps art undistorted */
 .item-media > img {
-  width: 128px;
-  height: 128px;
+  width: 154px;
+  height: 154px;
   object-fit: contain;
   padding: 2px 0;
 }
@@ -351,9 +360,9 @@ nav a[aria-current="page"] {
   bottom: 0;
   transform: translate(-50%, 15%);
   z-index: 2;
-  padding: 4px 12px;
+  padding: 5px 14px;
   font-family: var(--font-title);
-  font-size: 16px;
+  font-size: 19px;
   font-weight: bold;
   letter-spacing: 0.08em;
   line-height: 1;
@@ -362,8 +371,8 @@ nav a[aria-current="page"] {
   border: var(--border-sm) solid color-mix(in oklch, var(--cat) 40%, transparent);
   border-radius: 4px;
   white-space: nowrap;
-  text-shadow: 0 0 6px color-mix(in oklch, var(--cat) 75%, transparent);
-  box-shadow: 0 0 10px color-mix(in oklch, var(--cat) 25%, transparent);
+  text-shadow: 0 0 7px color-mix(in oklch, var(--cat) 75%, transparent);
+  box-shadow: 0 0 12px color-mix(in oklch, var(--cat) 25%, transparent);
 }
 
 .text {
@@ -377,7 +386,7 @@ nav a[aria-current="page"] {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 12px;
 }
 /* price + stock readout */
 .item-card-footer p {
@@ -387,36 +396,36 @@ nav a[aria-current="page"] {
 .stock-state {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   position: relative;
 }
 /* stock icon (64×64 source, capped to icon scale) */
 .stock-state img {
-  width: 32px;
-  height: 32px;
+  width: 38px;
+  height: 38px;
 }
 
 /* persistent action row (outside flip): primary add + optional Config/Close */
 .item-buy-controls {
   display: flex;
   justify-content: center;
-  gap: 6px;
+  gap: 7px;
   width: 100%;
-  padding: 0 8px;
+  padding: 0 10px;
   box-sizing: border-box;
-  margin-top: 6px;
+  margin-top: 7px;
 }
 .item-buy-controls .buy-button {
   flex: 0 0 auto;            /* size to label */
   min-width: 0;
-  padding: 8px 10px;
-  font-size: var(--font-small);
+  padding: 10px 12px;
+  font-size: calc(var(--font-small) * 1.2);
   white-space: nowrap;
 }
 /* sits left of primary; fixed min-width avoids reflow on Config↔Close relabel */
 .item-buy-controls .buy-button--secondary {
   order: -1;
-  min-width: 70px;
+  min-width: 84px;
 }
 
 /* ── Category badge (corner) ── */
@@ -425,9 +434,9 @@ nav a[aria-current="page"] {
   top: 0;
   right: 0;
   z-index: 2;
-  padding: 4px 9px;
+  padding: 5px 11px;
   font-family: var(--font-title);
-  font-size: 12px;
+  font-size: 14px;
   font-weight: bold;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -435,8 +444,8 @@ nav a[aria-current="page"] {
   background: color-mix(in oklch, var(--cat) 14%, var(--surface));
   border-left: 1px solid color-mix(in oklch, var(--cat) 40%, transparent);
   border-bottom: 1px solid color-mix(in oklch, var(--cat) 40%, transparent);
-  text-shadow: 0 0 6px color-mix(in oklch, var(--cat) 75%, transparent);
-  box-shadow: 0 0 10px color-mix(in oklch, var(--cat) 25%, transparent);
+  text-shadow: 0 0 7px color-mix(in oklch, var(--cat) 75%, transparent);
+  box-shadow: 0 0 12px color-mix(in oklch, var(--cat) 25%, transparent);
 }
 
 /* ── Category-coloured cards (shop/trade); opt-in via .item-card--cat ── */
@@ -448,20 +457,20 @@ nav a[aria-current="page"] {
   z-index: 1;
   transition: box-shadow var(--transition-fast);
   box-shadow:
-    inset 0 16px 24px -10px color-mix(in oklch, var(--cat) 80%, transparent),
-    inset 0 -10px 16px -10px color-mix(in oklch, var(--cat) 50%, transparent),
-    inset 10px 0 16px -10px color-mix(in oklch, var(--cat) 5%, transparent),
-    inset -10px 0 16px -10px color-mix(in oklch, var(--cat) 5%, transparent);
+    inset 0 19px 29px -12px color-mix(in oklch, var(--cat) 80%, transparent),
+    inset 0 -12px 19px -12px color-mix(in oklch, var(--cat) 50%, transparent),
+    inset 12px 0 19px -12px color-mix(in oklch, var(--cat) 5%, transparent),
+    inset -12px 0 19px -12px color-mix(in oklch, var(--cat) 5%, transparent);
 }
 
 /* intensify inset glow on hover */
 .item-card--cat:hover::after,
 .item-card--cat:focus-visible::after {
   box-shadow:
-    inset 0 16px 28px -8px color-mix(in oklch, var(--cat) 100%, transparent),
-    inset 0 -12px 20px -8px color-mix(in oklch, var(--cat) 70%, transparent),
-    inset 12px 0 18px -10px color-mix(in oklch, var(--cat) 12%, transparent),
-    inset -12px 0 18px -10px color-mix(in oklch, var(--cat) 12%, transparent);
+    inset 0 19px 34px -10px color-mix(in oklch, var(--cat) 100%, transparent),
+    inset 0 -14px 24px -10px color-mix(in oklch, var(--cat) 70%, transparent),
+    inset 14px 0 22px -12px color-mix(in oklch, var(--cat) 12%, transparent),
+    inset -14px 0 22px -12px color-mix(in oklch, var(--cat) 12%, transparent);
 }
 
 .item-card--cat[data-category="boats"]       { --cat: var(--cat-boats); }
@@ -498,10 +507,10 @@ nav a[aria-current="page"] {
   content: attr(data-next-stock);
   position: absolute;
   left: 50%;
-  bottom: calc(100% + 8px);
+  bottom: calc(100% + 10px);
   transform: translateX(-50%);
-  min-width: 100px;
-  padding: 8px 10px;
+  min-width: 120px;
+  padding: 10px 12px;
   border: var(--border-sm) solid var(--text);
   background: var(--surface);
   color: var(--text-muted);
@@ -545,8 +554,8 @@ nav a[aria-current="page"] {
   inset: 0;
   transform: rotateY(180deg);
   justify-content: flex-start;
-  gap: 6px;
-  padding: 6px 10px 4px;
+  gap: 7px;
+  padding: 7px 12px 5px;
   box-sizing: border-box;
   overflow: auto;              /* safety if a back face ever exceeds the front */
   text-align: center;
@@ -562,7 +571,7 @@ nav a[aria-current="page"] {
 /* back-face title (centred by the back face) */
 .flip-title {
   font-family: var(--font-title);
-  font-size: 18px;
+  font-size: 22px;
   letter-spacing: 0.06em;
   color: var(--text-strong);
 }
@@ -573,7 +582,7 @@ nav a[aria-current="page"] {
   text-overflow: ellipsis;
   white-space: nowrap;
   font-family: var(--font-text);
-  font-size: 13px;
+  font-size: 16px;
   color: var(--text-muted);
 }
 
@@ -581,7 +590,7 @@ nav a[aria-current="page"] {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
   width: 100%;
 }
 /* qty sits at the bottom, above the action row */
@@ -590,21 +599,21 @@ nav a[aria-current="page"] {
 }
 .flip-label {
   font-family: var(--font-text);
-  font-size: 13px;
+  font-size: 16px;
   letter-spacing: 0.04em;
   color: var(--text);
 }
 
 .flip-select {
   width: 100%;
-  max-width: 190px;
-  padding: 4px 8px;
+  max-width: 228px;
+  padding: 5px 10px;
   border: var(--border-sm) solid var(--border-subtle);
   border-radius: 3px;
   background: var(--surface-control);
   color: var(--text-muted);
   font-family: var(--font-text);
-  font-size: 14px;
+  font-size: 17px;
 }
 .flip-select option {
   background: var(--surface);
@@ -612,7 +621,7 @@ nav a[aria-current="page"] {
 }
 .flip-fit-price {
   font-family: var(--font-text);
-  font-size: 13px;
+  font-size: 16px;
   font-weight: bold;
   color: var(--text-strong);
 }
@@ -620,11 +629,11 @@ nav a[aria-current="page"] {
 .flip-stepper {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
 }
 .flip-step-btn {
-  width: 28px;
-  height: 28px;
+  width: 34px;
+  height: 34px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -634,21 +643,21 @@ nav a[aria-current="page"] {
   background: var(--surface-control);
   color: var(--text-muted);
   font-family: var(--font-text);
-  font-size: 18px;
+  font-size: 22px;
   transition: background var(--transition-fast);
 }
 .flip-step-btn:hover { background: var(--surface-hover); }
 .flip-num {
-  width: 48px;
+  width: 58px;
   box-sizing: border-box;
-  padding: 3px 4px;
+  padding: 4px 5px;
   text-align: center;
   border: var(--border-sm) solid var(--border-subtle);
   border-radius: 2px;
   background: var(--surface-control);
   color: var(--text-muted);
   font-family: var(--font-text);
-  font-size: 16px;
+  font-size: 19px;
 }
 
 /* materials coarse-step row in the configurator (±100k / ±1m) */
@@ -657,17 +666,17 @@ nav a[aria-current="page"] {
   align-items: center;
   justify-content: center;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 5px;
 }
 .flip-bigstep-btn {
-  height: 26px;
-  padding: 0 6px;
+  height: 31px;
+  padding: 0 7px;
   border: var(--border-sm) solid var(--text-strong);
   border-radius: 3px;
   background: var(--surface-control);
   color: var(--text-muted);
   font-family: var(--font-text);
-  font-size: 12px;
+  font-size: 14px;
   white-space: nowrap;
   transition: background var(--transition-fast);
 }

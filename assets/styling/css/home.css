@@ -29,6 +29,8 @@ main section + section {
 
 /* "Store has more" card */
 .store-more-card {
+  position: relative;
+  --glow: var(--glow-gold);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -43,19 +45,31 @@ main section + section {
   background:
     radial-gradient(circle at 50% 0%, color-mix(in oklch, var(--text-muted) 18%, transparent), transparent 65%),
     linear-gradient(180deg, rgba(34, 27, 12, 0.55), color-mix(in oklch, var(--space-900) 90%, transparent));
-  transition: box-shadow var(--transition-fast), transform var(--transition-fast);
 }
 
-.store-more-card:hover,
-.store-more-card:focus-visible {
-  transform: scale(1.03);
-  box-shadow: 0 0 28px color-mix(in oklch, var(--glow-gold) 18%, transparent);
+/* gold inset glow, matching the highlight cards' .item-card--cat::after (no scale) */
+.store-more-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  transition: box-shadow var(--transition-fast);
+  box-shadow:
+    inset 0 19px 29px -12px color-mix(in oklch, var(--glow) 80%, transparent),
+    inset 0 -12px 19px -12px color-mix(in oklch, var(--glow) 50%, transparent),
+    inset 12px 0 19px -12px color-mix(in oklch, var(--glow) 5%, transparent),
+    inset -12px 0 19px -12px color-mix(in oklch, var(--glow) 5%, transparent);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .store-more-card { transition: none; }
-  .store-more-card:hover,
-  .store-more-card:focus-visible { transform: none; }
+/* intensify inset glow on hover */
+.store-more-card:hover::after,
+.store-more-card:focus-visible::after {
+  box-shadow:
+    inset 0 19px 34px -10px color-mix(in oklch, var(--glow) 100%, transparent),
+    inset 0 -14px 24px -10px color-mix(in oklch, var(--glow) 70%, transparent),
+    inset 14px 0 22px -12px color-mix(in oklch, var(--glow) 12%, transparent),
+    inset -14px 0 22px -12px color-mix(in oklch, var(--glow) 12%, transparent);
 }
 
 .store-more-card:focus-visible {
