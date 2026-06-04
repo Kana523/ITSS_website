@@ -815,7 +815,7 @@ document.addEventListener("DOMContentLoaded", () => {
   cartBackdrop?.addEventListener("click", closeCart);
 
   // ── Card-flip configurator (store/home) ──────────────────────────────────────
-  // `flip` cards carry a back face (qty/fitting/runs); Config flips to it (→ Close),
+  // `flip` cards carry a back face (qty/fitting/runs); Options flips to it (→ Close),
   // the shared ADD button adds with chosen options when flipped, defaults when not.
 
   function openFlip(card) {
@@ -836,7 +836,7 @@ document.addEventListener("DOMContentLoaded", () => {
     card.querySelector(".item-card-face--front")?.setAttribute("aria-hidden", "false");
     card.querySelector(".item-card-face--back")?.setAttribute("aria-hidden", "true");
     const toggle = card.querySelector("[data-flip-toggle]");
-    if (toggle) toggle.textContent = "Config";
+    if (toggle) toggle.textContent = "Options";
     resetFlipControls(card);
   }
 
@@ -882,7 +882,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.addEventListener("click", (e) => {
     // Shared ADD: add with configurator values (defaults on front face, picks when
-    // flipped), reset fields but leave the face as-is (closed via Config/click-out/Esc).
+    // flipped), reset fields but leave the face as-is (closed via Options/click-out/Esc).
     // readFlipControls defaults for cards without a back face.
     const addBtn = e.target.closest("[data-cart-add]");
     if (addBtn) {
@@ -897,7 +897,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // Config / Close: toggle the configurator open or shut.
+    // Options / Close: toggle the configurator open or shut.
     const flipToggle = e.target.closest("[data-flip-toggle]");
     if (flipToggle) {
       const card = flipToggle.closest(".item-card");

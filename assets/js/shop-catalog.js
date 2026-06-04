@@ -80,9 +80,6 @@
 
   const SHOP_IMAGE_ROOT = "../assets/images/items/";
 
-  // flavour heading on the configurator face
-  const FLIP_TITLE = "Spice it up";
-
   // Fittings live in CATALOG as `kind: "fitting"` rows; resolve them into a flat
   // list + a by-name lookup, and pre-resolve each item's `fittings` names.
   const FITTINGS = CATALOG
@@ -182,7 +179,7 @@
 
   // Flip back face — the configurator. Boats/structures get a fitting dropdown;
   // all get a qty stepper (blueprints label it "Total runs", materials add
-  // ±100k / ±1m). Add/Config buttons live in the action row (createCard), not
+  // ±100k / ±1m). Add/Options buttons live in the action row (createCard), not
   // here; shop-cart reads these on ADD.
   function createFlipBack(item, fittings) {
     const cat = item.category;
@@ -191,13 +188,12 @@
     const back = el("div", "item-card-face item-card-face--back");
     back.setAttribute("aria-hidden", "true");
 
-    back.appendChild(el("p", "flip-title", FLIP_TITLE));
     back.appendChild(el("p", "flip-item-name", item.name));
 
     // Fitting dropdown — boats + structures. Always offers "No Fitting".
     if ((cat === "boats" || cat === "structures") && fittings.length) {
       const field = el("div", "flip-field");
-      field.appendChild(el("span", "flip-label", "Fitting:"));
+      field.appendChild(el("span", "flip-label flip-label--fitting", "Fitting:"));
       const select = el("select", "flip-select");
       select.dataset.flipFitting = "";
       select.setAttribute("aria-label", `Fitting for ${item.name}`);
@@ -346,7 +342,7 @@
     footer.appendChild(stockState);
 
     // action row (outside the flip so it stays put): filled --primary add button
-    // + secondary Config on flip cards (relabelled Close while flipped)
+    // + secondary Options on flip cards (relabelled Close while flipped)
     const controls = document.createElement("div");
     controls.className = "item-buy-controls";
     if (action !== "none") {
@@ -364,9 +360,9 @@
         const cfg = document.createElement("button");
         cfg.type = "button";
         cfg.className = "buy-button buy-button--secondary";
-        cfg.textContent = "Config";
+        cfg.textContent = "Options";
         cfg.setAttribute("data-flip-toggle", "");
-        cfg.setAttribute("aria-label", `Configure ${item.name}`);
+        cfg.setAttribute("aria-label", `Options for ${item.name}`);
         controls.appendChild(cfg);
       }
     }

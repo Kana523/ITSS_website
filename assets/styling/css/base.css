@@ -269,7 +269,7 @@ nav a[aria-current="page"] {
   color: var(--text-strong);
 }
 
-/* secondary (Config/Close): quiet outline, no fill */
+/* secondary (Options/Close): quiet outline, no fill */
 .buy-button--secondary {
   border-color: var(--border-subtle);
   color: var(--text-muted);
@@ -405,7 +405,7 @@ nav a[aria-current="page"] {
   height: 38px;
 }
 
-/* persistent action row (outside flip): primary add + optional Config/Close */
+/* persistent action row (outside flip): primary add + optional Options/Close */
 .item-buy-controls {
   display: flex;
   justify-content: center;
@@ -422,7 +422,7 @@ nav a[aria-current="page"] {
   font-size: calc(var(--font-small) * 1.2);
   white-space: nowrap;
 }
-/* sits left of primary; fixed min-width avoids reflow on Config↔Close relabel */
+/* sits left of primary; fixed min-width avoids reflow on Options↔Close relabel */
 .item-buy-controls .buy-button--secondary {
   order: -1;
   min-width: 84px;
@@ -568,22 +568,16 @@ nav a[aria-current="page"] {
   .item-card-flip { transition: none; }
 }
 
-/* back-face title (centred by the back face) */
-.flip-title {
-  font-family: var(--font-title);
-  font-size: 22px;
-  letter-spacing: 0.06em;
-  color: var(--text-strong);
-}
-
+/* back-face title — the boat name (centred by the back face) */
 .flip-item-name {
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-family: var(--font-text);
-  font-size: 16px;
-  color: var(--text-muted);
+  font-family: var(--font-title);
+  font-size: 22px;
+  letter-spacing: 0.06em;
+  color: var(--text-strong);
 }
 
 .flip-field {
@@ -603,6 +597,8 @@ nav a[aria-current="page"] {
   letter-spacing: 0.04em;
   color: var(--text);
 }
+/* fitting subtitle — brighter gold than the plain labels */
+.flip-label--fitting { color: var(--text-strong); }
 
 .flip-select {
   width: 100%;
