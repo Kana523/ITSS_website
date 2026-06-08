@@ -15,6 +15,10 @@
     { name: "Minokawa",                  category: "boats",      sub: "force-auxiliary",    price:             0, image: "boats/minokawa-render-256.avif",   fittings: ["Triage Fit", "Shield Tank"] },
     { name: "Ninazu",                    category: "boats",      sub: "force-auxiliary",    price:             0, image: "boats/ninazu-render-256.avif",     fittings: ["Triage Fit", "Armor Tank"] },
     { name: "Lif",                       category: "boats",      sub: "force-auxiliary",    price:             0, image: "boats/lif-render-256.avif",        fittings: ["Triage Fit", "Shield Tank"] },
+    { name: "Nidhoggur",                 category: "boats",      sub: "carrier",            price:             0, image: "boats/nidhoggur-render-256.avif",  fittings: ["Shield Tank", "Tackle Fit"] },
+    { name: "Archon",                    category: "boats",      sub: "carrier",            price:             0, image: "boats/archon-render-256.avif",     fittings: ["Armor Tank", "Gank Fit"] },
+    { name: "Chimera",                   category: "boats",      sub: "carrier",            price:             0, image: "boats/chimera-render-256.avif",    fittings: ["Shield Tank", "Gank Fit"] },
+    { name: "Thanatos",                  category: "boats",      sub: "carrier",            price:             0, image: "boats/thanatos-render-256.avif",   fittings: ["Armor Tank", "Tackle Fit"] },
     { name: "Ark",                       category: "boats",      sub: "jump-freighter",     price:             0, image: "boats/ark-render-256.avif",        fittings: ["Travel Fit", "Cargo Fit", "Armor Tank"] },
     { name: "Rhea",                      category: "boats",      sub: "jump-freighter",     price:             0, image: "boats/rhea-render-256.avif",       fittings: ["Travel Fit", "Cargo Fit", "Shield Tank"] },
     { name: "Anshar",                    category: "boats",      sub: "jump-freighter",     price:             0, image: "boats/anshar-render-256.avif",     fittings: ["Travel Fit", "Cargo Fit"] },
@@ -23,31 +27,28 @@
     { name: "Astrahus",                  category: "structures", sub: "citadel",            price:             0, image: "structures/astrahus-render-256.avif", fittings: ["Defense Fit"] },
     { name: "Raitaru",                   category: "structures", sub: "engineering",        price:             0, image: "structures/raitaru-render-256.avif",  fittings: ["Industry Fit"] },
     { name: "Athanor",                   category: "structures", sub: "refinery",           price:             0, image: "structures/athanor-render-256.avif",  fittings: ["Reaction Fit"] },
-    { name: "Fermionic Condensates",     category: "materials",  sub: "reaction",  price:             0 },
-    { name: "Hypersynaptic Fibers",      category: "materials",  sub: "reaction",  price:             0 },
-    { name: "Nanotransistors",           category: "materials",  sub: "reaction",  price:             0 },
-    { name: "Nonlinear Metamaterials",   category: "materials",  sub: "reaction",  price:             0 },
-    { name: "Photonic Metamaterials",    category: "materials",  sub: "reaction",  price:             0 },
-    { name: "Plasmonic Metamaterials",   category: "materials",  sub: "reaction",  price:             0 },
-    { name: "Terahertz Metamaterials",   category: "materials",  sub: "reaction",  price:             0 },
-    { name: "Sylramic Fibers",           category: "materials",  sub: "reaction",  price:      8_750_000 },
-    { name: "Reinforced Carbon Fiber",   category: "materials",  sub: "reaction",  price:     12_300_000, image: "materials/reaction/reinforced_carbon_fiber.avif" },
-    { name: "Titanium Carbide",          category: "materials",  sub: "reaction",  price:      9_600_000, image: "materials/reaction/titanium_carbide.avif" },
-    { name: "Tungsten Carbide",          category: "materials",  sub: "reaction",  price:     10_100_000, image: "materials/reaction/tungsten_carbide.avif" },
-    { name: "Pressurized Oxidizers",     category: "materials",  sub: "reaction",  price:      7_800_000 },
-    { name: "Ferrogel",                  category: "materials",  sub: "reaction",  price:     15_800_000 },
-    { name: "Fernite Carbide",           category: "materials",  sub: "reaction",  price:     11_200_000 },
-    { name: "Crystalline Carbonide",     category: "materials",  sub: "reaction",  price:              0 },
-    { name: "Fullerides",                category: "materials",  sub: "reaction",  price:              0 },
-    { name: "Phenolic Composites",       category: "materials",  sub: "reaction",  price:              0 },
-    { name: "Broadcast Node",              category: "materials",  sub: "planetary", price:      5_200_000 },
-    { name: "Integrity Response Drones",   category: "materials",  sub: "planetary", price:      6_100_000 },
-    { name: "Nano-Factory",                category: "materials",  sub: "planetary", price:             0 },
-    { name: "Organic Mortar Applicators",  category: "materials",  sub: "planetary", price:             0 },
-    { name: "Recursive Computing Module",  category: "materials",  sub: "planetary", price:             0 },
-    { name: "Self-Harmonizing Power Core", category: "materials",  sub: "planetary", price:             0 },
-    { name: "Sterile Conduits",            category: "materials",  sub: "planetary", price:      4_700_000 },
-    { name: "Wetware Mainframe",           category: "materials",  sub: "planetary", price:      9_300_000 },
+    // ── Raw moon materials (20) — ESI type IDs 16633–16653, rarity tiers
+    //    ubiquitous → exceptional. price 0 = filled by the stock feed.
+    { name: "Atmospheric Gases",  category: "materials", sub: "moon", price: 0 },
+    { name: "Evaporite Deposits", category: "materials", sub: "moon", price: 0 },
+    { name: "Hydrocarbons",       category: "materials", sub: "moon", price: 0 },
+    { name: "Silicates",          category: "materials", sub: "moon", price: 0 },
+    { name: "Cobalt",             category: "materials", sub: "moon", price: 0 },
+    { name: "Scandium",           category: "materials", sub: "moon", price: 0 },
+    { name: "Titanium",           category: "materials", sub: "moon", price: 0 },
+    { name: "Tungsten",           category: "materials", sub: "moon", price: 0 },
+    { name: "Cadmium",            category: "materials", sub: "moon", price: 0 },
+    { name: "Chromium",           category: "materials", sub: "moon", price: 0 },
+    { name: "Platinum",           category: "materials", sub: "moon", price: 0 },
+    { name: "Vanadium",           category: "materials", sub: "moon", price: 0 },
+    { name: "Caesium",            category: "materials", sub: "moon", price: 0 },
+    { name: "Hafnium",            category: "materials", sub: "moon", price: 0 },
+    { name: "Mercury",            category: "materials", sub: "moon", price: 0 },
+    { name: "Technetium",         category: "materials", sub: "moon", price: 0 },
+    { name: "Dysprosium",         category: "materials", sub: "moon", price: 0 },
+    { name: "Neodymium",          category: "materials", sub: "moon", price: 0 },
+    { name: "Promethium",         category: "materials", sub: "moon", price: 0 },
+    { name: "Thulium",            category: "materials", sub: "moon", price: 0 },
     { name: "Capital Capacitor Battery Blueprint",    category: "blueprints", sub: "component", price: 0, image: "blueprints/component/capital_capacitor_battery_blueprint.avif",    maxRuns: 20 },
     { name: "Capital Computer System Blueprint",      category: "blueprints", sub: "component", price: 0, image: "blueprints/component/capital_computer_system_blueprint.avif",      maxRuns: 20 },
     { name: "Capital Construction Parts Blueprint",   category: "blueprints", sub: "component", price: 0, image: "blueprints/component/capital_construction_parts_blueprint.avif",   maxRuns: 30 },
@@ -136,99 +137,35 @@
     return imageRoot.replace(/items\/?$/, "icons/");
   }
 
-  // ±1 qty stepper; shop-cart reads/clamps [data-flip-qty-input]. Used for every
-  // category (blueprints' qty == total runs).
-  function flipStepper(value) {
-    const wrap = el("div", "flip-stepper");
-
-    const minus = el("button", "flip-step-btn", "−");
-    minus.type = "button";
-    minus.dataset.flipStep = "";
-    minus.dataset.flipDir = "-1";
-    minus.setAttribute("aria-label", "Decrease quantity");
-
-    const input = el("input", "flip-num");
-    input.type = "text";
-    input.inputMode = "numeric";
-    input.value = String(value);
-    input.dataset.flipQtyInput = "";
-    input.setAttribute("aria-label", "Quantity");
-
-    const plus = el("button", "flip-step-btn", "+");
-    plus.type = "button";
-    plus.dataset.flipStep = "";
-    plus.dataset.flipDir = "1";
-    plus.setAttribute("aria-label", "Increase quantity");
-
-    wrap.appendChild(minus);
-    wrap.appendChild(input);
-    wrap.appendChild(plus);
-    return wrap;
-  }
-
-  // Coarse ±100k / ±1m qty button (materials); shares the qty stepper's hook.
-  function flipBigBtn(label, dir, amount) {
-    const b = el("button", "flip-bigstep-btn", label);
-    b.type = "button";
-    b.dataset.flipStep = "";
-    b.dataset.flipDir = String(dir);
-    b.dataset.flipAmount = String(amount);
-    b.setAttribute("aria-label", `${dir < 0 ? "Decrease" : "Increase"} quantity by ${amount.toLocaleString("en-US")}`);
-    return b;
-  }
-
-  // Flip back face — the configurator. Boats/structures get a fitting dropdown;
-  // all get a qty stepper (blueprints label it "Total runs", materials add
-  // ±100k / ±1m). Add/Options buttons live in the action row (createCard), not
-  // here; shop-cart reads these on ADD.
+  // Flip back face — the fitting picker (boats/structures only; built only when
+  // the item has fittings). Quantity lives in the action-row stepper (shop-cart),
+  // which re-binds to the boat+fitting variant the dropdown selects.
   function createFlipBack(item, fittings) {
-    const cat = item.category;
-    const isBlueprint = cat === "blueprints";
-    const isMat = cat === "materials";
     const back = el("div", "item-card-face item-card-face--back");
     back.setAttribute("aria-hidden", "true");
 
     back.appendChild(el("p", "flip-item-name", item.name));
 
-    // Fitting dropdown — boats + structures. Always offers "No Fitting".
-    if ((cat === "boats" || cat === "structures") && fittings.length) {
-      const field = el("div", "flip-field");
-      field.appendChild(el("span", "flip-label flip-label--fitting", "Fitting:"));
-      const select = el("select", "flip-select");
-      select.dataset.flipFitting = "";
-      select.setAttribute("aria-label", `Fitting for ${item.name}`);
-      const none = el("option", null, "No Fitting");
-      none.value = "";
-      select.appendChild(none);
-      fittings.forEach((f) => {
-        const opt = el("option", null, `${f.name} — +${formatPrice(f.price)} ISK`);
-        opt.value = f.name;
-        opt.dataset.price = String(f.price);
-        select.appendChild(opt);
-      });
-      field.appendChild(select);
-      const price = el("p", "flip-fit-price", "+0 ISK");
-      price.dataset.flipFitPrice = "";
-      field.appendChild(price);
-      back.appendChild(field);
-    }
-
-    // Quantity — all variants. Sits at the bottom, above the action row.
-    // Blueprints: qty == total runs. Materials: ±100k / ±1m coarse steps.
-    const qtyField = el("div", "flip-field flip-qty-field");
-    qtyField.appendChild(el("span", "flip-label", isBlueprint ? "Total runs" : "Quantity"));
-    if (isMat) {
-      const row = el("div", "flip-bigstep-row");
-      row.appendChild(flipBigBtn("-1m", -1, 1000000));
-      row.appendChild(flipBigBtn("-100k", -1, 100000));
-      row.appendChild(flipStepper(1));
-      row.appendChild(flipBigBtn("+100k", 1, 100000));
-      row.appendChild(flipBigBtn("+1m", 1, 1000000));
-      qtyField.appendChild(row);
-    } else {
-      qtyField.appendChild(flipStepper(1));
-    }
-    back.appendChild(qtyField);
+    // Fitting dropdown — always offers "No Fitting".
+    const field = el("div", "flip-field flip-qty-field");
+    field.appendChild(el("span", "flip-label flip-label--fitting", "Fitting:"));
+    const select = el("select", "flip-select");
+    select.dataset.flipFitting = "";
+    select.setAttribute("aria-label", `Fitting for ${item.name}`);
+    const none = el("option", null, "No Fitting");
+    none.value = "";
+    select.appendChild(none);
+    fittings.forEach((f) => {
+      const opt = el("option", null, `${f.name} — +${formatPrice(f.price)} ISK`);
+      opt.value = f.name;
+      opt.dataset.price = String(f.price);
+      select.appendChild(opt);
+    });
+    field.appendChild(select);
+    const price = el("p", "flip-fit-price", "+0 ISK");
+    price.dataset.flipFitPrice = "";
+    field.appendChild(price);
+    back.appendChild(field);
 
     return back;
   }
@@ -281,6 +218,13 @@
     img.height = 128;
     img.loading = "lazy";
     img.decoding = "async";
+    // Missing art (e.g. a hull whose render isn't in yet) falls back to the
+    // shared placeholder; real file just drops into its path later, no edit.
+    img.addEventListener("error", () => {
+      if (img.dataset.fallback) return;
+      img.dataset.fallback = "1";
+      img.src = `${imageRoot}placeholder.svg`;
+    });
     media.appendChild(img);
 
     // Blueprints carry a research box (ME/TE, e.g. "10/20") straddling the
@@ -341,8 +285,15 @@
     footer.appendChild(priceP);
     footer.appendChild(stockState);
 
+    // Only fitting-bearing items (boats/structures) get the flip + Options; for
+    // everything else quantity is the only control and lives inline (shop-cart
+    // morphs the ADD button into a stepper), so no back face is needed.
+    const fittings = flip && action === "button" ? fittingsFor(item.name) : [];
+    const wantFlip = fittings.length > 0;
+
     // action row (outside the flip so it stays put): filled --primary add button
-    // + secondary Options on flip cards (relabelled Close while flipped)
+    // (shop-cart swaps it for an inline qty stepper once the variant is in cart)
+    // + secondary Options on fitting cards (relabelled Close while flipped)
     const controls = document.createElement("div");
     controls.className = "item-buy-controls";
     if (action !== "none") {
@@ -356,7 +307,7 @@
       }
       controls.appendChild(actionEl);
 
-      if (flip && action === "button") {
+      if (wantFlip) {
         const cfg = document.createElement("button");
         cfg.type = "button";
         cfg.className = "buy-button buy-button--secondary";
@@ -372,9 +323,9 @@
     // badge is absolute, so DOM order = visual order: image, heading, price/stock
     const frontChildren = [badge, media, heading, text];
 
-    if (flip) {
-      // Wrap the front content + configurator back face in the rotating flip
-      // element; shop-cart reads the back controls when ADD is clicked.
+    if (wantFlip) {
+      // Wrap the front content + fitting picker in the rotating flip element;
+      // shop-cart reads the selected fitting when ADD/the stepper is used.
       const flipEl = document.createElement("div");
       flipEl.className = "item-card-flip";
       const front = document.createElement("div");
@@ -382,7 +333,7 @@
       front.setAttribute("aria-hidden", "false");
       frontChildren.forEach((child) => front.appendChild(child));
       flipEl.appendChild(front);
-      flipEl.appendChild(createFlipBack(item, fittingsFor(item.name)));
+      flipEl.appendChild(createFlipBack(item, fittings));
       card.appendChild(flipEl);
       card.appendChild(controls);
     } else {
@@ -395,10 +346,13 @@
   function renderCatalog() {
     const display = document.querySelector(".display");
     if (!display) return;
+    // `data-catalog-category` scopes a page to one category (e.g. trade = materials).
+    const only = (display.dataset.catalogCategory || "").trim().toLowerCase();
     const frag = document.createDocumentFragment();
     // Fittings are add-ons (kind:"fitting") — they never get a card of their own.
     CATALOG.forEach((item) => {
       if (item.kind === "fitting") return;
+      if (only && item.category !== only) return;
       frag.appendChild(createCard(item, { flip: true }));
     });
     display.appendChild(frag);

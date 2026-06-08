@@ -15,6 +15,10 @@
   font-display: swap;
 }
 
+@view-transition {
+  navigation: auto;
+}
+
 :root {
   /* ── Fonts ── */
   --font-title: 'Space_Grotesk', Courier, monospace;
@@ -32,24 +36,18 @@
   --space-700: #161c30;
   --space-500: #22304a;
 
-  /* category hues — in-stock / dimmed out-of-stock (hand-picked) */
+  /* category hues (hand-picked) */
   --cat-boats: #B878E2;
   --cat-blueprints: #6AC0FC;
   --cat-structures: #EB2345;
   --cat-materials: #EDCB40;
   --cat-misc: #69FF69;
-  --cat-boats-dim: #6A219C;
-  --cat-blueprints-dim: #034A78;
-  --cat-structures-dim: #911D1F;
-  --cat-materials-dim: #806E00;
-  --cat-misc-dim: #007500;
 
   /* ── Tier 2 · roles (reference these) ── */
   /* text */
   --text: var(--gold-300);            /* default body p/a/label */
   --text-muted: var(--gold-200);      /* links, placeholders, buttons */
   --text-strong: var(--gold-100);     /* active nav, headings, emphasis */
-  --text-disabled: var(--gold-400);   /* out-of-stock */
   --text-on-gold: var(--ink);
 
   /* surface */
@@ -428,6 +426,69 @@ nav a[aria-current="page"] {
   min-width: 84px;
 }
 
+/* inline qty stepper that replaces the ADD button once the variant is in cart */
+.item-card-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.item-card-step-btn {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: var(--border-sm) solid var(--gold-200);
+  border-radius: 4px;
+  background: color-mix(in oklch, var(--gold-300) 18%, var(--surface));
+  color: var(--text-muted);
+  font-family: var(--font-text);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+}
+.item-card-step-btn:hover,
+.item-card-step-btn:focus-visible {
+  background: color-mix(in oklch, var(--gold-300) 30%, var(--surface));
+  border-color: var(--text-strong);
+  color: var(--text-strong);
+}
+/* at qty 1 the "−" becomes a red trash (clicking removes the line) */
+.item-card-step-btn--trash {
+  border-color: var(--danger-line);
+  background: var(--danger-bg);
+  color: var(--danger-text);
+}
+.item-card-step-btn--trash:hover,
+.item-card-step-btn--trash:focus-visible {
+  border-color: var(--red);
+  background: var(--danger-bg-hover);
+  color: var(--danger-text-strong);
+}
+.card-step-trash-icon {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+.item-card-qty {
+  /* JS (resizeQtyInput) sets an inline ch width as digits grow; min/max keep it
+     between the default size and a width the stepper can still fit in the card. */
+  width: 52px;
+  min-width: 52px;
+  max-width: 150px;
+  box-sizing: border-box;
+  padding: 5px 4px;
+  text-align: center;
+  border: var(--border-sm) solid var(--border-subtle);
+  border-radius: 3px;
+  background: var(--surface-control);
+  color: var(--text-muted);
+  font-family: var(--font-text);
+  font-size: 18px;
+}
+
 /* ── Category badge (corner) ── */
 .card-badge {
   position: absolute;
@@ -479,26 +540,8 @@ nav a[aria-current="page"] {
 .item-card--cat[data-category="materials"]   { --cat: var(--cat-materials); }
 .item-card--cat[data-category="misc"]        { --cat: var(--cat-misc); }
 
-/* ── Out-of-stock treatment (home never sets this class) ── */
-.item-card.item-card--out-of-stock { border-color: var(--text-disabled); }
-.item-card--cat.item-card--out-of-stock[data-category="boats"]       { --cat: var(--cat-boats-dim); }
-.item-card--cat.item-card--out-of-stock[data-category="blueprints"]  { --cat: var(--cat-blueprints-dim); }
-.item-card--cat.item-card--out-of-stock[data-category="structures"]  { --cat: var(--cat-structures-dim); }
-.item-card--cat.item-card--out-of-stock[data-category="materials"]   { --cat: var(--cat-materials-dim); }
-.item-card--cat.item-card--out-of-stock[data-category="misc"]        { --cat: var(--cat-misc-dim); }
-
-/* dim art + readout so the whole card reads inactive (esp. blueprints) */
-.item-card--out-of-stock .item-media {
-  opacity: 0.45;   /* art + ME/TE box together */
-}
-.item-card--out-of-stock .item-media > img {
-  filter: grayscale(0.5);
-}
-.item-card--out-of-stock h2,
-.item-card--out-of-stock .text {
-  opacity: 0.6;
-}
-
+/* ── Out-of-stock: no dimming — the card stays bright and only swaps its ADD
+   button for ORDER (JS). The stock readout keeps its restock-info tooltip. ── */
 .item-card--out-of-stock .stock-state[data-next-stock] {
   cursor: help;
 }
@@ -622,59 +665,4 @@ nav a[aria-current="page"] {
   color: var(--text-strong);
 }
 
-.flip-stepper {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.flip-step-btn {
-  width: 34px;
-  height: 34px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  border: var(--border-sm) solid var(--text-strong);
-  border-radius: 3px;
-  background: var(--surface-control);
-  color: var(--text-muted);
-  font-family: var(--font-text);
-  font-size: 22px;
-  transition: background var(--transition-fast);
-}
-.flip-step-btn:hover { background: var(--surface-hover); }
-.flip-num {
-  width: 58px;
-  box-sizing: border-box;
-  padding: 4px 5px;
-  text-align: center;
-  border: var(--border-sm) solid var(--border-subtle);
-  border-radius: 2px;
-  background: var(--surface-control);
-  color: var(--text-muted);
-  font-family: var(--font-text);
-  font-size: 19px;
-}
-
-/* materials coarse-step row in the configurator (±100k / ±1m) */
-.flip-bigstep-row {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 5px;
-}
-.flip-bigstep-btn {
-  height: 31px;
-  padding: 0 7px;
-  border: var(--border-sm) solid var(--text-strong);
-  border-radius: 3px;
-  background: var(--surface-control);
-  color: var(--text-muted);
-  font-family: var(--font-text);
-  font-size: 14px;
-  white-space: nowrap;
-  transition: background var(--transition-fast);
-}
-.flip-bigstep-btn:hover { background: var(--surface-hover); }
 

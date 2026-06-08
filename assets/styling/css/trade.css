@@ -1,47 +1,184 @@
-﻿/* layout from .page-narrow */
-.buyback-page {
-  max-width: 1120px;
-  gap: 20px;
+/* Trade is a materials-only clone of the store layout (no top bar). Marketplace
+   layout mirrors shop.css; keep the two in sync until they intentionally diverge. */
+.grid-container {
+    display: grid;
+    grid-template-columns: 290px minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+        "appraisal display"
+        "filter     display";
+    gap: 10px 4px;
+    overflow: visible;
 }
 
-.buyback-hero {
+/* Appraisal box — left column, above the filter (placeholder, no JS yet) */
+.appraisal {
+  grid-area: appraisal;
+  margin-left: 10px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 24px;
+}
+
+.appraisal p {
+  font-size: var(--font-small);
+}
+
+.appraisal-input {
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  min-height: 84px;
+  padding: clamp(5px, 0.5vw, 10px) clamp(8px, 0.8vw, 14px);
   border: var(--border-sm) solid var(--border-subtle);
-  background: linear-gradient(135deg, var(--surface), var(--surface-raised));
+  background: var(--surface-control);
+  color: var(--text-muted);
+  font: inherit;
 }
 
-.buyback-copy {
-  max-width: 56ch;
+.appraisal-input::placeholder {
+  color: var(--text-muted);
+  opacity: 0.8;
 }
 
-.buyback-button {
-  margin-top: 8px;
+#appraisal-go {
   align-self: flex-start;
-  text-decoration: none;
 }
 
-.buyback-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px;
+.display {
+  grid-area: display;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-content: flex-start;
+  gap: 0 30px;
+  margin: 0 15px -30px 15px;
 }
 
-.buyback-card {
-  padding: 18px;
-  border: 4px solid transparent;
-  border-image: var(--border) 1;
-  background: var(--surface);
+.display .item-card {
+  margin-bottom: 30px;
 }
 
-.buyback-card h2 {
-  margin-bottom: 8px;
+/* hidden until shop-filter's first applyFilters pass (avoids OOS flash) */
+.display:not(.is-ready) .item-card {
+  visibility: hidden;
 }
 
-@media (max-width: 860px) {
-  .buyback-grid {
+.row-break {
+  flex-basis: 100%;
+  height: 0;
+}
+
+/* OOS muting, category glow, corner badge → shared in base.css */
+
+.display-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 5px;
+  gap: 5px;
+}
+
+#results-count strong {
+  color: var(--text-muted);
+}
+
+/* Filtering */
+.filter {
+  display: flex;
+  flex-direction: column;
+  grid-area: filter;
+  margin-left: 10px;
+}
+
+/* Filter dropdown */
+.filter-form {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(2px, 0.6vw, 6px);
+  font-size: clamp(14px, 1.15vw, 20px);
+}
+
+.filter-search {
+  display: flex;
+  flex-direction: column;
+}
+
+#filter-search,
+.filter-select {
+  border: var(--border-sm) solid var(--border-subtle);
+  background: var(--surface-control);
+  color: var(--text-muted);
+}
+
+#filter-search {
+  padding: clamp(5px, 0.5vw, 10px) clamp(8px, 0.8vw, 14px);
+  font-size: clamp(14px, 1.15vw, 20px);
+}
+
+.filter-select {
+  padding: clamp(8px, 0.85vw, 14px) clamp(10px, 1vw, 16px);
+  font: inherit;
+  font-size: clamp(14px, 1.15vw, 20px);
+}
+
+#filter-search::placeholder {
+  color: var(--text-muted);
+  opacity: 0.8;
+}
+
+/* gold clear-X (override native blue) */
+#filter-search::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M3 3 L13 13 M13 3 L3 13' stroke='%23d8b065' stroke-width='2' stroke-linecap='round' fill='none'/></svg>") center / contain no-repeat;
+  cursor: pointer;
+}
+
+#filter-search::-webkit-search-cancel-button:hover {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M3 3 L13 13 M13 3 L3 13' stroke='%23ffdd9c' stroke-width='2' stroke-linecap='round' fill='none'/></svg>");
+}
+
+#filter-clear {
+  font-size: clamp(14px, 1.2vw, 21px);
+  padding: 4px 12px;
+  min-width: 0;
+}
+
+/* cart UI → cart.css (shared component) */
+
+.filter label {
+  user-select: none;
+  font-size: clamp(14px, 1.2vw, 21px);
+  display: flex;
+  align-items: center;
+  gap: clamp(6px, 0.55vw, 12px);
+}
+
+.filter input[type="checkbox"] {
+  width: clamp(14px, 1.2vw, 22px);
+  height: clamp(14px, 1.2vw, 22px);
+  flex-shrink: 0;
+}
+
+/* Flat main filters (no parent toggle / sub-filter on trade) */
+.filter-group{
+  display: flex;
+  flex-direction: column;
+  gap: clamp(4px, 0.4vw, 9px);
+}
+
+@media (max-width: 780px) {
+  .grid-container {
     grid-template-columns: 1fr;
+    grid-template-areas:
+      "appraisal"
+      "filter"
+      "display";
   }
 }
+
+/* category colours via .item-card--cat (set by shop-catalog.js) → base.css */

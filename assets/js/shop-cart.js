@@ -168,6 +168,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function openCart() {
     if (!cartDrawer) return;
+    commitActiveAdd(false);   // opening the cart closes any inline editor, but silently (no toast)
     cartDrawer.hidden  = false;
     if (cartBackdrop) cartBackdrop.hidden = false;
     // double-rAF so CSS transition fires after display change
@@ -443,16 +444,6 @@ document.addEventListener("DOMContentLoaded", () => {
     renderCart();
   }
 
-  // Coarse +/- step for materials (±100k / ±1m). Never removes — clamps to
-  // [1, stock]; the X button removes.
-  function stepQtyBig(key, delta) {
-    if (!cart[key]) return;
-    const next = clampQtyToStock(cart[key].baseKey, Math.max(1, cart[key].qty + delta));
-    cart[key].qty = Math.max(1, next);
-    saveCart();
-    renderCart();
-  }
-
   // Switch a line's fitting in place (boats/structures). "" → no fitting. Re-keys
   // the line; merges into the target variant if it already exists.
   function changeLineFitting(key, fittingName) {
@@ -489,6 +480,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // ── DOM helpers ──────────────────────────────────────────────────────────────
 
   const X_ICON_SVG = '<svg class="cart-x-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg>';
+  // Trashcan shown on a card stepper's "−" when qty is 1 (clicking removes the line).
+  const TRASH_ICON_SVG = '<svg class="card-step-trash-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M4 7h16"/><path d="M10 11v6M14 11v6"/><path d="M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/><path d="M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3"/></svg>';
 
   function makeBtn(text, dataMap, cls) {
     const btn = document.createElement("button");
@@ -525,6 +518,113 @@ document.addEventListener("DOMContentLoaded", () => {
     return wrap;
   }
 
+  // ── On-card add control ──────────────────────────────────────────────────────
+  // Clicking ADD opens a transient inline qty stepper on that card (the "active
+  // editor"), bound to its current variant (item + the fitting picked in Options).
+  // Editing only ticks the cart badge; clicking away reverts it and toasts "×N in
+  // cart" (commitActiveAdd). The stepper re-binds as the fitting dropdown changes.
+
+  function cardCurrentFitting(card) {
+    const sel = card?.querySelector("[data-flip-fitting]");
+    if (!sel || !sel.value) return null;
+    const price = Number(sel.selectedOptions[0]?.dataset.price);
+    return { name: sel.value, price: Number.isFinite(price) ? price : 0 };
+  }
+
+  // Cart key the card's controls currently act on (base item + selected fitting).
+  function cardVariantKey(card) {
+    const base = String(card?.dataset.name || "").trim();
+    const f = cardCurrentFitting(card);
+    return variantKey(base, f ? resolveFitting(f.name, f.price) : null);
+  }
+
+  // Inline [ −/🗑 | input | + ] stepper; at qty 1 the "−" becomes a trash (remove).
+  // Reuses the shared data-cart-action / data-cart-qty-input delegation.
+  function makeCardStepper(key, qty) {
+    const wrap = document.createElement("div");
+    wrap.className = "item-card-stepper";
+
+    const dec = document.createElement("button");
+    dec.type = "button";
+    dec.className = "item-card-step-btn";
+    if (qty <= 1) {
+      dec.classList.add("item-card-step-btn--trash");
+      dec.dataset.cartAction = "remove";
+      dec.dataset.name = key;
+      dec.innerHTML = TRASH_ICON_SVG;
+      dec.setAttribute("aria-label", "Remove from cart");
+    } else {
+      dec.dataset.cartAction = "decrease";
+      dec.dataset.name = key;
+      dec.textContent = "−";
+      dec.setAttribute("aria-label", "Decrease quantity");
+    }
+
+    const input = document.createElement("input");
+    input.type = "text";
+    input.inputMode = "numeric";
+    input.className = "item-card-qty";
+    input.value = formatQty(qty);
+    input.dataset.cartQtyInput = key;
+    input.setAttribute("aria-label", "Quantity");
+    resizeQtyInput(input);   // size to the (possibly large) starting qty
+
+    const inc = document.createElement("button");
+    inc.type = "button";
+    inc.className = "item-card-step-btn";
+    inc.dataset.cartAction = "increase";
+    inc.dataset.name = key;
+    inc.textContent = "+";
+    inc.setAttribute("aria-label", "Increase quantity");
+
+    wrap.appendChild(dec);
+    wrap.appendChild(input);
+    wrap.appendChild(inc);
+    return wrap;
+  }
+
+  // The card whose ADD button is currently swapped for the inline stepper. The
+  // stepper is a transient editor: open on ADD, edit qty (badge updates live), and
+  // on click-away it reverts to the button + fires the "×N in cart" toast.
+  let activeAddCard = null;
+
+  // Show the inline stepper only while this card is the active editor (and its
+  // variant is still in the cart); otherwise the plain ADD button.
+  function syncCardControls(card) {
+    if (!card) return;
+    const controls = card.querySelector(".item-buy-controls");
+    const addBtn = controls?.querySelector("[data-cart-add]");
+    if (!addBtn) return;   // non-add cards (link/span)
+    const editing = card === activeAddCard;
+    const entry = editing ? cart[cardVariantKey(card)] : null;
+    const existing = controls.querySelector(".item-card-stepper");
+    if (entry) {
+      const fresh = makeCardStepper(entry.key, entry.qty);
+      if (existing) existing.replaceWith(fresh);
+      else addBtn.after(fresh);
+      addBtn.hidden = true;
+    } else {
+      existing?.remove();
+      addBtn.hidden = false;
+    }
+  }
+
+  function syncAllCardControls() {
+    document.querySelectorAll(".item-card").forEach(syncCardControls);
+  }
+
+  // Close the active inline editor: revert to the ADD button and (unless toast is
+  // false, e.g. when opening the cart) pop the "×N in cart" toast for the variant
+  // just edited (also skipped if it was removed).
+  function commitActiveAdd(toast = true) {
+    const card = activeAddCard;
+    if (!card) return;
+    const entry = cart[cardVariantKey(card)];
+    activeAddCard = null;
+    syncCardControls(card);
+    if (toast && entry) showAddToCartToast(entry);
+  }
+
   // ── Render ───────────────────────────────────────────────────────────────────
 
   function renderCart() {
@@ -545,6 +645,9 @@ document.addEventListener("DOMContentLoaded", () => {
     cartTotalEl.textContent = formatPriceLong(totalValue);
     if (cartTotalCompactEl) cartTotalCompactEl.textContent = formatPriceCompact(totalValue);
     cartItemsEl.innerHTML = "";
+
+    // Reflect cart state on the product cards (ADD button ↔ inline qty stepper).
+    syncAllCardControls();
 
     if (items.length === 0) {
       const empty = document.createElement("li");
@@ -585,7 +688,6 @@ document.addEventListener("DOMContentLoaded", () => {
       const itemFittings = fittingsFor(item.name);
       const supportsFittings = itemFittings.length > 0;   // boats + structures
       const isBlueprint = item.category === "blueprints";
-      const isMat = item.category === "materials";
       const li = document.createElement("li");
       li.className = `cart-item${supportsFittings ? " cart-item--boat" : ""}`;
 
@@ -621,15 +723,10 @@ document.addEventListener("DOMContentLoaded", () => {
       const stack = document.createElement("div");
       stack.className = "cart-controls-stack";
 
-      // Main price + qty row. Blueprint qty == total runs; materials move their
-      // qty to a dedicated big-step row below.
+      // Main qty + price row: qty on the left, price on the right. Blueprint
+      // qty == total runs.
       const mainRow = document.createElement("div");
       mainRow.className = "cart-controls-row";
-      const priceEl = document.createElement("span");
-      priceEl.className = "cart-item-price";
-      const unitLabel = isBlueprint ? " / run" : " / item";
-      priceEl.innerHTML = `${formatPrice(item.price)}<span class="cart-price-label">${unitLabel}</span>`;
-      mainRow.appendChild(priceEl);
 
       const qtyWrap = makeQtyWrap(
         item.qty,
@@ -647,22 +744,17 @@ document.addEventListener("DOMContentLoaded", () => {
         runsGroup.appendChild(runsLabel);
         runsGroup.appendChild(qtyWrap);
         mainRow.appendChild(runsGroup);
-      } else if (!isMat) {
+      } else {
         mainRow.appendChild(qtyWrap);
       }
-      stack.appendChild(mainRow);
 
-      // Materials: qty on its own row, flanked by ±100k / ±1m coarse steps.
-      if (isMat) {
-        const bigRow = document.createElement("div");
-        bigRow.className = "cart-bigstep-row";
-        bigRow.appendChild(makeBtn("-1m",   { cartAction: "bigstep", name: item.key, delta: "-1000000" }, "cart-bigstep-btn"));
-        bigRow.appendChild(makeBtn("-100k", { cartAction: "bigstep", name: item.key, delta: "-100000" },  "cart-bigstep-btn"));
-        bigRow.appendChild(qtyWrap);
-        bigRow.appendChild(makeBtn("+100k", { cartAction: "bigstep", name: item.key, delta: "100000" },   "cart-bigstep-btn"));
-        bigRow.appendChild(makeBtn("+1m",   { cartAction: "bigstep", name: item.key, delta: "1000000" },  "cart-bigstep-btn"));
-        stack.appendChild(bigRow);
-      }
+      const priceEl = document.createElement("span");
+      priceEl.className = "cart-item-price";
+      const runLabel = isBlueprint ? `<span class="cart-price-label"> / run</span>` : "";
+      priceEl.innerHTML = `${formatPrice(item.price)}${runLabel}`;
+      mainRow.appendChild(priceEl);
+
+      stack.appendChild(mainRow);
 
       // Fitting dropdown (boats + structures) — switches the line's fitting in
       // place (re-keys / merges). Always offers "No Fitting".
@@ -691,7 +783,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const fitPrice = document.createElement("span");
         fitPrice.className = "cart-fitting-price";
-        fitPrice.textContent = item.fitting ? `+${formatPrice(item.fitting.price)} / fitting` : "+0";
+        fitPrice.textContent = item.fitting ? `+${formatPrice(item.fitting.price)}` : "+0";
 
         fitRow.appendChild(fitSelect);
         fitRow.appendChild(fitPrice);
@@ -837,40 +929,7 @@ document.addEventListener("DOMContentLoaded", () => {
     card.querySelector(".item-card-face--back")?.setAttribute("aria-hidden", "true");
     const toggle = card.querySelector("[data-flip-toggle]");
     if (toggle) toggle.textContent = "Options";
-    resetFlipControls(card);
-  }
-
-  function resetFlipControls(card) {
-    if (!card) return;
-    const qty = card.querySelector("[data-flip-qty-input]");
-    if (qty) qty.value = "1";
-    const fit = card.querySelector("[data-flip-fitting]");
-    if (fit) { fit.value = ""; updateFlipFitPrice(fit); }
-  }
-
-  function readFlipControls(card) {
-    const qtyInput = card.querySelector("[data-flip-qty-input]");
-    const qty = qtyInput ? clampQty(qtyInput.value) : 1;   // blueprints: total runs
-
-    let fitting = null;
-    const fitSelect = card.querySelector("[data-flip-fitting]");
-    if (fitSelect && fitSelect.value) {
-      const opt = fitSelect.selectedOptions[0];
-      const price = Number(opt?.dataset.price);
-      fitting = { name: fitSelect.value, price: Number.isFinite(price) ? price : 0 };
-    }
-    return { qty, fitting };
-  }
-
-  // Qty stepper (±1 or ±100k/±1m via data-flip-amount); blueprints/materials too.
-  function stepFlipInput(btn) {
-    const card = btn.closest(".item-card");
-    if (!card) return;
-    const input = card.querySelector("[data-flip-qty-input]");
-    if (!input) return;
-    const dir = Number(btn.dataset.flipDir) || 0;
-    const amount = Number(btn.dataset.flipAmount) || 1;
-    input.value = formatQty(Math.max(1, clampQty(input.value) + dir * amount));
+    // The fitting selection persists — the inline stepper stays bound to it.
   }
 
   function updateFlipFitPrice(select) {
@@ -881,23 +940,24 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   document.addEventListener("click", (e) => {
-    // Shared ADD: add with configurator values (defaults on front face, picks when
-    // flipped), reset fields but leave the face as-is (closed via Options/click-out/Esc).
-    // readFlipControls defaults for cards without a back face.
+    // Quick add: adds 1 of the card's current variant (the fitting picked in
+    // Options, else no fitting) and opens the inline qty stepper. No toast yet —
+    // the cart badge just ticks up; the "×N in cart" toast fires on click-away.
     const addBtn = e.target.closest("[data-cart-add]");
     if (addBtn) {
       const card = addBtn.closest(".item-card");
+      if (activeAddCard && activeAddCard !== card) commitActiveAdd();   // leaving another editor
       const product = getProductData(card);
       if (product) {
-        const sel = readFlipControls(card);
-        const entry = addToCart(product, sel.qty, { fitting: sel.fitting });
-        if (entry) showAddToCartToast(entry);
+        const fitting = cardCurrentFitting(card);
+        activeAddCard = card;                              // syncCardControls now morphs it
+        const entry = addToCart(product, 1, { fitting });  // calls renderCart
+        if (!entry) { activeAddCard = null; syncCardControls(card); }   // add failed (e.g. OOS)
       }
-      resetFlipControls(card);
       return;
     }
 
-    // Options / Close: toggle the configurator open or shut.
+    // Options / Close: toggle the fitting picker open or shut.
     const flipToggle = e.target.closest("[data-flip-toggle]");
     if (flipToggle) {
       const card = flipToggle.closest(".item-card");
@@ -906,11 +966,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // +/- steppers inside the configurator (qty; ±100k/±1m on materials).
-    const flipStepBtn = e.target.closest("[data-flip-step]");
-    if (flipStepBtn) { stepFlipInput(flipStepBtn); return; }
-
-    // Cart drawer action buttons.
+    // Cart drawer + on-card stepper action buttons.
     const actionBtn = e.target.closest("[data-cart-action]");
     if (actionBtn) {
       const action = actionBtn.dataset.cartAction;
@@ -918,20 +974,26 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (action === "decrease" && key) changeQty(key, -1);
       if (action === "increase" && key) changeQty(key,  1);
-      if (action === "remove"   && key) removeItem(key);
-      if (action === "bigstep"  && key) stepQtyBig(key, Number(actionBtn.dataset.delta) || 0);
+      if (action === "remove"   && key) {
+        removeItem(key);
+        // Trashing the active line closes its editor silently (no toast).
+        if (activeAddCard && cardVariantKey(activeAddCard) === key) activeAddCard = null;
+      }
       return;
     }
 
-    // A click anywhere outside an open configurator returns it to the front.
+    // A click outside the active inline editor commits it (revert + toast); a click
+    // outside an open configurator returns it to the front.
+    if (activeAddCard && !activeAddCard.contains(e.target)) commitActiveAdd();
     document.querySelectorAll(".item-card.is-flipped").forEach((card) => {
       if (!card.contains(e.target)) flipCardBack(card);
     });
   });
 
-  // Escape returns any open configurator to its front.
+  // Escape commits the inline editor and returns any open configurator to its front.
   document.addEventListener("keydown", (e) => {
     if (e.key !== "Escape") return;
+    commitActiveAdd();
     document.querySelectorAll(".item-card.is-flipped").forEach((card) => flipCardBack(card));
   });
 
@@ -940,12 +1002,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (t.dataset.cartQtyInput !== undefined) {
       const digits = parseQtyDigits(t.value).slice(0, 9);
       t.value = digits ? formatQty(Number.parseInt(digits, 10)) : "";
-      resizeQtyInput(t);
-      return;
-    }
-    if (t.hasAttribute("data-flip-qty-input")) {
-      const digits = parseQtyDigits(t.value).slice(0, 9);
-      t.value = digits ? formatQty(Number.parseInt(digits, 10)) : "";
+      resizeQtyInput(t);   // drawer + on-card stepper grow with the number (card input clamped by CSS max-width)
     }
   });
 
@@ -955,12 +1012,10 @@ document.addEventListener("DOMContentLoaded", () => {
       setQty(t.dataset.cartQtyInput, t.value);
       return;
     }
-    if (t.hasAttribute("data-flip-qty-input")) {
-      t.value = formatQty(clampQty(t.value));
-      return;
-    }
     if (t.hasAttribute("data-flip-fitting")) {
+      // Re-point the card's ADD/stepper at the newly selected variant.
       updateFlipFitPrice(t);
+      syncCardControls(t.closest(".item-card"));
       return;
     }
     if (t.dataset.lineFitting !== undefined) {

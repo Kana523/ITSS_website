@@ -375,13 +375,13 @@
 
 /* +/- square buttons */
 .cart-action-btn {
-  width: 30px;
-  height: 30px;
+  width: 26px;
+  height: 26px;
   border: 1px solid var(--text-strong);
   background: var(--surface-control);
   color: var(--text-muted);
   font-family: var(--font-text);
-  font-size: 20px;
+  font-size: 17px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -394,15 +394,15 @@
 
 /* qty number input */
 .cart-item-qty {
-  min-width: 42px;
+  min-width: 36px;
   width: auto;
   text-align: center;
   background: var(--surface-control);
   border: 1px solid var(--border-subtle);
   color: var(--text-muted);
   font-family: var(--font-text);
-  font-size: 17px;
-  padding: 3px 4px;
+  font-size: 15px;
+  padding: 2px 4px;
   box-sizing: border-box;
   border-radius: 2px;
 }
@@ -419,15 +419,16 @@
   gap: 8px;
 }
 
-/* ── Fitting selector (boats/structures) ───────────────── */
+/* ── Fitting selector (boats/structures) — dropdown left, price right ─── */
 .cart-fitting-row {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
 }
 .cart-fitting-select {
-  width: 100%;
+  flex: 1 1 auto;
   min-width: 0;
   background: var(--surface-control);
   border: 1px solid var(--border-subtle);
@@ -455,28 +456,6 @@
   color: var(--text-strong);
   white-space: nowrap;
 }
-
-/* ── Materials coarse-step row (±100k / ±1m) ───────────── */
-.cart-bigstep-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 5px;
-}
-.cart-bigstep-btn {
-  flex-shrink: 0;
-  height: 30px;
-  padding: 0 8px;
-  border: 1px solid var(--text-strong);
-  background: var(--surface-control);
-  color: var(--text-muted);
-  font-family: var(--font-text);
-  font-size: 13px;
-  border-radius: 3px;
-  white-space: nowrap;
-  transition: background var(--transition-fast);
-}
-.cart-bigstep-btn:hover { background: var(--surface-hover); }
 
 /* ── Item total row ────────────────────────────────────── */
 .cart-item-total-row {

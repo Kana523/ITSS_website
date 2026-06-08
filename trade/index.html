@@ -11,11 +11,12 @@
   <link rel="stylesheet" href="../assets/styling/css/cart.css" media="print" onload="this.media='all'">
   <link rel="stylesheet" href="../assets/styling/css/trade.css">
 
-  <!-- Shared cart (drawer openable here). Order: utils → api → catalog →
-       cart-dom (injects cart) → shop-cart. -->
+  <!-- Same pipeline as the store. Order: utils → api → catalog (renders cards
+       into .display) → filter → cart-dom (injects cart) → shop-cart. -->
   <script src="../assets/js/shop-utils.js" defer></script>
   <script src="../assets/js/shop-api.js" defer></script>
   <script src="../assets/js/shop-catalog.js" defer></script>
+  <script src="../assets/js/shop-filter.js" defer></script>
   <script src="../assets/js/cart-dom.js" defer></script>
   <script src="../assets/js/shop-cart.js" defer></script>
 
@@ -42,30 +43,64 @@
       </nav>
     </header>
 
-    <main class="buyback-page page-narrow">
-      <section class="buyback-hero">
-        <p class="kicker">Buyback</p>
-        <h1>Turn surplus cargo into ISK.</h1>
-        <p class="buyback-copy">Send your inventory, container, or fitted hull list and Interstellar Systems will return a quick appraisal through evemail.</p>
-        <a href="../shop/" class="buy-button buyback-button">Back to Store</a>
-      </section>
+    <main>
+    <div class="grid-container">
+      <h1 class="page-title">Trade</h1>
 
-      <section class="buyback-grid" aria-label="Buyback details">
-        <article class="buyback-card">
-          <h2>What we buy</h2>
-          <p>Surplus hulls, PI, salvage, minerals, and packaged boats with clear quantities.</p>
-        </article>
+  <!-- Left column top: appraisal tool (placeholder) -->
+  <aside class="appraisal panel" aria-label="Appraisal">
+    <h2>Appraisal</h2>
+    <p>Paste a materials list for a quick ISK estimate.</p>
+    <textarea
+      id="appraisal-input"
+      class="appraisal-input"
+      rows="4"
+      aria-label="Materials to appraise"
+      placeholder="Ferrogel 12&#10;Sterile Conduits 40"
+    ></textarea>
+    <button type="button" class="buy-button" id="appraisal-go">Appraise</button>
+  </aside>
 
-        <article class="buyback-card">
-          <h2>How to send it</h2>
-          <p>Paste the item list or container contents in your message and include your requested pickup station.</p>
-        </article>
+  <!-- Left column: filters (material type — flat main filters, no parent group) -->
+  <aside class="filter" aria-label="Filters">
 
-        <article class="buyback-card">
-          <h2>Contact</h2>
-          <p>Evemail Neo Achasse (Karmafleet) for pricing, timing, and final acceptance. Looking to build it? Also on buying section become regular supplier</p>
-        </article>
-      </section>
+    <h2>Filters</h2>
+
+    <form class="filter-form" autocomplete="off">
+
+      <div class="filter-search">
+        <input
+          id="filter-search"
+          type="search"
+          aria-label="Search items"
+          placeholder="Ore, Ice, Moon, Ferrogel..."
+          autocomplete="off"
+        >
+      </div>
+
+      <!-- Material types are flat main filters (data-child `materials:<sub>` so the
+           existing child-match path filters by sub); no parent/sub-filter group. -->
+      <div class="filter-group">
+        <label><input type="checkbox" value="materials:ore" data-child> Ore</label>
+        <label><input type="checkbox" value="materials:ice" data-child> Ice</label>
+        <label><input type="checkbox" value="materials:moon" data-child> Moon Mats</label>
+        <label><input type="checkbox" value="materials:planetary" data-child> Planetary Mats</label>
+        <label><input type="checkbox" value="materials:exotic" data-child> Exotic Mats</label>
+      </div>
+
+      <button type="button" class="buy-button" id="filter-clear">Clear</button>
+
+      <div class="display-meta">
+        <p id="results-count" aria-live="polite">Showing 0 items</p>
+      </div>
+    </form>
+
+  </aside>
+
+  <!-- Right column: materials cards, injected by shop-catalog.js (scoped via data-catalog-category). -->
+  <section class="display" data-catalog-category="materials" aria-label="Products"></section>
+
+</div>
     </main>
 
     <footer>
