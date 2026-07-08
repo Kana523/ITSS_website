@@ -15,10 +15,6 @@
   font-display: swap;
 }
 
-@view-transition {
-  navigation: auto;
-}
-
 :root {
   /* ── Fonts ── */
   --font-title: 'Space_Grotesk', Courier, monospace;
