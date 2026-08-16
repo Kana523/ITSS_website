@@ -33,8 +33,9 @@ def parse_blueprint_skill_rows(
     source: SdeSource,
     *,
     known_type_ids: set[int],
+    allowed_recipe_keys: set[tuple[int, int]],
 ) -> list[SkillRow]:
-    """Read specialist skill requirements for supported industry activities."""
+    """Read skill requirements only for activities accepted by the main parser."""
     rows: list[SkillRow] = []
     filename = DATASET_FILENAMES["blueprints"]
     with source.open_text("blueprints") as stream:
@@ -70,7 +71,7 @@ def parse_blueprint_skill_rows(
 
             for code, activity_id in SUPPORTED_ACTIVITY_IDS.items():
                 activity = activities.get(code)
-                if activity is None:
+                if activity is None or (blueprint_type_id, activity_id) not in allowed_recipe_keys:
                     continue
                 activity_context = f"blueprint {blueprint_type_id} activity {code}"
                 if not isinstance(activity, Mapping):
