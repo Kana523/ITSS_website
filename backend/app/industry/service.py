@@ -21,6 +21,7 @@ from app.industry.models import (
 )
 from app.industry.planner import (
     normalize_build_choices,
+    normalize_owned_materials,
     plan_production,
     resolve_recipe_choice,
 )
@@ -38,12 +39,9 @@ class IndustryPlanningService:
         demands: Iterable[ItemQuantity],
         *,
         choices: Mapping[int, BuildChoice] | None = None,
-        blueprint_efficiencies: Mapping[
-            RecipeKey,
-            BlueprintEfficiency,
-        ]
-        | None = None,
+        blueprint_efficiencies: Mapping[RecipeKey, BlueprintEfficiency] | None = None,
         production_profile: ProductionProfile | None = None,
+        owned_materials: Mapping[int, int] | None = None,
         expected_sde_build_number: int | None = None,
     ) -> ProductionPlan:
         demand_tuple = tuple(demands)
@@ -59,6 +57,7 @@ class IndustryPlanningService:
                 "production_profile must be a ProductionProfile"
             )
         choice_by_type = normalize_build_choices(choices)
+        owned_by_type = normalize_owned_materials(owned_materials)
 
         build_number = self._repository.latest_sde_build_number()
         if build_number is None:
@@ -101,6 +100,7 @@ class IndustryPlanningService:
                 choice_by_type,
                 blueprint_efficiencies,
                 production_profile,
+                owned_by_type,
                 build_number,
                 root_type_ids,
             )
@@ -112,16 +112,12 @@ class IndustryPlanningService:
         self,
         demand_tuple: tuple[ItemQuantity, ...],
         choice_by_type: Mapping[int, BuildChoice],
-        blueprint_efficiencies: Mapping[
-            RecipeKey,
-            BlueprintEfficiency,
-        ]
-        | None,
+        blueprint_efficiencies: Mapping[RecipeKey, BlueprintEfficiency] | None,
         production_profile: ProductionProfile | None,
+        owned_materials: Mapping[int, int],
         build_number: int,
         root_type_ids: set[int],
     ) -> ProductionPlan:
-
         recipes_by_key: dict[RecipeKey, IndustryRecipe] = {}
         visited_type_ids: set[int] = set()
         frontier = root_type_ids
@@ -141,9 +137,7 @@ class IndustryPlanningService:
                 != BuildDecision.BUY
             }
             recipes_by_product = (
-                self._repository.load_recipes_for_products(
-                    recipe_lookup_type_ids
-                )
+                self._repository.load_recipes_for_products(recipe_lookup_type_ids)
                 if recipe_lookup_type_ids
                 else {}
             )
@@ -189,9 +183,7 @@ class IndustryPlanningService:
         if missing_product_type_ids:
             raise InvalidIndustryDataError(
                 "Production recipes reference missing product type ID(s): "
-                + ", ".join(
-                    str(type_id) for type_id in missing_product_type_ids
-                )
+                + ", ".join(str(type_id) for type_id in missing_product_type_ids)
             )
 
         return plan_production(
@@ -202,4 +194,5 @@ class IndustryPlanningService:
             blueprint_efficiencies=blueprint_efficiencies,
             production_profile=profile,
             product_types=product_types,
+            owned_materials=owned_materials,
         )
