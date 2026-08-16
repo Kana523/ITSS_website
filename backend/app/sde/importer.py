@@ -110,22 +110,17 @@ def _find_large_deletions(
         }
         if not existing_keys:
             continue
-
         incoming_rows = getattr(dataset, dataset_name)
         incoming_keys = {
             tuple(row[column] for column in key_columns) for row in incoming_rows
         }
         deleted_count = len(existing_keys - incoming_keys)
-        if (
-            deleted_count * 100
-            > len(existing_keys) * MAX_AUTOMATIC_ROW_DROP_PERCENT
-        ):
+        if deleted_count * 100 > len(existing_keys) * MAX_AUTOMATIC_ROW_DROP_PERCENT:
             deletion_percent = deleted_count * 100 / len(existing_keys)
             large_deletions.append(
                 f"{dataset_name}: {deleted_count} of {len(existing_keys)} current "
                 f"rows ({deletion_percent:.1f}%)"
             )
-
     return large_deletions
 
 
@@ -153,7 +148,6 @@ def _synchronize_sde(
         .order_by(SdeImport.id.desc())
         .limit(1)
     ).mappings().one_or_none()
-
     existing_import = connection.execute(
         select(
             SdeImport.id,
@@ -182,15 +176,11 @@ def _synchronize_sde(
             already_imported=True,
         )
 
-    if (
-        latest_import is not None
-        and dataset.manifest.build_number < latest_import["build_number"]
-    ):
+    if latest_import is not None and dataset.manifest.build_number < latest_import["build_number"]:
         raise SdeImportConflictError(
             f"SDE build {dataset.manifest.build_number} is older than current "
             f"build {latest_import['build_number']}"
         )
-
     if latest_import is not None and not allow_large_deletions:
         large_deletions = _find_large_deletions(connection, dataset)
         if large_deletions:
@@ -211,109 +201,15 @@ def _synchronize_sde(
         .returning(SdeImport.id)
     ).scalar_one()
 
-    _upsert_rows(
-        connection,
-        EveCategory,
-        dataset.categories,
-        conflict_columns=("category_id",),
-        update_columns=("name", "published", "last_seen_import_id"),
-        batch_size=batch_size,
-        import_id=import_id,
-    )
-    _upsert_rows(
-        connection,
-        EveGroup,
-        dataset.groups,
-        conflict_columns=("group_id",),
-        update_columns=(
-            "category_id",
-            "name",
-            "published",
-            "last_seen_import_id",
-        ),
-        batch_size=batch_size,
-        import_id=import_id,
-    )
-    _upsert_rows(
-        connection,
-        EveType,
-        dataset.types,
-        conflict_columns=("type_id",),
-        update_columns=("group_id", "name", "published", "last_seen_import_id"),
-        batch_size=batch_size,
-        import_id=import_id,
-    )
-    _upsert_rows(
-        connection,
-        IndustryActivityType,
-        dataset.activity_types,
-        conflict_columns=("activity_id",),
-        update_columns=(
-            "code",
-            "name",
-            "description",
-            "last_seen_import_id",
-        ),
-        batch_size=batch_size,
-        import_id=import_id,
-    )
-    _upsert_rows(
-        connection,
-        Blueprint,
-        dataset.blueprints,
-        conflict_columns=("blueprint_type_id",),
-        update_columns=("max_production_limit", "last_seen_import_id"),
-        batch_size=batch_size,
-        import_id=import_id,
-    )
-    _upsert_rows(
-        connection,
-        IndustryActivity,
-        dataset.activities,
-        conflict_columns=("blueprint_type_id", "activity_id"),
-        update_columns=("time_seconds", "last_seen_import_id"),
-        batch_size=batch_size,
-        import_id=import_id,
-    )
-    _upsert_rows(
-        connection,
-        IndustryActivityMaterial,
-        dataset.materials,
-        conflict_columns=(
-            "blueprint_type_id",
-            "activity_id",
-            "material_type_id",
-        ),
-        update_columns=("quantity", "last_seen_import_id"),
-        batch_size=batch_size,
-        import_id=import_id,
-    )
-    _upsert_rows(
-        connection,
-        IndustryActivityProduct,
-        dataset.products,
-        conflict_columns=(
-            "blueprint_type_id",
-            "activity_id",
-            "product_type_id",
-        ),
-        update_columns=("quantity", "last_seen_import_id"),
-        batch_size=batch_size,
-        import_id=import_id,
-    )
-    _upsert_rows(
-        connection,
-        IndustryActivitySkill,
-        skill_rows,
-        conflict_columns=(
-            "blueprint_type_id",
-            "activity_id",
-            "skill_type_id",
-        ),
-        update_columns=("required_level", "last_seen_import_id"),
-        batch_size=batch_size,
-        import_id=import_id,
-    )
+    _upsert_rows(connection, EveCategory, dataset.categories, conflict_columns=("category_id",), update_columns=("name", "published", "last_seen_import_id"), batch_size=batch_size, import_id=import_id)
+    _upsert_rows(connection, EveGroup, dataset.groups, conflict_columns=("group_id",), update_columns=("category_id", "name", "published", "last_seen_import_id"), batch_size=batch_size, import_id=import_id)
+    _upsert_rows(connection, EveType, dataset.types, conflict_columns=("type_id",), update_columns=("group_id", "name", "published", "last_seen_import_id"), batch_size=batch_size, import_id=import_id)
+    _upsert_rows(connection, IndustryActivityType, dataset.activity_types, conflict_columns=("activity_id",), update_columns=("code", "name", "description", "last_seen_import_id"), batch_size=batch_size, import_id=import_id)
+    _upsert_rows(connection, Blueprint, dataset.blueprints, conflict_columns=("blueprint_type_id",), update_columns=("max_production_limit", "last_seen_import_id"), batch_size=batch_size, import_id=import_id)
+    _upsert_rows(connection, IndustryActivity, dataset.activities, conflict_columns=("blueprint_type_id", "activity_id"), update_columns=("time_seconds", "last_seen_import_id"), batch_size=batch_size, import_id=import_id)
+    _upsert_rows(connection, IndustryActivityMaterial, dataset.materials, conflict_columns=("blueprint_type_id", "activity_id", "material_type_id"), update_columns=("quantity", "last_seen_import_id"), batch_size=batch_size, import_id=import_id)
+    _upsert_rows(connection, IndustryActivityProduct, dataset.products, conflict_columns=("blueprint_type_id", "activity_id", "product_type_id"), update_columns=("quantity", "last_seen_import_id"), batch_size=batch_size, import_id=import_id)
+    _upsert_rows(connection, IndustryActivitySkill, skill_rows, conflict_columns=("blueprint_type_id", "activity_id", "skill_type_id"), update_columns=("required_level", "last_seen_import_id"), batch_size=batch_size, import_id=import_id)
 
     for model in (
         IndustryActivitySkill,
@@ -326,9 +222,7 @@ def _synchronize_sde(
         EveGroup,
         EveCategory,
     ):
-        connection.execute(
-            delete(model).where(model.last_seen_import_id != import_id)
-        )
+        connection.execute(delete(model).where(model.last_seen_import_id != import_id))
 
     return SdeImportResult(
         import_id=import_id,
@@ -356,6 +250,10 @@ def import_sde(
     skill_rows = parse_blueprint_skill_rows(
         source,
         known_type_ids={row["type_id"] for row in dataset.types},
+        allowed_recipe_keys={
+            (row["blueprint_type_id"], row["activity_id"])
+            for row in dataset.activities
+        },
     )
     if source.calculate_checksum() != source_checksum:
         raise SdeSourceError("SDE source changed while it was being read")
@@ -363,21 +261,7 @@ def import_sde(
     if connection is not None:
         if not connection.in_transaction():
             raise RuntimeError("A supplied connection must have an active transaction")
-        return _synchronize_sde(
-            connection,
-            dataset,
-            skill_rows,
-            source_checksum,
-            batch_size,
-            allow_large_deletions,
-        )
+        return _synchronize_sde(connection, dataset, skill_rows, source_checksum, batch_size, allow_large_deletions)
 
     with engine.begin() as managed_connection:
-        return _synchronize_sde(
-            managed_connection,
-            dataset,
-            skill_rows,
-            source_checksum,
-            batch_size,
-            allow_large_deletions,
-        )
+        return _synchronize_sde(managed_connection, dataset, skill_rows, source_checksum, batch_size, allow_large_deletions)
