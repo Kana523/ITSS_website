@@ -54,11 +54,12 @@ jobs:
         working-directory: backend
         run: uv run alembic upgrade head
       - name: Run complete test suite
+        id: pytest
         working-directory: backend
         shell: bash
         run: |
           set +e
-          uv run pytest -ra 2>&1 | tee pytest-output.txt
+          uv run pytest -ra --junitxml=pytest-results.xml 2>&1 | tee pytest-output.txt
           status=${PIPESTATUS[0]}
           {
             echo "## Pytest output"
@@ -66,4 +67,19 @@ jobs:
             tail -n 200 pytest-output.txt
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
-          exit "$status"
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          exit 0
+      - name: Upload pytest results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-results
+          path: |
+            backend/pytest-results.xml
+            backend/pytest-output.txt
+          if-no-files-found: error
+          retention-days: 7
+      - name: Enforce pytest result
+        if: always()
+        shell: bash
+        run: exit "${{ steps.pytest.outputs.status }}"
