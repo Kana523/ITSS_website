@@ -18,10 +18,12 @@ from app.sde.models import (
     IndustryActivity,
     IndustryActivityMaterial,
     IndustryActivityProduct,
+    IndustryActivitySkill,
     IndustryActivityType,
     SdeImport,
 )
 from app.sde.parser import ParsedSde, parse_sde
+from app.sde.skill_parser import SkillRow, parse_blueprint_skill_rows
 from app.sde.source import SdeSource
 
 
@@ -130,6 +132,7 @@ def _find_large_deletions(
 def _synchronize_sde(
     connection: Connection,
     dataset: ParsedSde,
+    skill_rows: list[SkillRow],
     source_checksum: str,
     batch_size: int,
     allow_large_deletions: bool,
@@ -138,6 +141,7 @@ def _synchronize_sde(
         text("SELECT pg_advisory_xact_lock(:lock_id)"),
         {"lock_id": SDE_IMPORT_ADVISORY_LOCK_ID},
     )
+    row_counts = {**dataset.row_counts, "skills": len(skill_rows)}
 
     latest_import = connection.execute(
         select(
@@ -202,7 +206,7 @@ def _synchronize_sde(
             build_number=dataset.manifest.build_number,
             release_date=dataset.manifest.release_date,
             source_checksum=source_checksum,
-            row_counts=dataset.row_counts,
+            row_counts=row_counts,
         )
         .returning(SdeImport.id)
     ).scalar_one()
@@ -297,8 +301,22 @@ def _synchronize_sde(
         batch_size=batch_size,
         import_id=import_id,
     )
+    _upsert_rows(
+        connection,
+        IndustryActivitySkill,
+        skill_rows,
+        conflict_columns=(
+            "blueprint_type_id",
+            "activity_id",
+            "skill_type_id",
+        ),
+        update_columns=("required_level", "last_seen_import_id"),
+        batch_size=batch_size,
+        import_id=import_id,
+    )
 
     for model in (
+        IndustryActivitySkill,
         IndustryActivityProduct,
         IndustryActivityMaterial,
         IndustryActivity,
@@ -316,7 +334,7 @@ def _synchronize_sde(
         import_id=import_id,
         build_number=dataset.manifest.build_number,
         source_checksum=source_checksum,
-        row_counts=dataset.row_counts,
+        row_counts=row_counts,
         already_imported=False,
     )
 
@@ -335,6 +353,10 @@ def import_sde(
     source = SdeSource(source_path)
     source_checksum = source.calculate_checksum()
     dataset = parse_sde(source)
+    skill_rows = parse_blueprint_skill_rows(
+        source,
+        known_type_ids={row["type_id"] for row in dataset.types},
+    )
     if source.calculate_checksum() != source_checksum:
         raise SdeSourceError("SDE source changed while it was being read")
 
@@ -344,6 +366,7 @@ def import_sde(
         return _synchronize_sde(
             connection,
             dataset,
+            skill_rows,
             source_checksum,
             batch_size,
             allow_large_deletions,
@@ -353,6 +376,7 @@ def import_sde(
         return _synchronize_sde(
             managed_connection,
             dataset,
+            skill_rows,
             source_checksum,
             batch_size,
             allow_large_deletions,
