@@ -1,3 +1,6 @@
+from typing import Any
+
+
 class MarketCacheError(Exception):
     """Base error for public ESI cache refreshes."""
 
@@ -8,6 +11,33 @@ class EsiResponseError(MarketCacheError):
 
 class EsiPayloadError(MarketCacheError, ValueError):
     """ESI returned data that violates the expected contract."""
+
+
+class EsiOrderPayloadError(EsiPayloadError):
+    """Malformed market-order data with enough context to diagnose the row."""
+
+    def __init__(
+        self,
+        *,
+        page: int,
+        row: int,
+        order_id: int | str | None,
+        field: str,
+        rejected_value: Any,
+        reason: str,
+    ) -> None:
+        self.page = page
+        self.row = row
+        self.order_id = order_id
+        self.field = field
+        self.rejected_value = rejected_value
+        self.reason = reason
+        display_order_id = "<missing>" if order_id is None else repr(order_id)
+        super().__init__(
+            "Malformed ESI market order: "
+            f"page={page}, row={row}, order_id={display_order_id}, "
+            f"field={field}, rejected_value={rejected_value!r}: {reason}"
+        )
 
 
 class EsiRateLimitError(MarketCacheError):
