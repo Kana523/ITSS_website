@@ -4,6 +4,10 @@ from datetime import UTC, date, datetime
 from decimal import Decimal
 from enum import StrEnum
 
+from app.industry.depth_valuation import (
+    MarketDepthQuote,
+    calculate_depth_aware_industry_economics,
+)
 from app.industry.errors import MissingActivityPricingError
 from app.industry.models import ActivityKind, ProductionPlan
 from app.industry.valuation import (
@@ -17,9 +21,8 @@ from app.industry.valuation import (
     MarketQuoteSnapshot,
     SystemCostIndex,
     SystemCostIndexSnapshot,
-    calculate_industry_economics,
 )
-from app.market.domain import ResourceState
+from app.market.domain import HubPrice, MarketPriceLevel, ResourceState
 from app.market.refresh import (
     REFERENCE_PRICES_RESOURCE_KEY,
     SYSTEM_COST_INDICES_RESOURCE_KEY,
@@ -43,11 +46,23 @@ def _require_basis_points(value: int, field_name: str) -> None:
 
 
 def _rate(basis_points: int) -> Decimal:
-    # Construct the finite decimal directly. Decimal division (and subtraction
-    # from one) observes the process-wide context and can silently round these
-    # request rates when another caller has lowered its precision.
     whole, fraction = divmod(basis_points, 10_000)
     return Decimal(f"{whole}.{fraction:04d}")
+
+
+def _effective_levels(
+    price: HubPrice,
+    *,
+    side: str,
+) -> tuple[MarketPriceLevel, ...]:
+    levels = price.buy_levels if side == "buy" else price.sell_levels
+    if levels:
+        return levels
+    best_price = price.best_buy_price if side == "buy" else price.best_sell_price
+    best_volume = price.best_buy_volume if side == "buy" else price.best_sell_volume
+    if best_price is None or best_volume is None:
+        return ()
+    return (MarketPriceLevel(best_price, best_volume),)
 
 
 class MarketSnapshotStatus(StrEnum):
@@ -71,11 +86,7 @@ class MarketContext:
 
 @dataclass(frozen=True, slots=True)
 class IndustryPricingOptions:
-    """Explicit, reproducible rates for one profitability estimate.
-
-    Rates use integer basis points. They are deliberately request inputs rather
-    than hidden constants because character, facility, and game rates change.
-    """
+    """Explicit, reproducible rates for one profitability estimate."""
 
     solar_system_id: int = 30_000_142
     facility_tax_basis_points: int = 25
@@ -112,8 +123,7 @@ class IndustryPricingOptions:
             _require_basis_points(getattr(self, field_name), field_name)
         if self.broker_fee_basis_points:
             raise ValueError(
-                "broker_fee_basis_points must be zero for immediate best-buy "
-                "sales"
+                "broker_fee_basis_points must be zero for immediate best-buy sales"
             )
 
     def activity_fee_rates(
@@ -126,9 +136,7 @@ class IndustryPricingOptions:
                 solar_system_id=self.solar_system_id,
                 facility_tax_rate=_rate(self.facility_tax_basis_points),
                 scc_surcharge_rate=_rate(self.scc_surcharge_basis_points),
-                alpha_clone_tax_rate=_rate(
-                    self.alpha_clone_tax_basis_points
-                ),
+                alpha_clone_tax_rate=_rate(self.alpha_clone_tax_basis_points),
                 default_job_cost_modifier=_rate(
                     10_000 - self.job_cost_reduction_basis_points
                 ),
@@ -149,8 +157,7 @@ class IndustryPricingOptions:
                     self.reaction_alpha_clone_tax_basis_points
                 ),
                 default_job_cost_modifier=_rate(
-                    10_000
-                    - self.reaction_job_cost_reduction_basis_points
+                    10_000 - self.reaction_job_cost_reduction_basis_points
                 ),
             )
         raise ValueError(f"Unsupported pricing activity: {activity}")
@@ -222,7 +229,7 @@ def _resource_stamp(state: ResourceState) -> CacheResourceStamp:
 
 
 class IndustryEconomicsService:
-    """Join a pure production plan to previously cached public ESI data."""
+    """Join a production plan to one atomic cached public-ESI snapshot."""
 
     def __init__(
         self,
@@ -298,12 +305,10 @@ class IndustryEconomicsService:
             for system_id, activity_codes in sorted(
                 activities_by_system.items()
             ):
-                for activity_code, index in (
-                    self._repository.load_system_cost_indices(
-                        system_id,
-                        activity_codes,
-                    ).items()
-                ):
+                for activity_code, index in self._repository.load_system_cost_indices(
+                    system_id,
+                    activity_codes,
+                ).items():
                     cost_indices[(system_id, activity_code)] = index
 
         required_states = [order_state]
@@ -378,7 +383,19 @@ class IndustryEconomicsService:
             ),
             fees=options.to_fee_rates(activities),
         )
-        economics = calculate_industry_economics(plan, valuation_inputs)
+        depth_by_type = {
+            price.type_id: MarketDepthQuote(
+                type_id=price.type_id,
+                buy_levels=_effective_levels(price, side="buy"),
+                sell_levels=_effective_levels(price, side="sell"),
+            )
+            for price in hub_prices.values()
+        }
+        economics = calculate_depth_aware_industry_economics(
+            plan,
+            valuation_inputs,
+            depth_by_type,
+        )
         return ValuedProductionPlan(
             economics=economics,
             market_snapshot=MarketSnapshot(
@@ -386,8 +403,8 @@ class IndustryEconomicsService:
                 location_id=self._context.location_id,
                 location_name=self._context.location_name,
                 status=status,
-                input_strategy="best_sell",
-                output_strategy="best_unrestricted_buy",
+                input_strategy="volume_weighted_sell_depth",
+                output_strategy="volume_weighted_unrestricted_buy_depth",
                 resources=tuple(
                     _resource_stamp(state)
                     for state in sorted(
