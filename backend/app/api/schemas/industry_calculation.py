@@ -8,6 +8,8 @@ from app.api.schemas.industry import (
     ItemQuantityRequest,
     Quantity,
     RecipeKeyRequest,
+    SkillLevel,
+    TypeId,
 )
 from app.industry.models import RecipeKey
 
@@ -18,6 +20,11 @@ class BlueprintCopyRunLimitRequest(ApiModel):
 
     def to_domain(self) -> tuple[RecipeKey, int]:
         return self.recipe_key.to_domain(), self.runs_per_copy
+
+
+class SpecialistSkillLevelRequest(ApiModel):
+    type_id: TypeId
+    level: SkillLevel
 
 
 class IndustryCalculationRequest(CalculationRequest):
@@ -31,6 +38,10 @@ class IndustryCalculationRequest(CalculationRequest):
         list[BlueprintCopyRunLimitRequest],
         Field(max_length=500),
     ] = Field(default_factory=list)
+    specialist_skills: Annotated[
+        list[SpecialistSkillLevelRequest],
+        Field(max_length=500),
+    ] | None = None
 
     @model_validator(mode="after")
     def reject_duplicate_additive_inputs(self) -> Self:
@@ -47,6 +58,12 @@ class IndustryCalculationRequest(CalculationRequest):
             raise ValueError(
                 "blueprint_copy_run_limits must contain at most one entry per recipe"
             )
+        if self.specialist_skills is not None:
+            skill_type_ids = [item.type_id for item in self.specialist_skills]
+            if len(skill_type_ids) != len(set(skill_type_ids)):
+                raise ValueError(
+                    "specialist_skills must contain at most one entry per type_id"
+                )
         return self
 
     def to_owned_materials(self) -> dict[int, int]:
@@ -60,3 +77,11 @@ class IndustryCalculationRequest(CalculationRequest):
             item.to_domain()
             for item in self.blueprint_copy_run_limits
         )
+
+    def to_specialist_skill_levels(self) -> dict[int, int] | None:
+        if self.specialist_skills is None:
+            return None
+        return {
+            item.type_id: item.level
+            for item in self.specialist_skills
+        }
