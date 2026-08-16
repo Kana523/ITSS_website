@@ -1,0 +1,6 @@
+{"_key": 1001, "groupID": 10, "name": {"en": "Raw Resource"}, "published": true}
+{"_key": 1002, "groupID": 10, "name": {"en": "Reacted Component"}, "published": true}
+{"_key": 1003, "groupID": 10, "name": {"en": "Final Product"}, "published": true}
+{"_key": 2001, "groupID": 20, "name": {"en": "Component Reaction Formula"}, "published": true}
+{"_key": 2002, "groupID": 20, "name": {"en": "Final Product Blueprint"}, "published": true}
+{"_key": 2003, "groupID": 20, "name": {"en": "Unpublished Blueprint"}, "published": false}

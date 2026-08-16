@@ -7,6 +7,7 @@ ITS-S (Interstellar Systems) is my EVE Online corporation focused on small-scale
 - **Home** - Landing page with core corporate info and select merchandise highlights
 - **Shop** - Marketplace for in-game item transactions
 - **Trade** - Trade-related tooling and listings
+- **Industry** - Multi-product manufacturing and reaction planner with ME/TE, production profiles, cached market estimates, and shopping-list export
 - **About** - Extended overview of the corporation and its goals
 - **Legal** - Disclaimers and compliance documentation
 
@@ -17,6 +18,7 @@ ITSS_Website/
 ├── index.html
 ├── shop/
 ├── trade/
+├── industry/
 ├── about/
 ├── legal/
 └── assets/
@@ -37,4 +39,57 @@ ITSS_Website/
 
 ## Getting Started
 
-Open `index.html` in a browser, or use VS Code Live Server for local development.
+Serve the site over HTTP, for example:
+
+```powershell
+python -m http.server 5500 --bind 127.0.0.1
+```
+
+The Industry page also needs PostgreSQL, imported SDE data, and the API. From
+the repository root, start PostgreSQL:
+
+```powershell
+docker compose up -d --wait postgres
+```
+
+Before the first run, copy `backend/.env.example` to `backend/.env`, choose a
+local database password, and replace the example `ESI_USER_AGENT` contact with
+a real email address or repository URL. Then prepare the backend:
+
+```powershell
+cd backend
+uv sync
+uv run alembic upgrade head
+uv run python -m app.sde C:\path\to\eve-online-static-data-latest-jsonl.zip
+uv run python -m app.market refresh --resource all
+uv run fastapi dev app/main.py
+```
+
+Then open `http://127.0.0.1:5500/industry/`.
+
+### Using the industry planner
+
+Search for one or more products, edit their quantities in the build list, and
+select **Calculate**. The production-profile panel accepts character skill
+levels plus exact facility and rig reductions. Rig category/group scopes are
+optional; an empty scope applies that rig modifier to every product in the
+selected activity.
+
+Choose ME and TE values on any manufacturing job and select **Apply** to
+recalculate the full dependency chain. Enable market pricing to value purchases,
+job installation, requested outputs, surplus inventory, and estimated profit
+from the cached Jita snapshot. Inputs use the best sell level; immediate-sale
+values use the best unrestricted buy level. The cache does not walk the full
+order book: when the cached best-price volume cannot fill a quantity, the value
+is shown as incomplete rather than extrapolated or treated as zero. The
+aggregated shopping list can be copied or downloaded as CSV.
+
+Manufacturing and reaction jobs can use separate system IDs and fee assumptions.
+Enter a low-security reaction system when a selected route contains reactions;
+the page does not silently reuse the manufacturing system.
+
+Each production step currently represents one combined job. Blueprint-copy run
+limits, job splitting, implants, blueprint-required specialist skills, and
+owned-material deduction are not applied yet. The minimal UI currently accepts
+one scoped rig rule per activity, although the API supports multiple scoped
+rules.

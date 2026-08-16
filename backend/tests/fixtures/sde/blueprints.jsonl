@@ -1,0 +1,3 @@
+{"_key": 2001, "activities": {"reaction": {"materials": [{"quantity": 3, "typeID": 1001}], "products": [{"quantity": 2, "typeID": 1002}], "time": 60}}, "blueprintTypeID": 2001, "maxProductionLimit": 1000}
+{"_key": 2002, "activities": {"copying": {"time": 30}, "manufacturing": {"materials": [{"quantity": 4, "typeID": 1002}], "products": [{"quantity": 1, "typeID": 1003}], "time": 120}}, "blueprintTypeID": 2002, "maxProductionLimit": 100}
+{"_key": 2003, "activities": {"manufacturing": {"materials": [{"quantity": 1, "typeID": 9998}], "products": [{"quantity": 1, "typeID": 9999}], "time": 30}}, "blueprintTypeID": 2003, "maxProductionLimit": 1}

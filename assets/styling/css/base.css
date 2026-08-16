@@ -661,4 +661,61 @@ nav a[aria-current="page"] {
   color: var(--text-strong);
 }
 
+/* Keep the shared header usable now that the site has five primary pages. */
+@media (max-width: 760px) {
+  header {
+    gap: 5px;
+    padding-right: 7px;
+  }
+
+  .container-logo-name-motto {
+    display: none;
+  }
+
+  .container-logo img {
+    width: 52px;
+    height: 52px;
+  }
+
+  header a {
+    font-size: clamp(14px, 2.8vw, 18px);
+  }
+
+  nav {
+    gap: clamp(5px, 1.5vw, 10px);
+  }
+}
+
+@media (max-width: 480px) {
+  header {
+    flex-wrap: wrap;
+    padding: 0 6px 7px;
+  }
+
+  .container-logo {
+    order: 1;
+  }
+
+  .container-logo img {
+    width: 44px;
+    height: 44px;
+  }
+
+  nav {
+    order: 3;
+    flex: 1 0 100%;
+    justify-content: space-around;
+    gap: 4px;
+  }
+
+  .cart-nav {
+    order: 2;
+    margin-left: auto;
+  }
+
+  header nav a {
+    font-size: clamp(13px, 3.8vw, 16px);
+  }
+}
+
 
