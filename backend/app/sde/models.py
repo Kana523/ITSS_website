@@ -191,3 +191,36 @@ class IndustryActivityProduct(Base):
     last_seen_import_id: Mapped[int] = mapped_column(
         ForeignKey("sde_imports.id", ondelete="RESTRICT")
     )
+
+
+class IndustryActivitySkill(Base):
+    __tablename__ = "industry_activity_skills"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["blueprint_type_id", "activity_id"],
+            [
+                "industry_activities.blueprint_type_id",
+                "industry_activities.activity_id",
+            ],
+            ondelete="CASCADE",
+        ),
+        CheckConstraint(
+            "required_level >= 1 AND required_level <= 5",
+            name="required_level_valid",
+        ),
+        Index(
+            "ix_industry_activity_skills_skill_type_id",
+            "skill_type_id",
+        ),
+    )
+
+    blueprint_type_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    activity_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    skill_type_id: Mapped[int] = mapped_column(
+        ForeignKey("eve_types.type_id", ondelete="RESTRICT"),
+        primary_key=True,
+    )
+    required_level: Mapped[int] = mapped_column(Integer)
+    last_seen_import_id: Mapped[int] = mapped_column(
+        ForeignKey("sde_imports.id", ondelete="RESTRICT")
+    )
