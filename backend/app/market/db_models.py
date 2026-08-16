@@ -90,6 +90,8 @@ class MarketHubPrice(Base):
     best_buy_volume: Mapped[int | None] = mapped_column(BigInteger)
     best_sell_price: Mapped[Decimal | None] = mapped_column(Numeric(30, 2))
     best_sell_volume: Mapped[int | None] = mapped_column(BigInteger)
+    buy_levels: Mapped[list[dict]] = mapped_column(JSONB, default=list)
+    sell_levels: Mapped[list[dict]] = mapped_column(JSONB, default=list)
 
 
 class MarketReferencePrice(Base):
