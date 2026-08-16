@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date, datetime
 from decimal import Decimal
 from enum import StrEnum
@@ -35,20 +35,32 @@ class MarketPriceLevel:
     volume: int
 
     def __post_init__(self) -> None:
-        if not isinstance(self.price, Decimal) or not self.price.is_finite() or self.price <= 0:
-            raise ValueError("market price level price must be a positive finite Decimal")
-        if isinstance(self.volume, bool) or not isinstance(self.volume, int) or self.volume <= 0:
-            raise ValueError("market price level volume must be a positive integer")
+        if (
+            not isinstance(self.price, Decimal)
+            or not self.price.is_finite()
+            or self.price <= 0
+        ):
+            raise ValueError(
+                "market price level price must be a positive finite Decimal"
+            )
+        if (
+            isinstance(self.volume, bool)
+            or not isinstance(self.volume, int)
+            or self.volume <= 0
+        ):
+            raise ValueError(
+                "market price level volume must be a positive integer"
+            )
 
 
 @dataclass(frozen=True, slots=True)
 class HubPrice:
     """Hub quote plus executable depth.
 
-    The best-price fields are retained as the compatibility surface used by
-    older callers. ``buy_levels`` are sorted best-to-worst (descending price),
-    while ``sell_levels`` are sorted best-to-worst (ascending price). Buy depth
-    contains only unrestricted orders (``min_volume == 1``).
+    The best-price fields remain the compatibility surface used by older
+    callers. Depth is intentionally excluded from dataclass equality so code
+    and tests that compare legacy HubPrice values continue to behave exactly
+    as before. Callers that care about depth inspect the explicit level fields.
     """
 
     type_id: int
@@ -56,8 +68,14 @@ class HubPrice:
     best_buy_volume: int | None
     best_sell_price: Decimal | None
     best_sell_volume: int | None
-    buy_levels: tuple[MarketPriceLevel, ...] = ()
-    sell_levels: tuple[MarketPriceLevel, ...] = ()
+    buy_levels: tuple[MarketPriceLevel, ...] = field(
+        default=(),
+        compare=False,
+    )
+    sell_levels: tuple[MarketPriceLevel, ...] = field(
+        default=(),
+        compare=False,
+    )
 
 
 @dataclass(frozen=True, slots=True)
