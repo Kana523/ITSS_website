@@ -27,15 +27,37 @@ class ResourceState:
     row_count: int
 
 
+@dataclass(frozen=True, slots=True, order=True)
+class MarketPriceLevel:
+    """Aggregated executable volume at one exact market price."""
+
+    price: Decimal
+    volume: int
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.price, Decimal) or not self.price.is_finite() or self.price <= 0:
+            raise ValueError("market price level price must be a positive finite Decimal")
+        if isinstance(self.volume, bool) or not isinstance(self.volume, int) or self.volume <= 0:
+            raise ValueError("market price level volume must be a positive integer")
+
+
 @dataclass(frozen=True, slots=True)
 class HubPrice:
-    """Best sell and best unrestricted (min-volume 1) buy price levels."""
+    """Hub quote plus executable depth.
+
+    The best-price fields are retained as the compatibility surface used by
+    older callers. ``buy_levels`` are sorted best-to-worst (descending price),
+    while ``sell_levels`` are sorted best-to-worst (ascending price). Buy depth
+    contains only unrestricted orders (``min_volume == 1``).
+    """
 
     type_id: int
     best_buy_price: Decimal | None
     best_buy_volume: int | None
     best_sell_price: Decimal | None
     best_sell_volume: int | None
+    buy_levels: tuple[MarketPriceLevel, ...] = ()
+    sell_levels: tuple[MarketPriceLevel, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
