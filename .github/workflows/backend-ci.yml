@@ -1,0 +1,58 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [indy-calc, develop]
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-ci.yml"
+  pull_request:
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-ci.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: industry
+          POSTGRES_USER: industry
+          POSTGRES_PASSWORD: industry-test-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U industry -d industry"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      APP_ENV: test
+      POSTGRES_DB: industry
+      POSTGRES_USER: industry
+      POSTGRES_PASSWORD: industry-test-password
+      DATABASE_URL: postgresql+psycopg://industry:industry-test-password@127.0.0.1:5432/industry
+      ESI_USER_AGENT: ITSS-Industry-CI/1.0
+      ESI_COMPATIBILITY_DATE: "2026-08-13"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: Install dependencies
+        working-directory: backend
+        run: uv sync --locked --dev
+      - name: Check migrations
+        working-directory: backend
+        run: uv run alembic upgrade head
+      - name: Run complete test suite
+        working-directory: backend
+        run: uv run pytest -ra
