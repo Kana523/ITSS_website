@@ -44,17 +44,37 @@ def _ceil_fraction(value: Fraction) -> int:
     return (value.numerator + value.denominator - 1) // value.denominator
 
 
+def _job_run_chunks(runs: int, max_runs_per_job: int | None) -> tuple[int, ...]:
+    """Split a run count into legal BPC-sized jobs.
+
+    ``maxProductionLimit`` is the maximum licensed run count available on a
+    blueprint copy. BPO-backed jobs have no copy-run limit represented here.
+    Splitting also matters for material rounding because EVE rounds each job.
+    """
+    if max_runs_per_job is None or runs <= max_runs_per_job:
+        return (runs,)
+    full_jobs, remainder = divmod(runs, max_runs_per_job)
+    return (max_runs_per_job,) * full_jobs + ((remainder,) if remainder else ())
+
+
 def _job_material_quantity(
     quantity_per_run: int,
     runs: int,
     material_multiplier: Fraction,
+    *,
+    max_runs_per_job: int | None = None,
 ) -> int:
-    """Apply all whole-job material factors before EVE's final ceiling."""
-    reduced_total = _ceil_fraction(
-        quantity_per_run * runs * material_multiplier
-    )
-    # Every listed material requires at least one whole unit for every run.
-    return max(runs, reduced_total)
+    """Apply factors and EVE's final material ceiling independently per job."""
+    total = 0
+    for job_runs in _job_run_chunks(runs, max_runs_per_job):
+        reduced_total = _ceil_fraction(
+            quantity_per_run * job_runs * material_multiplier
+        )
+        total = _require_safe_integer(
+            total + max(job_runs, reduced_total),
+            "Adjusted material quantity",
+        )
+    return total
 
 
 def _resolve_production_modifiers(
@@ -180,6 +200,29 @@ def _aggregate_demands(
     )
 
 
+def normalize_owned_materials(
+    owned_materials: Mapping[int, int] | None,
+) -> dict[int, int]:
+    normalized: dict[int, int] = {}
+    for type_id, quantity in (owned_materials or {}).items():
+        if isinstance(type_id, bool) or not isinstance(type_id, int) or type_id <= 0:
+            raise InvalidIndustryDataError(
+                "Owned-material type IDs must be positive integers"
+            )
+        if (
+            isinstance(quantity, bool)
+            or not isinstance(quantity, int)
+            or quantity < 0
+        ):
+            raise InvalidIndustryDataError(
+                f"Owned quantity for type {type_id} must be a non-negative integer"
+            )
+        _require_safe_integer(quantity, f"Owned quantity for type {type_id}")
+        if quantity:
+            normalized[type_id] = quantity
+    return {type_id: normalized[type_id] for type_id in sorted(normalized)}
+
+
 def normalize_build_choices(
     choices: Mapping[int, BuildChoice] | None,
 ) -> dict[int, BuildChoice]:
@@ -223,7 +266,6 @@ def resolve_recipe_choice(
     candidates: Iterable[IndustryRecipe],
     choice: BuildChoice,
 ) -> IndustryRecipe | None:
-    """Resolve one global build/buy decision for a product type."""
     candidates = tuple(sorted(candidates, key=lambda recipe: recipe.key))
     for candidate in candidates:
         if candidate.output_quantity_for(product_type_id) is None:
@@ -271,6 +313,7 @@ def plan_production(
     blueprint_efficiencies: Mapping[RecipeKey, BlueprintEfficiency] | None = None,
     production_profile: ProductionProfile | None = None,
     product_types: Mapping[int, IndustryType] | None = None,
+    owned_materials: Mapping[int, int] | None = None,
 ) -> ProductionPlan:
     """Create a deterministic production plan without database access."""
     if (
@@ -285,6 +328,7 @@ def plan_production(
     requested = _aggregate_demands(demands)
     recipes_by_product = _index_recipes(recipes)
     choice_by_type = normalize_build_choices(choices)
+    owned_remaining = normalize_owned_materials(owned_materials)
     efficiency_by_recipe = normalize_blueprint_efficiencies(
         blueprint_efficiencies
     )
@@ -367,7 +411,21 @@ def plan_production(
     steps_by_product: dict[int, ProductionStep] = {}
     for product_type_id in reversed(dependency_order):
         recipe = selected_recipes[product_type_id]
-        required_quantity = required_quantities[product_type_id]
+        gross_required_quantity = required_quantities[product_type_id]
+        owned_quantity = min(
+            gross_required_quantity,
+            owned_remaining.get(product_type_id, 0),
+        )
+        required_quantity = gross_required_quantity - owned_quantity
+        if owned_quantity:
+            remaining = owned_remaining[product_type_id] - owned_quantity
+            if remaining:
+                owned_remaining[product_type_id] = remaining
+            else:
+                owned_remaining.pop(product_type_id, None)
+        if required_quantity == 0:
+            continue
+
         output_per_run = recipe.output_quantity_for(product_type_id)
         if output_per_run is None:
             raise InvalidIndustryDataError(
@@ -422,14 +480,11 @@ def plan_production(
         )
         inputs_list: list[ItemQuantity] = []
         for material in recipe.materials:
-            base_total_quantity = _require_safe_integer(
-                material.quantity * runs,
-                f"Base input quantity for type {material.type_id}",
-            )
             adjusted_quantity = _job_material_quantity(
                 material.quantity,
                 runs,
                 material_multiplier,
+                max_runs_per_job=recipe.max_production_limit,
             )
             inputs_list.append(
                 ItemQuantity(
@@ -462,17 +517,30 @@ def plan_production(
             inputs=inputs,
         )
 
-    purchases = tuple(
-        PurchaseRequirement(
-            type_id=type_id,
-            quantity=required_quantities[type_id],
-            reason=reason,
-        )
-        for type_id, reason in sorted(purchase_reasons.items())
-        if required_quantities[type_id] > 0
-    )
+    purchases_list: list[PurchaseRequirement] = []
+    for type_id, reason in sorted(purchase_reasons.items()):
+        required_quantity = required_quantities[type_id]
+        owned_quantity = min(required_quantity, owned_remaining.get(type_id, 0))
+        quantity = required_quantity - owned_quantity
+        if owned_quantity:
+            remaining = owned_remaining[type_id] - owned_quantity
+            if remaining:
+                owned_remaining[type_id] = remaining
+            else:
+                owned_remaining.pop(type_id, None)
+        if quantity > 0:
+            purchases_list.append(
+                PurchaseRequirement(
+                    type_id=type_id,
+                    quantity=quantity,
+                    reason=reason,
+                )
+            )
+    purchases = tuple(purchases_list)
     build_steps = tuple(
-        steps_by_product[product_type_id] for product_type_id in dependency_order
+        steps_by_product[product_type_id]
+        for product_type_id in dependency_order
+        if product_type_id in steps_by_product
     )
 
     return ProductionPlan(
