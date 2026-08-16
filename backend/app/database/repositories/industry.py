@@ -12,6 +12,7 @@ from app.industry.models import (
     ItemQuantity,
     RecipeKey,
 )
+from app.industry.specialist_skills import SpecialistSkillRequirement
 from app.sde.constants import SDE_IMPORT_ADVISORY_LOCK_ID
 from app.sde.models import (
     Blueprint,
@@ -21,6 +22,7 @@ from app.sde.models import (
     IndustryActivity,
     IndustryActivityMaterial,
     IndustryActivityProduct,
+    IndustryActivitySkill,
     IndustryActivityType,
     SdeImport,
 )
@@ -322,4 +324,52 @@ class SqlAlchemyIndustryRepository:
         return {
             type_id: tuple(sorted(candidates, key=lambda recipe: recipe.key))
             for type_id, candidates in grouped_recipes.items()
+        }
+
+    def load_recipe_skill_requirements(
+        self,
+        recipe_keys: Collection[RecipeKey],
+    ) -> dict[RecipeKey, tuple[SpecialistSkillRequirement, ...]]:
+        requested_keys = tuple(sorted(set(recipe_keys)))
+        result = {key: () for key in requested_keys}
+        if not requested_keys:
+            return result
+
+        self._lock_sde_snapshot()
+        rows = self._session.execute(
+            select(
+                IndustryActivitySkill.blueprint_type_id,
+                IndustryActivitySkill.activity_id,
+                IndustryActivitySkill.skill_type_id,
+                IndustryActivitySkill.required_level,
+            )
+            .where(
+                tuple_(
+                    IndustryActivitySkill.blueprint_type_id,
+                    IndustryActivitySkill.activity_id,
+                ).in_(
+                    tuple(
+                        (key.blueprint_type_id, key.activity_id)
+                        for key in requested_keys
+                    )
+                )
+            )
+            .order_by(
+                IndustryActivitySkill.blueprint_type_id,
+                IndustryActivitySkill.activity_id,
+                IndustryActivitySkill.skill_type_id,
+            )
+        )
+        grouped: dict[RecipeKey, list[SpecialistSkillRequirement]] = defaultdict(list)
+        for row in rows:
+            key = RecipeKey(row.blueprint_type_id, row.activity_id)
+            grouped[key].append(
+                SpecialistSkillRequirement(
+                    type_id=row.skill_type_id,
+                    level=row.required_level,
+                )
+            )
+        return {
+            key: tuple(grouped.get(key, ()))
+            for key in requested_keys
         }
