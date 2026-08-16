@@ -62,14 +62,16 @@ def test_owned_intermediate_reduces_the_number_of_jobs_needed() -> None:
         owned_materials={200: 2},
     )
 
-    component_step = next(step for step in plan.build_steps if step.product_type_id == 200)
+    component_step = next(
+        step for step in plan.build_steps if step.product_type_id == 200
+    )
     assert component_step.required_quantity == 3
     assert component_step.runs == 3
     assert plan.purchases[0].type_id == 300
     assert plan.purchases[0].quantity == 6
 
 
-def test_blueprint_copy_limit_splits_jobs_before_material_rounding() -> None:
+def test_sde_copy_limit_does_not_split_an_unspecified_bpo_job() -> None:
     key = RecipeKey(1000, 1)
     plan = plan_production(
         (ItemQuantity(100, 5),),
@@ -78,6 +80,23 @@ def test_blueprint_copy_limit_splits_jobs_before_material_rounding() -> None:
         blueprint_efficiencies={
             key: BlueprintEfficiency(material_efficiency=10, time_efficiency=0)
         },
+    )
+
+    # A BPO-backed five-run job rounds once: ceil(3 * 5 * .9) = 14.
+    assert plan.build_steps[0].inputs == (ItemQuantity(200, 14),)
+    assert plan.purchases[0].quantity == 14
+
+
+def test_explicit_blueprint_copy_limit_splits_before_material_rounding() -> None:
+    key = RecipeKey(1000, 1)
+    plan = plan_production(
+        (ItemQuantity(100, 5),),
+        (_recipe(max_runs=2),),
+        sde_build_number=1,
+        blueprint_efficiencies={
+            key: BlueprintEfficiency(material_efficiency=10, time_efficiency=0)
+        },
+        blueprint_copy_run_limits={key: 2},
     )
 
     # Five runs are split 2 + 2 + 1. Each job is rounded independently:
