@@ -101,12 +101,9 @@ class IndustryApplicationService:
         demands: Iterable[ItemQuantity],
         *,
         choices: Mapping[int, BuildChoice] | None = None,
-        blueprint_efficiencies: Mapping[
-            RecipeKey,
-            BlueprintEfficiency,
-        ]
-        | None = None,
+        blueprint_efficiencies: Mapping[RecipeKey, BlueprintEfficiency] | None = None,
         production_profile: ProductionProfile | None = None,
+        owned_materials: Mapping[int, int] | None = None,
         pricing_options: IndustryPricingOptions | None = None,
         expected_sde_build_number: int | None = None,
     ) -> DescribedProductionPlan:
@@ -115,6 +112,7 @@ class IndustryApplicationService:
             choices=choices,
             blueprint_efficiencies=blueprint_efficiencies,
             production_profile=production_profile,
+            owned_materials=owned_materials,
             expected_sde_build_number=expected_sde_build_number,
         )
         related_type_ids = {item.type_id for item in plan.requested}
