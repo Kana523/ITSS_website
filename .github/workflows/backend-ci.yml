@@ -55,4 +55,15 @@ jobs:
         run: uv run alembic upgrade head
       - name: Run complete test suite
         working-directory: backend
-        run: uv run pytest -ra
+        shell: bash
+        run: |
+          set +e
+          uv run pytest -ra 2>&1 | tee pytest-output.txt
+          status=${PIPESTATUS[0]}
+          {
+            echo "## Pytest output"
+            echo '```text'
+            tail -n 200 pytest-output.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$status"
