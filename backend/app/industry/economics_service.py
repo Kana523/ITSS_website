@@ -403,8 +403,8 @@ class IndustryEconomicsService:
                 location_id=self._context.location_id,
                 location_name=self._context.location_name,
                 status=status,
-                input_strategy="volume_weighted_sell_depth",
-                output_strategy="volume_weighted_unrestricted_buy_depth",
+                input_strategy="best_sell",
+                output_strategy="best_unrestricted_buy",
                 resources=tuple(
                     _resource_stamp(state)
                     for state in sorted(
