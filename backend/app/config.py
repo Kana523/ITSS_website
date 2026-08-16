@@ -22,6 +22,14 @@ class Settings(BaseSettings):
     market_region_id: int = Field(default=10_000_002, gt=0)
     market_location_id: int = Field(default=60_003_760, gt=0)
     market_location_name: str = "Jita IV - Moon 4 - Caldari Navy Assembly Plant"
+    sde_latest_url: str = (
+        "https://developers.eveonline.com/static-data/"
+        "eve-online-static-data-latest-jsonl.zip"
+    )
+    sde_download_max_bytes: int = Field(
+        default=2_147_483_648,
+        gt=0,
+    )
 
     model_config = SettingsConfigDict(
         env_file=_BACKEND_DIR / ".env",
