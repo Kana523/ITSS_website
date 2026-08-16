@@ -1,8 +1,10 @@
 from collections.abc import Iterable
+from decimal import Decimal
 
 from app.market.domain import (
     CacheMetadata,
     HubPrice,
+    MarketPriceLevel,
     OrderPageCache,
     RefreshResult,
     RefreshStatus,
@@ -58,49 +60,69 @@ def _checked_volume_sum(left: int, right: int) -> int:
     return total
 
 
+def _quote_levels(quote: HubPrice, side: str) -> tuple[MarketPriceLevel, ...]:
+    levels = quote.buy_levels if side == "buy" else quote.sell_levels
+    if levels:
+        return levels
+    price = quote.best_buy_price if side == "buy" else quote.best_sell_price
+    volume = quote.best_buy_volume if side == "buy" else quote.best_sell_volume
+    if price is None:
+        return ()
+    if volume is None:
+        raise EsiPayloadError(f"Best-{side} volume is missing")
+    return (MarketPriceLevel(price=price, volume=volume),)
+
+
+def _merge_levels(
+    left: tuple[MarketPriceLevel, ...],
+    right: tuple[MarketPriceLevel, ...],
+    *,
+    reverse: bool,
+) -> tuple[MarketPriceLevel, ...]:
+    volumes: dict[Decimal, int] = {}
+    for level in (*left, *right):
+        volumes[level.price] = _checked_volume_sum(
+            volumes.get(level.price, 0),
+            level.volume,
+        )
+    return tuple(
+        MarketPriceLevel(price=price, volume=volume)
+        for price, volume in sorted(
+            volumes.items(),
+            key=lambda item: item[0],
+            reverse=reverse,
+        )
+    )
+
+
 def merge_hub_prices(pages: Iterable[OrderPageCache]) -> tuple[HubPrice, ...]:
+    """Merge station-scoped page depth without losing equal-price volume."""
     merged: dict[int, HubPrice] = {}
     for page in pages:
         for quote in page.quotes:
             current = merged.get(quote.type_id)
             if current is None:
-                merged[quote.type_id] = quote
-                continue
-
-            buy_price = current.best_buy_price
-            buy_volume = current.best_buy_volume
-            if quote.best_buy_price is not None:
-                if buy_price is None or quote.best_buy_price > buy_price:
-                    buy_price = quote.best_buy_price
-                    buy_volume = quote.best_buy_volume
-                elif quote.best_buy_price == buy_price:
-                    if buy_volume is None or quote.best_buy_volume is None:
-                        raise EsiPayloadError("Best-buy volume is missing")
-                    buy_volume = _checked_volume_sum(
-                        buy_volume,
-                        quote.best_buy_volume,
-                    )
-
-            sell_price = current.best_sell_price
-            sell_volume = current.best_sell_volume
-            if quote.best_sell_price is not None:
-                if sell_price is None or quote.best_sell_price < sell_price:
-                    sell_price = quote.best_sell_price
-                    sell_volume = quote.best_sell_volume
-                elif quote.best_sell_price == sell_price:
-                    if sell_volume is None or quote.best_sell_volume is None:
-                        raise EsiPayloadError("Best-sell volume is missing")
-                    sell_volume = _checked_volume_sum(
-                        sell_volume,
-                        quote.best_sell_volume,
-                    )
-
+                buy_levels = _quote_levels(quote, "buy")
+                sell_levels = _quote_levels(quote, "sell")
+            else:
+                buy_levels = _merge_levels(
+                    _quote_levels(current, "buy"),
+                    _quote_levels(quote, "buy"),
+                    reverse=True,
+                )
+                sell_levels = _merge_levels(
+                    _quote_levels(current, "sell"),
+                    _quote_levels(quote, "sell"),
+                    reverse=False,
+                )
             merged[quote.type_id] = HubPrice(
                 type_id=quote.type_id,
-                best_buy_price=buy_price,
-                best_buy_volume=buy_volume,
-                best_sell_price=sell_price,
-                best_sell_volume=sell_volume,
+                best_buy_price=buy_levels[0].price if buy_levels else None,
+                best_buy_volume=buy_levels[0].volume if buy_levels else None,
+                best_sell_price=sell_levels[0].price if sell_levels else None,
+                best_sell_volume=sell_levels[0].volume if sell_levels else None,
+                buy_levels=buy_levels,
+                sell_levels=sell_levels,
             )
     return tuple(merged[type_id] for type_id in sorted(merged))
 
@@ -253,6 +275,7 @@ class MarketCacheRefresher:
             quotes = parse_hub_order_page(
                 response.content,
                 location_id=self._location_id,
+                page=page,
             )
         return (
             OrderPageCache(
@@ -275,10 +298,7 @@ class MarketCacheRefresher:
             return
         remaining_tokens = response.rate_limit_remaining
         required_tokens = remaining_pages * 2 + 10
-        if (
-            remaining_tokens is not None
-            and remaining_tokens < required_tokens
-        ):
+        if remaining_tokens is not None and remaining_tokens < required_tokens:
             raise EsiRateLimitError()
 
     def refresh_hub_orders(self) -> RefreshResult:
@@ -295,10 +315,7 @@ class MarketCacheRefresher:
         if self._is_fresh(state) and cached_pages:
             return _fresh_result(state)
 
-        first_page, first_response = self._order_page(
-            1,
-            cached_pages.get(1),
-        )
+        first_page, first_response = self._order_page(1, cached_pages.get(1))
         page_count = first_page.page_count
         self._require_rate_budget(first_response, page_count - 1)
         pages = [first_page]
@@ -340,9 +357,7 @@ class MarketCacheRefresher:
         snapshot_metadata = CacheMetadata(
             etag=None,
             last_modified_at=(
-                next(iter(last_modified_values))
-                if last_modified_values
-                else None
+                next(iter(last_modified_values)) if last_modified_values else None
             ),
             fresh_until=min(page.metadata.fresh_until for page in pages),
             fetched_at=max(page.metadata.fetched_at for page in pages),
@@ -368,9 +383,7 @@ class MarketCacheRefresher:
         return RefreshResult(
             resource=resource_key,
             status=(
-                RefreshStatus.UPDATED
-                if changed
-                else RefreshStatus.NOT_MODIFIED
+                RefreshStatus.UPDATED if changed else RefreshStatus.NOT_MODIFIED
             ),
             row_count=len(prices),
             fresh_until=snapshot_metadata.fresh_until,
