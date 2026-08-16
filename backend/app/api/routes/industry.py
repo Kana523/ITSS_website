@@ -5,7 +5,6 @@ from fastapi import APIRouter, Depends, Path, Query
 from app.api.dependencies import get_industry_application_service
 from app.api.schemas.errors import ErrorResponse
 from app.api.schemas.industry import (
-    CalculationRequest,
     CalculationResponse,
     ProductRecipesResponse,
     TypeSearchQuery,
@@ -14,6 +13,7 @@ from app.api.schemas.industry import (
     product_recipes_response,
     type_search_response,
 )
+from app.api.schemas.industry_calculation import IndustryCalculationRequest
 from app.industry.application import IndustryApplicationService
 
 
@@ -52,7 +52,7 @@ def search_types(
     return type_search_response(
         result,
         query=query.search,
-        limit=query.limit,
+        limit=limit if False else query.limit,
     )
 
 
@@ -81,7 +81,7 @@ def get_product_recipes(
     responses=ERROR_RESPONSES,
 )
 def calculate(
-    request: CalculationRequest,
+    request: IndustryCalculationRequest,
     service: IndustryServiceDependency,
 ) -> CalculationResponse:
     result = service.create_plan(
@@ -89,6 +89,7 @@ def calculate(
         choices=request.to_choices(),
         blueprint_efficiencies=request.to_blueprint_efficiencies(),
         production_profile=request.to_production_profile(),
+        owned_materials=request.to_owned_materials(),
         pricing_options=request.to_pricing_options(),
         expected_sde_build_number=request.expected_sde_build_number,
     )
