@@ -104,6 +104,7 @@ class IndustryApplicationService:
         blueprint_efficiencies: Mapping[RecipeKey, BlueprintEfficiency] | None = None,
         production_profile: ProductionProfile | None = None,
         owned_materials: Mapping[int, int] | None = None,
+        blueprint_copy_run_limits: Mapping[RecipeKey, int] | None = None,
         pricing_options: IndustryPricingOptions | None = None,
         expected_sde_build_number: int | None = None,
     ) -> DescribedProductionPlan:
@@ -113,6 +114,7 @@ class IndustryApplicationService:
             blueprint_efficiencies=blueprint_efficiencies,
             production_profile=production_profile,
             owned_materials=owned_materials,
+            blueprint_copy_run_limits=blueprint_copy_run_limits,
             expected_sde_build_number=expected_sde_build_number,
         )
         related_type_ids = {item.type_id for item in plan.requested}
