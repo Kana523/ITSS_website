@@ -12,10 +12,12 @@ import httpx
 from app.market.domain import (
     CacheMetadata,
     HubPrice,
+    MarketPriceLevel,
     ReferencePrice,
     SystemCostIndex,
 )
 from app.market.errors import (
+    EsiOrderPayloadError,
     EsiPayloadError,
     EsiRateLimitError,
     EsiResponseError,
@@ -148,10 +150,7 @@ class EsiClient:
             == self._compatibility_date
             else None
         )
-        if (
-            revalidation_cache is not None
-            and revalidation_cache.etag is not None
-        ):
+        if revalidation_cache is not None and revalidation_cache.etag is not None:
             headers["If-None-Match"] = revalidation_cache.etag
 
         try:
@@ -174,9 +173,7 @@ class EsiClient:
                 )
             )
         if response.status_code not in (200, 304):
-            raise EsiResponseError(
-                f"ESI returned HTTP {response.status_code}"
-            )
+            raise EsiResponseError(f"ESI returned HTTP {response.status_code}")
         if response.status_code == 304 and revalidation_cache is None:
             raise EsiResponseError("ESI returned 304 without a cached response")
 
@@ -184,11 +181,7 @@ class EsiClient:
         metadata = CacheMetadata(
             etag=(
                 response.headers.get("ETag")
-                or (
-                    revalidation_cache.etag
-                    if revalidation_cache is not None
-                    else None
-                )
+                or (revalidation_cache.etag if revalidation_cache is not None else None)
             ),
             last_modified_at=(
                 _http_datetime(response.headers.get("Last-Modified"))
@@ -202,9 +195,7 @@ class EsiClient:
             fetched_at=fetched_at,
             requested_compatibility_date=self._compatibility_date,
             matched_compatibility_date=(
-                _compatibility_date(
-                    response.headers.get("X-Compatibility-Date")
-                )
+                _compatibility_date(response.headers.get("X-Compatibility-Date"))
                 or (
                     revalidation_cache.matched_compatibility_date
                     if revalidation_cache is not None
@@ -287,11 +278,7 @@ def _decimal(
     if isinstance(value, bool) or not isinstance(value, (int, Decimal)):
         raise EsiPayloadError(f"{field} must be a number")
     parsed = Decimal(value)
-    if (
-        not parsed.is_finite()
-        or parsed < 0
-        or (parsed == 0 and not allow_zero)
-    ):
+    if not parsed.is_finite() or parsed < 0 or (parsed == 0 and not allow_zero):
         qualifier = "non-negative" if allow_zero else "positive"
         raise EsiPayloadError(f"{field} must be {qualifier} and finite")
     if money and parsed != parsed.quantize(_CENT):
@@ -299,80 +286,211 @@ def _decimal(
     return parsed
 
 
+def _order_payload_error(
+    *,
+    page: int,
+    row_number: int,
+    row: Mapping[str, Any] | None,
+    field: str,
+    rejected_value: Any,
+    reason: str,
+) -> EsiOrderPayloadError:
+    order_id = row.get("order_id") if row is not None else None
+    return EsiOrderPayloadError(
+        page=page,
+        row=row_number,
+        order_id=order_id,
+        field=field,
+        rejected_value=rejected_value,
+        reason=reason,
+    )
+
+
+def _order_integer(
+    row: Mapping[str, Any],
+    field: str,
+    *,
+    page: int,
+    row_number: int,
+    maximum: int = _MAX_INT64,
+) -> int:
+    value = row.get(field)
+    try:
+        return _integer(value, field, maximum=maximum)
+    except EsiPayloadError as exc:
+        raise _order_payload_error(
+            page=page,
+            row_number=row_number,
+            row=row,
+            field=field,
+            rejected_value=value,
+            reason=str(exc),
+        ) from exc
+
+
+def _order_decimal(
+    row: Mapping[str, Any],
+    field: str,
+    *,
+    page: int,
+    row_number: int,
+) -> Decimal:
+    value = row.get(field)
+    try:
+        return _decimal(value, field, money=True)
+    except EsiPayloadError as exc:
+        raise _order_payload_error(
+            page=page,
+            row_number=row_number,
+            row=row,
+            field=field,
+            rejected_value=value,
+            reason=str(exc),
+        ) from exc
+
+
+def _checked_level_volume(
+    current: int,
+    added: int,
+    *,
+    page: int,
+    row_number: int,
+    row: Mapping[str, Any],
+) -> int:
+    total = current + added
+    if total > _MAX_INT64:
+        raise _order_payload_error(
+            page=page,
+            row_number=row_number,
+            row=row,
+            field="volume_remain",
+            rejected_value=row.get("volume_remain"),
+            reason="Aggregated market volume exceeds BIGINT",
+        )
+    return total
+
+
 def parse_hub_order_page(
     content: bytes,
     *,
     location_id: int,
+    page: int = 1,
 ) -> tuple[HubPrice, ...]:
-    quotes: dict[int, dict[str, Decimal | int | None]] = {}
+    """Parse one ESI order page into station-scoped aggregated price depth."""
+    if isinstance(page, bool) or not isinstance(page, int) or page <= 0:
+        raise ValueError("page must be a positive integer")
+
+    quotes: dict[int, dict[str, dict[Decimal, int]]] = {}
     for index, raw_row in enumerate(_json_list(content)):
-        row = _object(raw_row, f"orders[{index}]")
-        row_location_id = _integer(row.get("location_id"), "location_id")
+        row_number = index + 1
+        if not isinstance(raw_row, dict):
+            raise _order_payload_error(
+                page=page,
+                row_number=row_number,
+                row=None,
+                field="row",
+                rejected_value=raw_row,
+                reason=f"orders[{index}] must be an object",
+            )
+        row = raw_row
+        row_location_id = _order_integer(
+            row,
+            "location_id",
+            page=page,
+            row_number=row_number,
+        )
         if row_location_id != location_id:
             continue
-        type_id = _integer(
-            row.get("type_id"),
+
+        raw_volume = row.get("volume_remain")
+        # ESI may briefly expose an exhausted order while a cached page is being
+        # refreshed. Exact integer zero is a legitimate exhausted order and is
+        # ignored. Numeric-looking strings/floats and negative values remain
+        # malformed instead of being silently coerced.
+        if type(raw_volume) is int and raw_volume == 0:
+            continue
+        volume = _order_integer(
+            row,
+            "volume_remain",
+            page=page,
+            row_number=row_number,
+        )
+        type_id = _order_integer(
+            row,
             "type_id",
+            page=page,
+            row_number=row_number,
             maximum=_MAX_INT32,
         )
         is_buy_order = row.get("is_buy_order")
         if not isinstance(is_buy_order, bool):
-            raise EsiPayloadError("is_buy_order must be a boolean")
-        price = _decimal(row.get("price"), "price", money=True)
-        raw_volume = row.get("volume_remain")
-        if raw_volume == 0:
-            continue
-        volume = _integer(raw_volume, "volume_remain")
-        if is_buy_order:
-            min_volume = _integer(
-                row.get("min_volume", 1),
-                "min_volume",
+            raise _order_payload_error(
+                page=page,
+                row_number=row_number,
+                row=row,
+                field="is_buy_order",
+                rejected_value=is_buy_order,
+                reason="is_buy_order must be a boolean",
             )
-            # A minimum-volume order is not generally executable for an
-            # arbitrary shopping-list quantity. Keep the cached top buy quote
-            # conservative by considering unrestricted orders only.
+        price = _order_decimal(
+            row,
+            "price",
+            page=page,
+            row_number=row_number,
+        )
+        if is_buy_order:
+            raw_min_volume = row.get("min_volume", 1)
+            try:
+                min_volume = _integer(raw_min_volume, "min_volume")
+            except EsiPayloadError as exc:
+                raise _order_payload_error(
+                    page=page,
+                    row_number=row_number,
+                    row=row,
+                    field="min_volume",
+                    rejected_value=raw_min_volume,
+                    reason=str(exc),
+                ) from exc
             if min_volume > 1:
                 continue
-        quote = quotes.setdefault(
-            type_id,
-            {
-                "buy_price": None,
-                "buy_volume": None,
-                "sell_price": None,
-                "sell_volume": None,
-            },
-        )
-        side = "buy" if is_buy_order else "sell"
-        current_price = quote[f"{side}_price"]
-        is_better = (
-            current_price is None
-            or (is_buy_order and price > current_price)
-            or (not is_buy_order and price < current_price)
-        )
-        if is_better:
-            quote[f"{side}_price"] = price
-            quote[f"{side}_volume"] = volume
-        elif price == current_price:
-            current_volume = quote[f"{side}_volume"]
-            if not isinstance(current_volume, int):
-                raise EsiPayloadError("cached quote volume is invalid")
-            total_volume = current_volume + volume
-            if total_volume > _MAX_INT64:
-                raise EsiPayloadError(
-                    "Aggregated market volume exceeds BIGINT"
-                )
-            quote[f"{side}_volume"] = total_volume
 
-    return tuple(
-        HubPrice(
-            type_id=type_id,
-            best_buy_price=quote["buy_price"],
-            best_buy_volume=quote["buy_volume"],
-            best_sell_price=quote["sell_price"],
-            best_sell_volume=quote["sell_volume"],
+        quote = quotes.setdefault(type_id, {"buy": {}, "sell": {}})
+        side = "buy" if is_buy_order else "sell"
+        levels = quote[side]
+        levels[price] = _checked_level_volume(
+            levels.get(price, 0),
+            volume,
+            page=page,
+            row_number=row_number,
+            row=row,
         )
-        for type_id, quote in sorted(quotes.items())
-    )
+
+    result: list[HubPrice] = []
+    for type_id, quote in sorted(quotes.items()):
+        buy_levels = tuple(
+            MarketPriceLevel(price=price, volume=volume)
+            for price, volume in sorted(
+                quote["buy"].items(),
+                key=lambda item: item[0],
+                reverse=True,
+            )
+        )
+        sell_levels = tuple(
+            MarketPriceLevel(price=price, volume=volume)
+            for price, volume in sorted(quote["sell"].items(), key=lambda item: item[0])
+        )
+        result.append(
+            HubPrice(
+                type_id=type_id,
+                best_buy_price=buy_levels[0].price if buy_levels else None,
+                best_buy_volume=buy_levels[0].volume if buy_levels else None,
+                best_sell_price=sell_levels[0].price if sell_levels else None,
+                best_sell_volume=sell_levels[0].volume if sell_levels else None,
+                buy_levels=buy_levels,
+                sell_levels=sell_levels,
+            )
+        )
+    return tuple(result)
 
 
 def parse_reference_prices(content: bytes) -> tuple[ReferencePrice, ...]:
@@ -380,11 +498,7 @@ def parse_reference_prices(content: bytes) -> tuple[ReferencePrice, ...]:
     seen_type_ids: set[int] = set()
     for index, raw_row in enumerate(_json_list(content)):
         row = _object(raw_row, f"prices[{index}]")
-        type_id = _integer(
-            row.get("type_id"),
-            "type_id",
-            maximum=_MAX_INT32,
-        )
+        type_id = _integer(row.get("type_id"), "type_id", maximum=_MAX_INT32)
         if type_id in seen_type_ids:
             raise EsiPayloadError(f"duplicate reference price for type {type_id}")
         seen_type_ids.add(type_id)
@@ -427,9 +541,7 @@ def parse_system_cost_indices(content: bytes) -> tuple[SystemCostIndex, ...]:
                 f"systems[{system_index}].cost_indices[{cost_index}]",
             )
             activity = entry.get("activity")
-            if not isinstance(activity, str) or not _ACTIVITY_CODE.fullmatch(
-                activity
-            ):
+            if not isinstance(activity, str) or not _ACTIVITY_CODE.fullmatch(activity):
                 raise EsiPayloadError("activity has an invalid value")
             raw_cost_index = entry.get("cost_index")
             if isinstance(raw_cost_index, bool) or not isinstance(
@@ -439,9 +551,7 @@ def parse_system_cost_indices(content: bytes) -> tuple[SystemCostIndex, ...]:
                 raise EsiPayloadError("cost_index must be a number")
             parsed_cost_index = Decimal(raw_cost_index)
             if not parsed_cost_index.is_finite() or parsed_cost_index < 0:
-                raise EsiPayloadError(
-                    "cost_index must be non-negative and finite"
-                )
+                raise EsiPayloadError("cost_index must be non-negative and finite")
             key = (solar_system_id, activity)
             if key in seen:
                 raise EsiPayloadError(
