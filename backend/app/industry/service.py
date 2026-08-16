@@ -20,6 +20,7 @@ from app.industry.models import (
     RecipeKey,
 )
 from app.industry.planner import (
+    normalize_blueprint_copy_run_limits,
     normalize_build_choices,
     normalize_owned_materials,
     plan_production,
@@ -42,6 +43,7 @@ class IndustryPlanningService:
         blueprint_efficiencies: Mapping[RecipeKey, BlueprintEfficiency] | None = None,
         production_profile: ProductionProfile | None = None,
         owned_materials: Mapping[int, int] | None = None,
+        blueprint_copy_run_limits: Mapping[RecipeKey, int] | None = None,
         expected_sde_build_number: int | None = None,
     ) -> ProductionPlan:
         demand_tuple = tuple(demands)
@@ -58,6 +60,9 @@ class IndustryPlanningService:
             )
         choice_by_type = normalize_build_choices(choices)
         owned_by_type = normalize_owned_materials(owned_materials)
+        copy_run_limits = normalize_blueprint_copy_run_limits(
+            blueprint_copy_run_limits
+        )
 
         build_number = self._repository.latest_sde_build_number()
         if build_number is None:
@@ -101,6 +106,7 @@ class IndustryPlanningService:
                 blueprint_efficiencies,
                 production_profile,
                 owned_by_type,
+                copy_run_limits,
                 build_number,
                 root_type_ids,
             )
@@ -115,6 +121,7 @@ class IndustryPlanningService:
         blueprint_efficiencies: Mapping[RecipeKey, BlueprintEfficiency] | None,
         production_profile: ProductionProfile | None,
         owned_materials: Mapping[int, int],
+        blueprint_copy_run_limits: Mapping[RecipeKey, int],
         build_number: int,
         root_type_ids: set[int],
     ) -> ProductionPlan:
@@ -195,4 +202,5 @@ class IndustryPlanningService:
             production_profile=profile,
             product_types=product_types,
             owned_materials=owned_materials,
+            blueprint_copy_run_limits=blueprint_copy_run_limits,
         )
