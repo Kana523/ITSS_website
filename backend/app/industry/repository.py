@@ -1,7 +1,8 @@
 from collections.abc import Collection, Mapping
 from typing import Protocol
 
-from app.industry.models import IndustryRecipe, IndustryType
+from app.industry.models import IndustryRecipe, IndustryType, RecipeKey
+from app.industry.specialist_skills import SpecialistSkillRequirement
 
 
 class IndustryCatalogRepository(Protocol):
@@ -31,6 +32,11 @@ class IndustryRepository(Protocol):
         self,
         product_type_ids: Collection[int],
     ) -> Mapping[int, tuple[IndustryRecipe, ...]]: ...
+
+    def load_recipe_skill_requirements(
+        self,
+        recipe_keys: Collection[RecipeKey],
+    ) -> Mapping[RecipeKey, tuple[SpecialistSkillRequirement, ...]]: ...
 
 
 class IndustryDataRepository(
