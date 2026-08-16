@@ -27,6 +27,11 @@ from app.industry.planner import (
     resolve_recipe_choice,
 )
 from app.industry.repository import IndustryRepository
+from app.industry.specialist_skills import (
+    MissingSpecialistSkillsError,
+    SpecialistSkillRequirement,
+    normalize_specialist_skill_levels,
+)
 
 
 class IndustryPlanningService:
@@ -44,6 +49,7 @@ class IndustryPlanningService:
         production_profile: ProductionProfile | None = None,
         owned_materials: Mapping[int, int] | None = None,
         blueprint_copy_run_limits: Mapping[RecipeKey, int] | None = None,
+        specialist_skill_levels: Mapping[int, int] | None = None,
         expected_sde_build_number: int | None = None,
     ) -> ProductionPlan:
         demand_tuple = tuple(demands)
@@ -62,6 +68,10 @@ class IndustryPlanningService:
         owned_by_type = normalize_owned_materials(owned_materials)
         copy_run_limits = normalize_blueprint_copy_run_limits(
             blueprint_copy_run_limits
+        )
+        enforce_specialist_skills = specialist_skill_levels is not None
+        specialist_levels = normalize_specialist_skill_levels(
+            dict(specialist_skill_levels or {})
         )
 
         build_number = self._repository.latest_sde_build_number()
@@ -107,6 +117,8 @@ class IndustryPlanningService:
                 production_profile,
                 owned_by_type,
                 copy_run_limits,
+                specialist_levels,
+                enforce_specialist_skills,
                 build_number,
                 root_type_ids,
             )
@@ -122,6 +134,8 @@ class IndustryPlanningService:
         production_profile: ProductionProfile | None,
         owned_materials: Mapping[int, int],
         blueprint_copy_run_limits: Mapping[RecipeKey, int],
+        specialist_skill_levels: Mapping[int, int],
+        enforce_specialist_skills: bool,
         build_number: int,
         root_type_ids: set[int],
     ) -> ProductionPlan:
@@ -168,6 +182,35 @@ class IndustryPlanningService:
                     material.type_id for material in selected_recipe.materials
                 )
             frontier = next_frontier
+
+        if enforce_specialist_skills and recipes_by_key:
+            skill_loader = getattr(
+                self._repository,
+                "load_recipe_skill_requirements",
+                None,
+            )
+            requirements_by_recipe: Mapping[
+                RecipeKey, tuple[SpecialistSkillRequirement, ...]
+            ] = (
+                skill_loader(tuple(recipes_by_key))
+                if callable(skill_loader)
+                else {}
+            )
+            missing: list[
+                tuple[RecipeKey, SpecialistSkillRequirement, int]
+            ] = []
+            for recipe_key in sorted(recipes_by_key):
+                for requirement in requirements_by_recipe.get(recipe_key, ()):
+                    current_level = specialist_skill_levels.get(
+                        requirement.type_id,
+                        0,
+                    )
+                    if current_level < requirement.level:
+                        missing.append(
+                            (recipe_key, requirement, current_level)
+                        )
+            if missing:
+                raise MissingSpecialistSkillsError(tuple(missing))
 
         profile = production_profile or ProductionProfile()
         scoped_rig_product_type_ids = {
