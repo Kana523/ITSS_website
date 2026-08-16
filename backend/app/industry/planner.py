@@ -26,11 +26,11 @@ from app.industry.models import (
     ItemQuantity,
     MAX_SAFE_INTEGER,
     ProductionPlan,
+    ProductionProfile,
     ProductionStep,
     PurchaseReason,
     PurchaseRequirement,
     RecipeKey,
-    ProductionProfile,
 )
 
 
@@ -45,12 +45,7 @@ def _ceil_fraction(value: Fraction) -> int:
 
 
 def _job_run_chunks(runs: int, max_runs_per_job: int | None) -> tuple[int, ...]:
-    """Split a run count into legal BPC-sized jobs.
-
-    ``maxProductionLimit`` is the maximum licensed run count available on a
-    blueprint copy. BPO-backed jobs have no copy-run limit represented here.
-    Splitting also matters for material rounding because EVE rounds each job.
-    """
+    """Split only jobs explicitly backed by a limited-run blueprint copy."""
     if max_runs_per_job is None or runs <= max_runs_per_job:
         return (runs,)
     full_jobs, remainder = divmod(runs, max_runs_per_job)
@@ -104,7 +99,7 @@ def _resolve_production_modifiers(
         )
     if scoped_rig_rules and product_type is None:
         raise InvalidIndustryDataError(
-            f"Product metadata is required to resolve rig modifiers for type "
+            "Product metadata is required to resolve rig modifiers for type "
             f"{product_type_id}"
         )
 
@@ -138,14 +133,10 @@ def _resolve_production_modifiers(
         activity=recipe.activity,
         skills=production_profile.skills,
         facility_material_reduction_basis_points=(
-            facility.material_reduction_basis_points
-            if facility is not None
-            else 0
+            facility.material_reduction_basis_points if facility is not None else 0
         ),
         facility_time_reduction_basis_points=(
-            facility.time_reduction_basis_points
-            if facility is not None
-            else 0
+            facility.time_reduction_basis_points if facility is not None else 0
         ),
         rig_material_reduction_basis_points=(
             material_rig_rules[0].material_reduction_basis_points
@@ -165,7 +156,6 @@ def _index_recipes(
 ) -> dict[int, tuple[IndustryRecipe, ...]]:
     recipes_by_key: dict[RecipeKey, IndustryRecipe] = {}
     recipes_by_product: dict[int, list[IndustryRecipe]] = defaultdict(list)
-
     for recipe in recipes:
         if recipe.key in recipes_by_key:
             raise InvalidIndustryDataError(
@@ -174,7 +164,6 @@ def _index_recipes(
         recipes_by_key[recipe.key] = recipe
         for product in recipe.products:
             recipes_by_product[product.type_id].append(recipe)
-
     return {
         product_type_id: tuple(sorted(candidates, key=lambda recipe: recipe.key))
         for product_type_id, candidates in recipes_by_product.items()
@@ -190,10 +179,8 @@ def _aggregate_demands(
             quantities[demand.type_id] + demand.quantity,
             f"Requested quantity for type {demand.type_id}",
         )
-
     if not quantities:
         raise InvalidIndustryDataError("At least one production demand is required")
-
     return tuple(
         ItemQuantity(type_id=type_id, quantity=quantity)
         for type_id, quantity in sorted(quantities.items())
@@ -221,6 +208,34 @@ def normalize_owned_materials(
         if quantity:
             normalized[type_id] = quantity
     return {type_id: normalized[type_id] for type_id in sorted(normalized)}
+
+
+def normalize_blueprint_copy_run_limits(
+    run_limits: Mapping[RecipeKey, int] | None,
+) -> dict[RecipeKey, int]:
+    normalized: dict[RecipeKey, int] = {}
+    for recipe_key, run_limit in (run_limits or {}).items():
+        if not isinstance(recipe_key, RecipeKey):
+            raise InvalidIndustryDataError(
+                "Blueprint copy run-limit keys must be RecipeKey values"
+            )
+        if (
+            isinstance(run_limit, bool)
+            or not isinstance(run_limit, int)
+            or run_limit <= 0
+        ):
+            raise InvalidIndustryDataError(
+                f"Blueprint copy run limit for {recipe_key} must be a positive integer"
+            )
+        _require_safe_integer(
+            run_limit,
+            f"Blueprint copy run limit for {recipe_key}",
+        )
+        normalized[recipe_key] = run_limit
+    return {
+        recipe_key: normalized[recipe_key]
+        for recipe_key in sorted(normalized)
+    }
 
 
 def normalize_build_choices(
@@ -251,8 +266,7 @@ def normalize_blueprint_efficiencies(
             )
         if not isinstance(efficiency, BlueprintEfficiency):
             raise InvalidIndustryDataError(
-                f"Blueprint efficiency for {recipe_key} must be a "
-                "BlueprintEfficiency"
+                f"Blueprint efficiency for {recipe_key} must be a BlueprintEfficiency"
             )
         normalized[recipe_key] = efficiency
     return {
@@ -272,21 +286,15 @@ def resolve_recipe_choice(
             raise InvalidIndustryDataError(
                 f"Recipe {candidate.key} does not produce type {product_type_id}"
             )
-
     if choice.decision == BuildDecision.BUY:
         return None
     if not candidates:
         if choice.decision == BuildDecision.BUILD:
             raise MissingRecipeError(product_type_id)
         return None
-
     if choice.recipe_key is not None:
         selected = next(
-            (
-                candidate
-                for candidate in candidates
-                if candidate.key == choice.recipe_key
-            ),
+            (candidate for candidate in candidates if candidate.key == choice.recipe_key),
             None,
         )
         if selected is None:
@@ -298,7 +306,6 @@ def resolve_recipe_choice(
         )
     else:
         selected = candidates[0]
-
     if len(selected.products) != 1:
         raise UnsupportedCoProductsError(selected.key)
     return selected
@@ -314,6 +321,7 @@ def plan_production(
     production_profile: ProductionProfile | None = None,
     product_types: Mapping[int, IndustryType] | None = None,
     owned_materials: Mapping[int, int] | None = None,
+    blueprint_copy_run_limits: Mapping[RecipeKey, int] | None = None,
 ) -> ProductionPlan:
     """Create a deterministic production plan without database access."""
     if (
@@ -329,6 +337,9 @@ def plan_production(
     recipes_by_product = _index_recipes(recipes)
     choice_by_type = normalize_build_choices(choices)
     owned_remaining = normalize_owned_materials(owned_materials)
+    copy_run_limit_by_recipe = normalize_blueprint_copy_run_limits(
+        blueprint_copy_run_limits
+    )
     efficiency_by_recipe = normalize_blueprint_efficiencies(
         blueprint_efficiencies
     )
@@ -355,7 +366,6 @@ def plan_production(
             raise RecipeCycleError(
                 tuple(active_path[cycle_start:] + [product_type_id])
             )
-
         visit_state[product_type_id] = 1
         active_path.append(product_type_id)
         choice = choice_by_type.get(product_type_id, BuildChoice())
@@ -379,20 +389,24 @@ def plan_production(
     for demand in requested:
         visit(demand.type_id)
 
-    unused_choice_type_ids = tuple(
-        sorted(set(choice_by_type) - set(visit_state))
-    )
+    unused_choice_type_ids = tuple(sorted(set(choice_by_type) - set(visit_state)))
     if unused_choice_type_ids:
         raise UnusedBuildChoicesError(unused_choice_type_ids)
 
-    selected_recipe_keys = {
-        recipe.key for recipe in selected_recipes.values()
-    }
+    selected_recipe_keys = {recipe.key for recipe in selected_recipes.values()}
     unused_efficiency_keys = tuple(
         sorted(set(efficiency_by_recipe) - selected_recipe_keys)
     )
     if unused_efficiency_keys:
         raise UnusedBlueprintEfficienciesError(unused_efficiency_keys)
+    unused_copy_limit_keys = tuple(
+        sorted(set(copy_run_limit_by_recipe) - selected_recipe_keys)
+    )
+    if unused_copy_limit_keys:
+        raise InvalidIndustryDataError(
+            "Blueprint copy run limit references unused recipe(s): "
+            + ", ".join(str(key) for key in unused_copy_limit_keys)
+        )
 
     for recipe in selected_recipes.values():
         if (
@@ -403,6 +417,20 @@ def plan_production(
                 recipe.key,
                 recipe.activity,
             )
+        copy_run_limit = copy_run_limit_by_recipe.get(recipe.key)
+        if copy_run_limit is not None:
+            if recipe.activity != ActivityKind.MANUFACTURING:
+                raise InvalidIndustryDataError(
+                    f"Blueprint copy run limits only apply to manufacturing: {recipe.key}"
+                )
+            if (
+                recipe.max_production_limit is not None
+                and copy_run_limit > recipe.max_production_limit
+            ):
+                raise InvalidIndustryDataError(
+                    f"Blueprint copy run limit {copy_run_limit} exceeds SDE maximum "
+                    f"{recipe.max_production_limit} for {recipe.key}"
+                )
 
     required_quantities: dict[int, int] = defaultdict(int)
     for demand in requested:
@@ -431,7 +459,6 @@ def plan_production(
             raise InvalidIndustryDataError(
                 f"Recipe {recipe.key} does not contain product {product_type_id}"
             )
-
         _require_safe_integer(
             output_per_run,
             f"Output per run for type {product_type_id}",
@@ -470,8 +497,7 @@ def plan_production(
             else Fraction(1)
         )
         material_multiplier = (
-            blueprint_material_multiplier
-            * production_modifiers.material_multiplier
+            blueprint_material_multiplier * production_modifiers.material_multiplier
         )
         exact_job_time_seconds = (
             Fraction(base_total_job_time_seconds)
@@ -484,7 +510,7 @@ def plan_production(
                 material.quantity,
                 runs,
                 material_multiplier,
-                max_runs_per_job=recipe.max_production_limit,
+                max_runs_per_job=copy_run_limit_by_recipe.get(recipe.key),
             )
             inputs_list.append(
                 ItemQuantity(
