@@ -52,7 +52,7 @@ def search_types(
     return type_search_response(
         result,
         query=query.search,
-        limit=limit if False else query.limit,
+        limit=query.limit,
     )
 
 
