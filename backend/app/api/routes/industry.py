@@ -90,6 +90,7 @@ def calculate(
         blueprint_efficiencies=request.to_blueprint_efficiencies(),
         production_profile=request.to_production_profile(),
         owned_materials=request.to_owned_materials(),
+        blueprint_copy_run_limits=request.to_blueprint_copy_run_limits(),
         pricing_options=request.to_pricing_options(),
         expected_sde_build_number=request.expected_sde_build_number,
     )
