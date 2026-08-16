@@ -17,6 +17,7 @@ from app.market.db_models import (
 from app.market.domain import (
     CacheMetadata,
     HubPrice,
+    MarketPriceLevel,
     OrderPageCache,
     ReferencePrice,
     ResourceState,
@@ -46,31 +47,42 @@ def _state_values(state: ResourceState) -> dict:
         "last_modified_at": state.metadata.last_modified_at,
         "fresh_until": state.metadata.fresh_until,
         "fetched_at": state.metadata.fetched_at,
-        "requested_compatibility_date": (
-            state.metadata.requested_compatibility_date
-        ),
-        "matched_compatibility_date": (
-            state.metadata.matched_compatibility_date
-        ),
+        "requested_compatibility_date": state.metadata.requested_compatibility_date,
+        "matched_compatibility_date": state.metadata.matched_compatibility_date,
         "row_count": state.row_count,
     }
+
+
+def _level_values(levels: tuple[MarketPriceLevel, ...]) -> list[dict]:
+    return [
+        {"price": str(level.price), "volume": level.volume}
+        for level in levels
+    ]
+
+
+def _levels(rows: list[dict] | None) -> tuple[MarketPriceLevel, ...]:
+    return tuple(
+        MarketPriceLevel(
+            price=Decimal(row["price"]),
+            volume=int(row["volume"]),
+        )
+        for row in (rows or [])
+    )
 
 
 def _page_quote_values(quote: HubPrice) -> dict:
     return {
         "type_id": quote.type_id,
         "best_buy_price": (
-            str(quote.best_buy_price)
-            if quote.best_buy_price is not None
-            else None
+            str(quote.best_buy_price) if quote.best_buy_price is not None else None
         ),
         "best_buy_volume": quote.best_buy_volume,
         "best_sell_price": (
-            str(quote.best_sell_price)
-            if quote.best_sell_price is not None
-            else None
+            str(quote.best_sell_price) if quote.best_sell_price is not None else None
         ),
         "best_sell_volume": quote.best_sell_volume,
+        "buy_levels": _level_values(quote.buy_levels),
+        "sell_levels": _level_values(quote.sell_levels),
     }
 
 
@@ -89,6 +101,8 @@ def _page_quote(row: dict) -> HubPrice:
             else None
         ),
         best_sell_volume=row["best_sell_volume"],
+        buy_levels=_levels(row.get("buy_levels")),
+        sell_levels=_levels(row.get("sell_levels")),
     )
 
 
@@ -248,6 +262,8 @@ class SqlAlchemyMarketCacheRepository:
                     "best_buy_volume": price.best_buy_volume,
                     "best_sell_price": price.best_sell_price,
                     "best_sell_volume": price.best_sell_volume,
+                    "buy_levels": _level_values(price.buy_levels),
+                    "sell_levels": _level_values(price.sell_levels),
                 }
                 for price in prices
             ]
@@ -331,6 +347,8 @@ class SqlAlchemyMarketCacheRepository:
                 best_buy_volume=row.best_buy_volume,
                 best_sell_price=row.best_sell_price,
                 best_sell_volume=row.best_sell_volume,
+                buy_levels=_levels(row.buy_levels),
+                sell_levels=_levels(row.sell_levels),
             )
             for row in rows
         }
