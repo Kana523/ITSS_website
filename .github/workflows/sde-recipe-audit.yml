@@ -15,15 +15,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - name: Scan latest CCP SDE
         shell: python
         run: |
-          import io
-          import json
-          import os
-          import urllib.request
-          import zipfile
+          import io, json, os, urllib.request, zipfile
           from pathlib import Path, PurePosixPath
 
           url = "https://developers.eveonline.com/static-data/eve-online-static-data-latest-jsonl.zip"
@@ -32,32 +27,22 @@ jobs:
               resolved_url = response.geturl()
 
           with zipfile.ZipFile(io.BytesIO(payload)) as archive:
-              names = archive.namelist()
-              member = lambda filename: next(
-                  name for name in names if PurePosixPath(name).name == filename
-              )
-              blueprint_name = member("blueprints.jsonl")
-              type_name = member("types.jsonl")
-              meta_name = next(
-                  (name for name in names if PurePosixPath(name).name == "_sde.jsonl"),
-                  None,
-              )
-
-              type_info = {}
-              with archive.open(type_name) as stream:
+              members = {PurePosixPath(n).name: n for n in archive.namelist()}
+              types = {}
+              with archive.open(members["types.jsonl"]) as stream:
                   for raw in stream:
                       row = json.loads(raw)
                       name = row.get("name")
                       if isinstance(name, dict):
                           name = name.get("en")
-                      type_info[row["_key"]] = {
+                      types[row["_key"]] = {
                           "name": name if isinstance(name, str) else None,
                           "published": row.get("published") is True,
                       }
 
               build_number = None
-              if meta_name:
-                  with archive.open(meta_name) as stream:
+              if "_sde.jsonl" in members:
+                  with archive.open(members["_sde.jsonl"]) as stream:
                       for raw in stream:
                           row = json.loads(raw)
                           if row.get("_key") == "sde":
@@ -66,83 +51,66 @@ jobs:
                                   build_number = value.get("buildNumber")
                               break
 
-              def blank_counts():
-                  return {
-                      activity: {
-                          "recipes": 0,
-                          "multi_product": 0,
-                          "self_dependent": 0,
-                      }
-                      for activity in ("manufacturing", "reaction")
-                  }
-
-              all_counts = blank_counts()
-              imported_counts = blank_counts()
+              activities = ("manufacturing", "reaction")
+              all_counts = {a: {"recipes": 0, "multi_product": 0, "self_dependent": 0, "identity_self_dependent": 0} for a in activities}
+              imported_counts = {a: {"recipes": 0, "multi_product": 0, "self_dependent": 0, "identity_self_dependent": 0} for a in activities}
               multi_product = []
               self_dependent = []
+              imported_non_identity = []
 
-              with archive.open(blueprint_name) as stream:
+              with archive.open(members["blueprints.jsonl"]) as stream:
                   for raw in stream:
                       row = json.loads(raw)
-                      blueprint_type_id = row["_key"]
-                      blueprint = type_info.get(
-                          blueprint_type_id,
-                          {"name": None, "published": False},
-                      )
-                      for activity_name in ("manufacturing", "reaction"):
+                      bp_id = row["_key"]
+                      bp = types.get(bp_id, {"name": None, "published": False})
+                      for activity_name in activities:
                           activity = row.get("activities", {}).get(activity_name)
                           if not isinstance(activity, dict):
                               continue
-
                           all_counts[activity_name]["recipes"] += 1
-                          if blueprint["published"]:
+                          if bp["published"]:
                               imported_counts[activity_name]["recipes"] += 1
 
                           products = activity.get("products", []) or []
                           materials = activity.get("materials", []) or []
-                          product_ids = {item["typeID"] for item in products}
-                          material_ids = {item["typeID"] for item in materials}
-
                           if len(products) > 1:
                               all_counts[activity_name]["multi_product"] += 1
-                              if blueprint["published"]:
+                              if bp["published"]:
                                   imported_counts[activity_name]["multi_product"] += 1
-                              multi_product.append({
-                                  "activity": activity_name,
-                                  "blueprint_type_id": blueprint_type_id,
-                                  "blueprint_name": blueprint["name"],
-                                  "blueprint_published": blueprint["published"],
-                                  "products": products,
-                              })
+                              multi_product.append({"activity": activity_name, "blueprint_type_id": bp_id, "blueprint_name": bp["name"], "blueprint_published": bp["published"]})
 
+                          product_ids = {x["typeID"] for x in products}
+                          material_ids = {x["typeID"] for x in materials}
                           shared = sorted(product_ids & material_ids)
-                          if shared:
-                              all_counts[activity_name]["self_dependent"] += 1
-                              if blueprint["published"]:
-                                  imported_counts[activity_name]["self_dependent"] += 1
-                              self_dependent.append({
-                                  "activity": activity_name,
-                                  "blueprint_type_id": blueprint_type_id,
-                                  "blueprint_name": blueprint["name"],
-                                  "blueprint_published": blueprint["published"],
-                                  "materials": [
-                                      {
-                                          **item,
-                                          "name": type_info.get(item["typeID"], {}).get("name"),
-                                          "published": type_info.get(item["typeID"], {}).get("published"),
-                                      }
-                                      for item in materials
-                                  ],
-                                  "products": [
-                                      {
-                                          **item,
-                                          "name": type_info.get(item["typeID"], {}).get("name"),
-                                          "published": type_info.get(item["typeID"], {}).get("published"),
-                                      }
-                                      for item in products
-                                  ],
-                                  "shared_type_ids": shared,
-                              })
+                          if not shared:
+                              continue
+
+                          identity = (
+                              len(materials) == 1
+                              and len(products) == 1
+                              and materials[0]["typeID"] == products[0]["typeID"]
+                              and materials[0]["quantity"] == products[0]["quantity"]
+                          )
+                          all_counts[activity_name]["self_dependent"] += 1
+                          if identity:
+                              all_counts[activity_name]["identity_self_dependent"] += 1
+                          if bp["published"]:
+                              imported_counts[activity_name]["self_dependent"] += 1
+                              if identity:
+                                  imported_counts[activity_name]["identity_self_dependent"] += 1
+
+                          detail = {
+                              "activity": activity_name,
+                              "blueprint_type_id": bp_id,
+                              "blueprint_name": bp["name"],
+                              "blueprint_published": bp["published"],
+                              "identity_recipe": identity,
+                              "materials": [{**x, "name": types.get(x["typeID"], {}).get("name")} for x in materials],
+                              "products": [{**x, "name": types.get(x["typeID"], {}).get("name")} for x in products],
+                          }
+                          self_dependent.append(detail)
+                          if bp["published"] and not identity:
+                              imported_non_identity.append(detail)
 
           result = {
               "source_url": resolved_url,
@@ -150,19 +118,15 @@ jobs:
               "all_sde_counts": all_counts,
               "calculator_import_counts": imported_counts,
               "multi_product_recipes": multi_product,
+              "calculator_non_identity_self_dependent_recipes": imported_non_identity,
               "self_dependent_recipes": self_dependent,
           }
-          output_path = Path(".github/audits/sde-recipe-audit.json")
-          output_path.parent.mkdir(parents=True, exist_ok=True)
-          output_path.write_text(
-              json.dumps(result, indent=2, sort_keys=True) + "\n",
-              encoding="utf-8",
-          )
+          out = Path(".github/audits/sde-recipe-audit.json")
+          out.parent.mkdir(parents=True, exist_ok=True)
+          out.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
           print(json.dumps(result, indent=2, sort_keys=True))
-          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
-              summary.write("## SDE recipe audit\n\n```json\n")
-              summary.write(json.dumps(result, indent=2, sort_keys=True))
-              summary.write("\n```\n")
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as f:
+              f.write("## SDE recipe audit\n\n```json\n" + json.dumps(result, indent=2, sort_keys=True) + "\n```\n")
 
       - name: Persist audit result
         shell: bash
@@ -170,8 +134,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add .github/audits/sde-recipe-audit.json
-          if git diff --cached --quiet; then
-            exit 0
-          fi
+          if git diff --cached --quiet; then exit 0; fi
           git commit -m "Record live SDE recipe audit"
           git push
