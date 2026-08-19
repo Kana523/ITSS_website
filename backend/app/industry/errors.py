@@ -183,10 +183,20 @@ class RecipeCycleError(IndustryPlanningError):
         super().__init__(f"Production cycle detected: {joined_path}")
 
 
+class UnsupportedSelfDependentRecipeError(IndustryPlanningError):
+    def __init__(self, recipe_key: RecipeKey, product_type_id: int) -> None:
+        self.recipe_key = recipe_key
+        self.product_type_id = product_type_id
+        super().__init__(
+            f"Recipe {recipe_key} consumes its own product type {product_type_id}; "
+            "this self-dependent blueprint is not supported"
+        )
+
+
 class UnsupportedCoProductsError(IndustryPlanningError):
     def __init__(self, recipe_key: RecipeKey) -> None:
         self.recipe_key = recipe_key
         super().__init__(
             f"Recipe {recipe_key} has multiple products; co-product planning is "
-            "not supported yet"
+            "not supported"
         )

@@ -14,6 +14,7 @@ from app.industry.errors import (
     UnusedBlueprintEfficienciesError,
     UnusedBuildChoicesError,
     UnsupportedCoProductsError,
+    UnsupportedSelfDependentRecipeError,
 )
 from app.industry.models import (
     ActivityKind,
@@ -308,6 +309,8 @@ def resolve_recipe_choice(
         selected = candidates[0]
     if len(selected.products) != 1:
         raise UnsupportedCoProductsError(selected.key)
+    if any(material.type_id == product_type_id for material in selected.materials):
+        raise UnsupportedSelfDependentRecipeError(selected.key, product_type_id)
     return selected
 
 

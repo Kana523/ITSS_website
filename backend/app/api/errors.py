@@ -30,6 +30,7 @@ from app.industry.errors import (
     UnusedBlueprintEfficienciesError,
     UnusedBuildChoicesError,
     UnsupportedCoProductsError,
+    UnsupportedSelfDependentRecipeError,
 )
 from app.industry.valuation import InvalidValuationDataError
 
@@ -138,6 +139,20 @@ async def industry_error_handler(
         return _error_response(
             status.HTTP_409_CONFLICT,
             "invalid_recipe_choice",
+            str(exc),
+            {
+                "product_type_id": exc.product_type_id,
+                "recipe_key": {
+                    "blueprint_type_id": exc.recipe_key.blueprint_type_id,
+                    "activity_id": exc.recipe_key.activity_id,
+                },
+            },
+            sde_build_number=exc.sde_build_number,
+        )
+    if isinstance(exc, UnsupportedSelfDependentRecipeError):
+        return _error_response(
+            status.HTTP_409_CONFLICT,
+            "unsupported_self_dependent_recipe",
             str(exc),
             {
                 "product_type_id": exc.product_type_id,
