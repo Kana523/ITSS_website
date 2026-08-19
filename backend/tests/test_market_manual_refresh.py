@@ -1,12 +1,12 @@
 from contextlib import contextmanager
 from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
+from pathlib import Path
 
 import httpx
 from fastapi.testclient import TestClient
 
 from app.api.dependencies import get_market_application_service
-from app.config import get_settings
 from app.market.application import (
     JitaRefreshView,
     JitaSnapshotStatus,
@@ -192,11 +192,11 @@ def test_market_api_exposes_status_and_explicit_refresh() -> None:
 
 
 def test_market_frontend_refreshes_only_on_page_load_or_button() -> None:
-    root = get_settings().model_config.get("env_file").parent.parent
-    loader = (root.parent / "assets" / "js" / "industry.js").read_text(
+    root = Path(__file__).resolve().parents[2]
+    loader = (root / "assets" / "js" / "industry.js").read_text(
         encoding="utf-8"
     )
-    script = (root.parent / "assets" / "js" / "industry-market.js").read_text(
+    script = (root / "assets" / "js" / "industry-market.js").read_text(
         encoding="utf-8"
     )
 
