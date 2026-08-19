@@ -19,6 +19,7 @@ from app.industry.models import (
     RecipeKey,
 )
 from app.industry.views import DescribedProductionPlan
+from tests.test_industry_api import api_client  # noqa: F401
 
 
 def _result(activity: ActivityKind) -> DescribedProductionPlan:
