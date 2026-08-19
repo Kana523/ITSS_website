@@ -12,6 +12,12 @@
     const implants = document.createElement("script");
     implants.src = new URL("industry-implants.js", baseUrl).href;
     implants.async = false;
+    implants.addEventListener("load", () => {
+      const market = document.createElement("script");
+      market.src = new URL("industry-market.js", baseUrl).href;
+      market.async = false;
+      document.head.append(market);
+    });
     document.head.append(implants);
   });
   document.head.append(core);
