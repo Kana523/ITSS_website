@@ -5,16 +5,19 @@ from fastapi import APIRouter, Depends, Path, Query
 from app.api.dependencies import get_industry_application_service
 from app.api.schemas.errors import ErrorResponse
 from app.api.schemas.industry import (
-    CalculationResponse,
     ProductRecipesResponse,
     TypeSearchQuery,
     TypeSearchResponse,
-    calculation_response,
     product_recipes_response,
     type_search_response,
 )
-from app.api.schemas.industry_calculation import IndustryCalculationRequest
+from app.api.schemas.industry_calculation import (
+    IndustryCalculationRequest,
+    IndustryCalculationResponse,
+    industry_calculation_response,
+)
 from app.industry.application import IndustryApplicationService
+from app.industry.implants import apply_manufacturing_time_implant
 
 
 router = APIRouter(prefix="/api/industry", tags=["industry"])
@@ -77,13 +80,14 @@ def get_product_recipes(
 
 @router.post(
     "/calculate",
-    response_model=CalculationResponse,
+    response_model=IndustryCalculationResponse,
     responses=ERROR_RESPONSES,
 )
 def calculate(
     request: IndustryCalculationRequest,
     service: IndustryServiceDependency,
-) -> CalculationResponse:
+) -> IndustryCalculationResponse:
+    implant = request.to_manufacturing_time_implant()
     result = service.create_plan(
         request.to_demands(),
         choices=request.to_choices(),
@@ -95,4 +99,5 @@ def calculate(
         pricing_options=request.to_pricing_options(),
         expected_sde_build_number=request.expected_sde_build_number,
     )
-    return calculation_response(result)
+    result = apply_manufacturing_time_implant(result, implant)
+    return industry_calculation_response(result, implant)
