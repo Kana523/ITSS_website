@@ -1,17 +1,23 @@
-from typing import Annotated, Self
+from fractions import Fraction
+from typing import Annotated, Literal, Self
 
 from pydantic import Field, model_validator
 
 from app.api.schemas.industry import (
     ApiModel,
     CalculationRequest,
+    CalculationResponse,
     ItemQuantityRequest,
+    ProductionProfileRequest,
     Quantity,
     RecipeKeyRequest,
     SkillLevel,
     TypeId,
+    calculation_response,
 )
+from app.industry.implants import ManufacturingTimeImplant
 from app.industry.models import RecipeKey
+from app.industry.views import DescribedProductionPlan
 
 
 class BlueprintCopyRunLimitRequest(ApiModel):
@@ -27,9 +33,36 @@ class SpecialistSkillLevelRequest(ApiModel):
     level: SkillLevel
 
 
+class ImplantProductionProfileRequest(ProductionProfileRequest):
+    """Production profile with the supported manufacturing-time hardwiring."""
+
+    manufacturing_time_implant: ManufacturingTimeImplant | None = None
+
+
+AppliedModifier = Literal[
+    "blueprint_material_efficiency",
+    "blueprint_time_efficiency",
+    "industry_skill_time",
+    "advanced_industry_skill_time",
+    "reactions_skill_time",
+    "manufacturing_implant_time",
+    "facility_material_efficiency",
+    "facility_time_efficiency",
+    "rig_material_efficiency",
+    "rig_time_efficiency",
+]
+
+
+class IndustryCalculationResponse(CalculationResponse):
+    """Calculation response with the additive implant modifier label."""
+
+    applied_modifiers: tuple[AppliedModifier, ...]
+
+
 class IndustryCalculationRequest(CalculationRequest):
     """Backward-compatible calculation request with additive planner inputs."""
 
+    production_profile: ImplantProductionProfileRequest | None = None
     owned_materials: Annotated[
         list[ItemQuantityRequest],
         Field(max_length=500),
@@ -85,3 +118,62 @@ class IndustryCalculationRequest(CalculationRequest):
             item.type_id: item.level
             for item in self.specialist_skills
         }
+
+    def to_manufacturing_time_implant(self) -> ManufacturingTimeImplant | None:
+        if self.production_profile is None:
+            return None
+        return self.production_profile.manufacturing_time_implant
+
+
+def _multiply_fraction_payload(
+    payload: dict[str, str],
+    multiplier: Fraction,
+) -> dict[str, str]:
+    value = Fraction(int(payload["numerator"]), int(payload["denominator"]))
+    value *= multiplier
+    return {
+        "numerator": str(value.numerator),
+        "denominator": str(value.denominator),
+    }
+
+
+def industry_calculation_response(
+    result: DescribedProductionPlan,
+    implant: ManufacturingTimeImplant | None,
+) -> IndustryCalculationResponse:
+    """Build the stable calculation response plus implant-specific metadata."""
+    base = calculation_response(result)
+    payload = base.model_dump(mode="python")
+
+    if implant is None:
+        return IndustryCalculationResponse.model_validate(payload)
+
+    multiplier = implant.time_multiplier
+    labels = list(payload["applied_modifiers"])
+    if any(step["activity"] == "manufacturing" for step in payload["build_steps"]):
+        insert_at = next(
+            (
+                index
+                for index, label in enumerate(labels)
+                if label.startswith("facility_") or label.startswith("rig_")
+            ),
+            len(labels),
+        )
+        labels.insert(insert_at, "manufacturing_implant_time")
+        payload["applied_modifiers"] = tuple(labels)
+
+        for step in payload["build_steps"]:
+            if step["activity"] != "manufacturing":
+                continue
+            modifiers = step["production_modifiers"]
+            modifiers["time_multiplier"] = _multiply_fraction_payload(
+                modifiers["time_multiplier"],
+                multiplier,
+            )
+
+    payload["excluded_modifiers"] = tuple(
+        modifier
+        for modifier in payload["excluded_modifiers"]
+        if modifier != "character_implants"
+    )
+    return IndustryCalculationResponse.model_validate(payload)
