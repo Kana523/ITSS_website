@@ -1,10 +1,13 @@
 from dataclasses import dataclass
+from collections.abc import Mapping
 
 from app.industry.errors import IndustryPlanningError, InvalidIndustryDataError
-from app.industry.models import RecipeKey
+from app.industry.models import CharacterIndustrySkills, RecipeKey
 
 
 MAX_SKILL_LEVEL = 5
+INDUSTRY_SKILL_TYPE_ID = 3380
+REACTIONS_SKILL_TYPE_ID = 45746
 
 
 @dataclass(frozen=True, slots=True, order=True)
@@ -42,7 +45,9 @@ class MissingSpecialistSkillsError(IndustryPlanningError):
             f"{current_level}/{requirement.level}"
             for recipe_key, requirement, current_level in missing
         )
-        super().__init__(f"Blueprint specialist skill requirements are not met: {details}")
+        super().__init__(
+            f"Blueprint specialist skill requirements are not met: {details}"
+        )
 
 
 def normalize_specialist_skill_levels(
@@ -68,3 +73,22 @@ def normalize_specialist_skill_levels(
             )
         normalized[type_id] = level
     return dict(sorted(normalized.items()))
+
+
+def effective_required_skill_level(
+    type_id: int,
+    specialist_skill_levels: Mapping[int, int],
+    generic_skills: CharacterIndustrySkills,
+) -> int:
+    """Resolve one SDE activity requirement from the request's skill inputs.
+
+    Industry and Reactions already have dedicated fields in ProductionProfile.
+    Accepting the maximum also preserves compatibility if an older client sends
+    either of those type IDs through the additive specialist skill list.
+    """
+    level = specialist_skill_levels.get(type_id, 0)
+    if type_id == INDUSTRY_SKILL_TYPE_ID:
+        return max(level, generic_skills.industry_level)
+    if type_id == REACTIONS_SKILL_TYPE_ID:
+        return max(level, generic_skills.reactions_level)
+    return level
