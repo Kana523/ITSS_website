@@ -1,0 +1,79 @@
+name: Apply Legacy Recipe Rejection Guard
+
+on:
+  push:
+    branches: [indy-calc]
+    paths:
+      - ".github/workflows/apply-legacy-recipe-rejection.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Patch planner and tests
+        shell: python
+        run: |
+          from pathlib import Path
+
+          def replace_once(path: str, old: str, new: str) -> None:
+              p = Path(path)
+              text = p.read_text(encoding="utf-8")
+              if old not in text:
+                  raise SystemExit(f"Expected patch target not found in {path}: {old[:80]!r}")
+              p.write_text(text.replace(old, new, 1), encoding="utf-8")
+
+          replace_once(
+              "backend/app/industry/errors.py",
+              '''class UnsupportedCoProductsError(IndustryPlanningError):\n    def __init__(self, recipe_key: RecipeKey) -> None:\n        self.recipe_key = recipe_key\n        super().__init__(\n            f"Recipe {recipe_key} has multiple products; co-product planning is "\n            "not supported yet"\n        )\n''',
+              '''class UnsupportedSelfDependentRecipeError(IndustryPlanningError):\n    def __init__(self, recipe_key: RecipeKey, product_type_id: int) -> None:\n        self.recipe_key = recipe_key\n        self.product_type_id = product_type_id\n        super().__init__(\n            f"Recipe {recipe_key} consumes its own product type {product_type_id}; "\n            "this self-dependent blueprint is not supported"\n        )\n\n\nclass UnsupportedCoProductsError(IndustryPlanningError):\n    def __init__(self, recipe_key: RecipeKey) -> None:\n        self.recipe_key = recipe_key\n        super().__init__(\n            f"Recipe {recipe_key} has multiple products; co-product planning is "\n            "not supported"\n        )\n''',
+          )
+
+          replace_once(
+              "backend/app/industry/planner.py",
+              '''    UnusedBuildChoicesError,\n    UnsupportedCoProductsError,\n)''',
+              '''    UnusedBuildChoicesError,\n    UnsupportedCoProductsError,\n    UnsupportedSelfDependentRecipeError,\n)''',
+          )
+
+          replace_once(
+              "backend/app/industry/planner.py",
+              '''    if len(selected.products) != 1:\n        raise UnsupportedCoProductsError(selected.key)\n    return selected\n''',
+              '''    if len(selected.products) != 1:\n        raise UnsupportedCoProductsError(selected.key)\n    if any(material.type_id == product_type_id for material in selected.materials):\n        raise UnsupportedSelfDependentRecipeError(selected.key, product_type_id)\n    return selected\n''',
+          )
+
+          replace_once(
+              "backend/app/api/errors.py",
+              '''    UnusedBuildChoicesError,\n    UnsupportedCoProductsError,\n)''',
+              '''    UnusedBuildChoicesError,\n    UnsupportedCoProductsError,\n    UnsupportedSelfDependentRecipeError,\n)''',
+          )
+
+          replace_once(
+              "backend/app/api/errors.py",
+              '''    if isinstance(exc, RecipeCycleError):\n        return _error_response(\n            status.HTTP_409_CONFLICT,\n            "recipe_cycle",\n            str(exc),\n            {\n                "type_path": list(exc.type_path),\n                "hint": "Mark one type in the cycle as buy to stop recursion",\n            },\n            sde_build_number=exc.sde_build_number,\n        )\n    if isinstance(exc, UnsupportedCoProductsError):\n''',
+              '''    if isinstance(exc, UnsupportedSelfDependentRecipeError):\n        return _error_response(\n            status.HTTP_409_CONFLICT,\n            "unsupported_self_dependent_recipe",\n            str(exc),\n            {\n                "product_type_id": exc.product_type_id,\n                "recipe_key": {\n                    "blueprint_type_id": exc.recipe_key.blueprint_type_id,\n                    "activity_id": exc.recipe_key.activity_id,\n                },\n            },\n            sde_build_number=exc.sde_build_number,\n        )\n    if isinstance(exc, RecipeCycleError):\n        return _error_response(\n            status.HTTP_409_CONFLICT,\n            "recipe_cycle",\n            str(exc),\n            {\n                "type_path": list(exc.type_path),\n                "hint": "Mark one type in the cycle as buy to stop recursion",\n            },\n            sde_build_number=exc.sde_build_number,\n        )\n    if isinstance(exc, UnsupportedCoProductsError):\n''',
+          )
+
+          Path("backend/tests/test_unsupported_self_dependent_recipe.py").write_text(
+              '''import asyncio\nimport json\n\nimport pytest\n\nfrom app.api.errors import industry_error_handler\nfrom app.industry.errors import RecipeCycleError, UnsupportedSelfDependentRecipeError\nfrom app.industry.models import (\n    ActivityKind,\n    BuildChoice,\n    BuildDecision,\n    IndustryRecipe,\n    ItemQuantity,\n    PurchaseReason,\n    RecipeKey,\n)\nfrom app.industry.planner import plan_production\n\n\ndef _recipe(\n    blueprint_type_id: int,\n    product_type_id: int,\n    materials: tuple[tuple[int, int], ...],\n) -> IndustryRecipe:\n    return IndustryRecipe(\n        key=RecipeKey(blueprint_type_id, 1),\n        blueprint_name=f"Blueprint {blueprint_type_id}",\n        activity=ActivityKind.MANUFACTURING,\n        time_seconds=60,\n        max_production_limit=100,\n        products=(ItemQuantity(product_type_id, 1),),\n        materials=tuple(ItemQuantity(type_id, quantity) for type_id, quantity in materials),\n    )\n\n\ndef test_self_dependent_blueprint_is_rejected_before_cycle_detection() -> None:\n    recipe = _recipe(2742, 25270, ((25270, 1),))\n\n    with pytest.raises(UnsupportedSelfDependentRecipeError) as error:\n        plan_production(\n            (ItemQuantity(25270, 1),),\n            (recipe,),\n            sde_build_number=3_473_160,\n        )\n\n    assert error.value.recipe_key == recipe.key\n    assert error.value.product_type_id == 25270\n\n\ndef test_buy_override_does_not_try_to_use_self_dependent_blueprint() -> None:\n    recipe = _recipe(2742, 25270, ((25270, 1),))\n\n    plan = plan_production(\n        (ItemQuantity(25270, 2),),\n        (recipe,),\n        sde_build_number=3_473_160,\n        choices={25270: BuildChoice(decision=BuildDecision.BUY)},\n    )\n\n    assert plan.build_steps == ()\n    assert [(item.type_id, item.quantity, item.reason) for item in plan.purchases] == [\n        (25270, 2, PurchaseReason.BUY_OVERRIDE)\n    ]\n\n\ndef test_real_multi_recipe_cycle_still_uses_cycle_error() -> None:\n    first = _recipe(5001, 1001, ((1002, 1),))\n    second = _recipe(5002, 1002, ((1001, 1),))\n\n    with pytest.raises(RecipeCycleError):\n        plan_production(\n            (ItemQuantity(1001, 1),),\n            (first, second),\n            sde_build_number=1,\n        )\n\n\ndef test_api_maps_self_dependent_blueprint_to_specific_409() -> None:\n    error = UnsupportedSelfDependentRecipeError(RecipeKey(2742, 1), 25270)\n    error.attach_sde_build_number(3_473_160)\n\n    response = asyncio.run(industry_error_handler(None, error))\n    payload = json.loads(response.body)\n\n    assert response.status_code == 409\n    assert payload == {\n        "error": {\n            "code": "unsupported_self_dependent_recipe",\n            "message": str(error),\n            "details": {\n                "product_type_id": 25270,\n                "recipe_key": {\n                    "blueprint_type_id": 2742,\n                    "activity_id": 1,\n                },\n            },\n        },\n        "sde_build_number": 3_473_160,\n    }\n''',
+              encoding="utf-8",
+          )
+
+      - name: Run targeted tests
+        working-directory: backend
+        run: |
+          python -m pip install uv
+          uv sync --locked --dev
+          uv run pytest tests/test_unsupported_self_dependent_recipe.py tests/test_industry_planner.py -q
+
+      - name: Commit implementation
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add backend/app/industry/errors.py backend/app/industry/planner.py backend/app/api/errors.py backend/tests/test_unsupported_self_dependent_recipe.py
+          git commit -m "Reject unsupported self-dependent blueprints"
+          git push
