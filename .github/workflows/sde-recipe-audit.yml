@@ -24,7 +24,7 @@ jobs:
           import os
           import urllib.request
           import zipfile
-          from pathlib import PurePosixPath, Path
+          from pathlib import Path, PurePosixPath
 
           url = "https://developers.eveonline.com/static-data/eve-online-static-data-latest-jsonl.zip"
           with urllib.request.urlopen(url, timeout=120) as response:
@@ -33,34 +33,30 @@ jobs:
 
           with zipfile.ZipFile(io.BytesIO(payload)) as archive:
               names = archive.namelist()
-              blueprint_name = next(
-                  name for name in names
-                  if PurePosixPath(name).name == "blueprints.jsonl"
+              member = lambda filename: next(
+                  name for name in names if PurePosixPath(name).name == filename
               )
-              type_name = next(
-                  name for name in names
-                  if PurePosixPath(name).name == "types.jsonl"
-              )
+              blueprint_name = member("blueprints.jsonl")
+              type_name = member("types.jsonl")
               meta_name = next(
-                  (
-                      name for name in names
-                      if PurePosixPath(name).name == "_sde.jsonl"
-                  ),
+                  (name for name in names if PurePosixPath(name).name == "_sde.jsonl"),
                   None,
               )
 
-              type_names = {}
+              type_info = {}
               with archive.open(type_name) as stream:
                   for raw in stream:
                       row = json.loads(raw)
                       name = row.get("name")
                       if isinstance(name, dict):
                           name = name.get("en")
-                      if isinstance(name, str):
-                          type_names[row["_key"]] = name
+                      type_info[row["_key"]] = {
+                          "name": name if isinstance(name, str) else None,
+                          "published": row.get("published") is True,
+                      }
 
               build_number = None
-              if meta_name is not None:
+              if meta_name:
                   with archive.open(meta_name) as stream:
                       for raw in stream:
                           row = json.loads(raw)
@@ -70,14 +66,18 @@ jobs:
                                   build_number = value.get("buildNumber")
                               break
 
-              counts = {
-                  activity: {
-                      "recipes": 0,
-                      "multi_product": 0,
-                      "self_dependent": 0,
+              def blank_counts():
+                  return {
+                      activity: {
+                          "recipes": 0,
+                          "multi_product": 0,
+                          "self_dependent": 0,
+                      }
+                      for activity in ("manufacturing", "reaction")
                   }
-                  for activity in ("manufacturing", "reaction")
-              }
+
+              all_counts = blank_counts()
+              imported_counts = blank_counts()
               multi_product = []
               self_dependent = []
 
@@ -85,52 +85,70 @@ jobs:
                   for raw in stream:
                       row = json.loads(raw)
                       blueprint_type_id = row["_key"]
+                      blueprint = type_info.get(
+                          blueprint_type_id,
+                          {"name": None, "published": False},
+                      )
                       for activity_name in ("manufacturing", "reaction"):
                           activity = row.get("activities", {}).get(activity_name)
                           if not isinstance(activity, dict):
                               continue
-                          counts[activity_name]["recipes"] += 1
+
+                          all_counts[activity_name]["recipes"] += 1
+                          if blueprint["published"]:
+                              imported_counts[activity_name]["recipes"] += 1
+
                           products = activity.get("products", []) or []
                           materials = activity.get("materials", []) or []
                           product_ids = {item["typeID"] for item in products}
                           material_ids = {item["typeID"] for item in materials}
 
                           if len(products) > 1:
-                              counts[activity_name]["multi_product"] += 1
+                              all_counts[activity_name]["multi_product"] += 1
+                              if blueprint["published"]:
+                                  imported_counts[activity_name]["multi_product"] += 1
                               multi_product.append({
                                   "activity": activity_name,
                                   "blueprint_type_id": blueprint_type_id,
-                                  "blueprint_name": type_names.get(blueprint_type_id),
-                                  "products": [
-                                      {
-                                          "type_id": item["typeID"],
-                                          "name": type_names.get(item["typeID"]),
-                                          "quantity": item["quantity"],
-                                      }
-                                      for item in products
-                                  ],
+                                  "blueprint_name": blueprint["name"],
+                                  "blueprint_published": blueprint["published"],
+                                  "products": products,
                               })
 
                           shared = sorted(product_ids & material_ids)
                           if shared:
-                              counts[activity_name]["self_dependent"] += 1
+                              all_counts[activity_name]["self_dependent"] += 1
+                              if blueprint["published"]:
+                                  imported_counts[activity_name]["self_dependent"] += 1
                               self_dependent.append({
                                   "activity": activity_name,
                                   "blueprint_type_id": blueprint_type_id,
-                                  "blueprint_name": type_names.get(blueprint_type_id),
-                                  "shared_types": [
+                                  "blueprint_name": blueprint["name"],
+                                  "blueprint_published": blueprint["published"],
+                                  "materials": [
                                       {
-                                          "type_id": type_id,
-                                          "name": type_names.get(type_id),
+                                          **item,
+                                          "name": type_info.get(item["typeID"], {}).get("name"),
+                                          "published": type_info.get(item["typeID"], {}).get("published"),
                                       }
-                                      for type_id in shared
+                                      for item in materials
                                   ],
+                                  "products": [
+                                      {
+                                          **item,
+                                          "name": type_info.get(item["typeID"], {}).get("name"),
+                                          "published": type_info.get(item["typeID"], {}).get("published"),
+                                      }
+                                      for item in products
+                                  ],
+                                  "shared_type_ids": shared,
                               })
 
           result = {
               "source_url": resolved_url,
               "build_number": build_number,
-              "counts": counts,
+              "all_sde_counts": all_counts,
+              "calculator_import_counts": imported_counts,
               "multi_product_recipes": multi_product,
               "self_dependent_recipes": self_dependent,
           }
@@ -140,7 +158,6 @@ jobs:
               json.dumps(result, indent=2, sort_keys=True) + "\n",
               encoding="utf-8",
           )
-
           print(json.dumps(result, indent=2, sort_keys=True))
           with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
               summary.write("## SDE recipe audit\n\n```json\n")
