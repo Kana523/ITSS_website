@@ -5,6 +5,9 @@ on:
     branches: [indy-calc]
     paths:
       - ".github/workflows/apply-industry-implants.yml"
+  pull_request_target:
+    branches: [indy-calc]
+    types: [opened, synchronize]
 
 permissions:
   contents: write
@@ -36,6 +39,8 @@ jobs:
       ESI_COMPATIBILITY_DATE: "2026-08-13"
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: indy-calc
       - name: Apply implant patch
         run: python .github/scripts/apply_industry_implants.py
       - uses: actions/setup-python@v5
@@ -61,4 +66,4 @@ jobs:
           git add backend/app/industry/models.py backend/app/industry/planner.py backend/app/api/schemas/industry.py backend/tests/test_industry_implants.py industry/index.html assets/js/industry.js
           if git diff --cached --quiet; then exit 0; fi
           git commit -m "Add manufacturing time implants"
-          git push
+          git push origin HEAD:indy-calc
