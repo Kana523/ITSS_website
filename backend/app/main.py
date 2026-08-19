@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.errors import install_error_handlers
 from app.api.routes.industry import router as industry_router
+from app.api.specialist_skill_errors import install_specialist_skill_error_handler
 from app.config import get_settings
 from app.database.engine import is_database_available
 
@@ -46,6 +47,7 @@ def create_app(
     )
     application.include_router(industry_router)
     install_error_handlers(application)
+    install_specialist_skill_error_handler(application)
     return application
 
 
