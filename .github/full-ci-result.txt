@@ -1,4 +1,4 @@
-FAIL
+PASS
 ============================= test session starts ==============================
 platform linux -- Python 3.14.7, pytest-9.1.1, pluggy-1.6.0
 rootdir: /home/runner/work/ITSS_website/ITSS_website/backend
@@ -8,7 +8,7 @@ plugins: anyio-4.14.2
 collected 218 items
 
 tests/test_depth_valuation.py ..                                         [  0%]
-tests/test_industry_api.py ...............................F............. [ 21%]
+tests/test_industry_api.py ............................................. [ 21%]
 .                                                                        [ 22%]
 tests/test_industry_economics_api.py ...............                     [ 28%]
 tests/test_industry_economics_service.py .........                       [ 33%]
@@ -30,34 +30,10 @@ tests/test_specialist_skill_backfill.py .                                [ 96%]
 tests/test_specialist_skills.py ....                                     [ 98%]
 tests/test_unsupported_self_dependent_recipe.py ....                     [100%]
 
-=================================== FAILURES ===================================
-________________________ test_cycle_error_is_structured ________________________
-
-api_client = <starlette.testclient.TestClient object at 0x7f387c5168b0>
-
-    def test_cycle_error_is_structured(api_client: TestClient) -> None:
-        response = api_client.post(
-            "/api/industry/calculate",
-            json={"demands": [{"type_id": 1004, "quantity": 1}]},
-        )
-    
-        assert response.status_code == 409
->       assert response.json()["error"]["code"] == "recipe_cycle"
-E       AssertionError: assert 'unsupported_...endent_recipe' == 'recipe_cycle'
-E         
-E         - recipe_cycle
-E         + unsupported_self_dependent_recipe
-
-tests/test_industry_api.py:823: AssertionError
 =============================== warnings summary ===============================
 .venv/lib/python3.14/site-packages/fastapi/testclient.py:1
   /home/runner/work/ITSS_website/ITSS_website/backend/.venv/lib/python3.14/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
     from starlette.testclient import TestClient as TestClient  # noqa
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-=========================== short test summary info ============================
-FAILED tests/test_industry_api.py::test_cycle_error_is_structured - AssertionError: assert 'unsupported_...endent_recipe' == 'recipe_cycle'
-  
-  - recipe_cycle
-  + unsupported_self_dependent_recipe
-=================== 1 failed, 217 passed, 1 warning in 5.13s ===================
+======================== 218 passed, 1 warning in 4.05s ========================

@@ -813,15 +813,18 @@ def test_unpublished_public_targets_are_rejected(api_client: TestClient) -> None
     assert calculation_response.json()["sde_build_number"] == 9_000_001
 
 
-def test_cycle_error_is_structured(api_client: TestClient) -> None:
+def test_self_dependent_recipe_error_is_structured(api_client: TestClient) -> None:
     response = api_client.post(
         "/api/industry/calculate",
         json={"demands": [{"type_id": 1004, "quantity": 1}]},
     )
 
     assert response.status_code == 409
-    assert response.json()["error"]["code"] == "recipe_cycle"
-    assert response.json()["error"]["details"]["type_path"] == [1004, 1004]
+    assert response.json()["error"]["code"] == "unsupported_self_dependent_recipe"
+    assert response.json()["error"]["details"] == {
+        "product_type_id": 1004,
+        "recipe_key": {"blueprint_type_id": 2004, "activity_id": 1},
+    }
     assert response.json()["sde_build_number"] == 9_000_001
 
 
