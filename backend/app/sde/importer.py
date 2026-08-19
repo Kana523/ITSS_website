@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from sqlalchemy import delete, insert, select, text
+from sqlalchemy import delete, insert, select, text, update
 from sqlalchemy.dialects.postgresql import insert as postgresql_insert
 from sqlalchemy.engine import Connection
 
@@ -95,6 +95,33 @@ def _upsert_rows(
         connection.execute(upsert_statement, batch)
 
 
+def _synchronize_skill_rows(
+    connection: Connection,
+    skill_rows: list[SkillRow],
+    *,
+    batch_size: int,
+    import_id: int,
+) -> None:
+    _upsert_rows(
+        connection,
+        IndustryActivitySkill,
+        skill_rows,
+        conflict_columns=(
+            "blueprint_type_id",
+            "activity_id",
+            "skill_type_id",
+        ),
+        update_columns=("required_level", "last_seen_import_id"),
+        batch_size=batch_size,
+        import_id=import_id,
+    )
+    connection.execute(
+        delete(IndustryActivitySkill).where(
+            IndustryActivitySkill.last_seen_import_id != import_id
+        )
+    )
+
+
 def _find_large_deletions(
     connection: Connection,
     dataset: ParsedSde,
@@ -168,11 +195,27 @@ def _synchronize_sde(
                 f"SDE build {dataset.manifest.build_number} is historical and "
                 "cannot replace the current build"
             )
+
+        existing_row_counts = dict(existing_import["row_counts"])
+        if "skills" not in existing_row_counts:
+            _synchronize_skill_rows(
+                connection,
+                skill_rows,
+                batch_size=batch_size,
+                import_id=existing_import["id"],
+            )
+            existing_row_counts["skills"] = len(skill_rows)
+            connection.execute(
+                update(SdeImport)
+                .where(SdeImport.id == existing_import["id"])
+                .values(row_counts=existing_row_counts)
+            )
+
         return SdeImportResult(
             import_id=existing_import["id"],
             build_number=existing_import["build_number"],
             source_checksum=existing_import["source_checksum"],
-            row_counts=dict(existing_import["row_counts"]),
+            row_counts=existing_row_counts,
             already_imported=True,
         )
 
@@ -209,10 +252,14 @@ def _synchronize_sde(
     _upsert_rows(connection, IndustryActivity, dataset.activities, conflict_columns=("blueprint_type_id", "activity_id"), update_columns=("time_seconds", "last_seen_import_id"), batch_size=batch_size, import_id=import_id)
     _upsert_rows(connection, IndustryActivityMaterial, dataset.materials, conflict_columns=("blueprint_type_id", "activity_id", "material_type_id"), update_columns=("quantity", "last_seen_import_id"), batch_size=batch_size, import_id=import_id)
     _upsert_rows(connection, IndustryActivityProduct, dataset.products, conflict_columns=("blueprint_type_id", "activity_id", "product_type_id"), update_columns=("quantity", "last_seen_import_id"), batch_size=batch_size, import_id=import_id)
-    _upsert_rows(connection, IndustryActivitySkill, skill_rows, conflict_columns=("blueprint_type_id", "activity_id", "skill_type_id"), update_columns=("required_level", "last_seen_import_id"), batch_size=batch_size, import_id=import_id)
+    _synchronize_skill_rows(
+        connection,
+        skill_rows,
+        batch_size=batch_size,
+        import_id=import_id,
+    )
 
     for model in (
-        IndustryActivitySkill,
         IndustryActivityProduct,
         IndustryActivityMaterial,
         IndustryActivity,
