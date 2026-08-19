@@ -1,0 +1,125 @@
+name: SDE Recipe Audit
+
+on:
+  push:
+    branches: [indy-calc]
+    paths:
+      - ".github/workflows/sde-recipe-audit.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Scan latest CCP SDE
+        shell: python
+        run: |
+          import io
+          import json
+          import urllib.request
+          import zipfile
+
+          url = "https://developers.eveonline.com/static-data/eve-online-static-data-latest-jsonl.zip"
+          with urllib.request.urlopen(url, timeout=120) as response:
+              payload = response.read()
+              resolved_url = response.geturl()
+
+          with zipfile.ZipFile(io.BytesIO(payload)) as archive:
+              names = archive.namelist()
+              blueprint_name = next(name for name in names if name.endswith("blueprints.jsonl"))
+              type_name = next(name for name in names if name.endswith("types.jsonl"))
+              meta_name = next((name for name in names if name.endswith("_sde.jsonl")), None)
+
+              type_names = {}
+              with archive.open(type_name) as stream:
+                  for raw in stream:
+                      row = json.loads(raw)
+                      name = row.get("name")
+                      if isinstance(name, dict):
+                          name = name.get("en")
+                      if isinstance(name, str):
+                          type_names[row["_key"]] = name
+
+              build_number = None
+              if meta_name is not None:
+                  with archive.open(meta_name) as stream:
+                      for raw in stream:
+                          row = json.loads(raw)
+                          if row.get("_key") == "sde":
+                              value = row.get("_value", row)
+                              if isinstance(value, dict):
+                                  build_number = value.get("buildNumber")
+                              break
+
+              counts = {activity: {"recipes": 0, "multi_product": 0, "self_dependent": 0} for activity in ("manufacturing", "reaction")}
+              multi_product = []
+              self_dependent = []
+
+              with archive.open(blueprint_name) as stream:
+                  for raw in stream:
+                      row = json.loads(raw)
+                      blueprint_type_id = row["_key"]
+                      for activity_name in ("manufacturing", "reaction"):
+                          activity = row.get("activities", {}).get(activity_name)
+                          if not isinstance(activity, dict):
+                              continue
+                          counts[activity_name]["recipes"] += 1
+                          products = activity.get("products", []) or []
+                          materials = activity.get("materials", []) or []
+                          product_ids = {item["typeID"] for item in products}
+                          material_ids = {item["typeID"] for item in materials}
+
+                          if len(products) > 1:
+                              counts[activity_name]["multi_product"] += 1
+                              multi_product.append({
+                                  "activity": activity_name,
+                                  "blueprint_type_id": blueprint_type_id,
+                                  "blueprint_name": type_names.get(blueprint_type_id),
+                                  "products": [
+                                      {
+                                          "type_id": item["typeID"],
+                                          "name": type_names.get(item["typeID"]),
+                                          "quantity": item["quantity"],
+                                      }
+                                      for item in products
+                                  ],
+                              })
+
+                          shared = sorted(product_ids & material_ids)
+                          if shared:
+                              counts[activity_name]["self_dependent"] += 1
+                              self_dependent.append({
+                                  "activity": activity_name,
+                                  "blueprint_type_id": blueprint_type_id,
+                                  "blueprint_name": type_names.get(blueprint_type_id),
+                                  "shared_types": [
+                                      {"type_id": type_id, "name": type_names.get(type_id)}
+                                      for type_id in shared
+                                  ],
+                              })
+
+          result = {
+              "source_url": resolved_url,
+              "build_number": build_number,
+              "counts": counts,
+              "multi_product_recipes": multi_product,
+              "self_dependent_recipes": self_dependent,
+          }
+          with open("sde-recipe-audit.json", "w", encoding="utf-8") as output:
+              json.dump(result, output, indent=2, sort_keys=True)
+
+          print(json.dumps(result, indent=2, sort_keys=True))
+          with open(__import__("os").environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
+              summary.write("## SDE recipe audit\n\n```json\n")
+              summary.write(json.dumps(result, indent=2, sort_keys=True))
+              summary.write("\n```\n")
+
+      - name: Upload audit
+        uses: actions/upload-artifact@v4
+        with:
+          name: sde-recipe-audit
+          path: sde-recipe-audit.json
+          retention-days: 7
