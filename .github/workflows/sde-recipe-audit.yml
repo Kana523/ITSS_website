@@ -8,19 +8,23 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   audit:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
       - name: Scan latest CCP SDE
         shell: python
         run: |
           import io
           import json
+          import os
           import urllib.request
           import zipfile
+          from pathlib import Path
 
           url = "https://developers.eveonline.com/static-data/eve-online-static-data-latest-jsonl.zip"
           with urllib.request.urlopen(url, timeout=120) as response:
@@ -54,7 +58,14 @@ jobs:
                                   build_number = value.get("buildNumber")
                               break
 
-              counts = {activity: {"recipes": 0, "multi_product": 0, "self_dependent": 0} for activity in ("manufacturing", "reaction")}
+              counts = {
+                  activity: {
+                      "recipes": 0,
+                      "multi_product": 0,
+                      "self_dependent": 0,
+                  }
+                  for activity in ("manufacturing", "reaction")
+              }
               multi_product = []
               self_dependent = []
 
@@ -96,7 +107,10 @@ jobs:
                                   "blueprint_type_id": blueprint_type_id,
                                   "blueprint_name": type_names.get(blueprint_type_id),
                                   "shared_types": [
-                                      {"type_id": type_id, "name": type_names.get(type_id)}
+                                      {
+                                          "type_id": type_id,
+                                          "name": type_names.get(type_id),
+                                      }
                                       for type_id in shared
                                   ],
                               })
@@ -108,18 +122,27 @@ jobs:
               "multi_product_recipes": multi_product,
               "self_dependent_recipes": self_dependent,
           }
-          with open("sde-recipe-audit.json", "w", encoding="utf-8") as output:
-              json.dump(result, output, indent=2, sort_keys=True)
+          output_path = Path(".github/audits/sde-recipe-audit.json")
+          output_path.parent.mkdir(parents=True, exist_ok=True)
+          output_path.write_text(
+              json.dumps(result, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
 
           print(json.dumps(result, indent=2, sort_keys=True))
-          with open(__import__("os").environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
               summary.write("## SDE recipe audit\n\n```json\n")
               summary.write(json.dumps(result, indent=2, sort_keys=True))
               summary.write("\n```\n")
 
-      - name: Upload audit
-        uses: actions/upload-artifact@v4
-        with:
-          name: sde-recipe-audit
-          path: sde-recipe-audit.json
-          retention-days: 7
+      - name: Persist audit result
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/audits/sde-recipe-audit.json
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "Record live SDE recipe audit"
+          git push
