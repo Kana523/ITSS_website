@@ -1,11 +1,13 @@
 {
   "all_sde_counts": {
     "manufacturing": {
+      "identity_self_dependent": 51,
       "multi_product": 0,
       "recipes": 4872,
       "self_dependent": 51
     },
     "reaction": {
+      "identity_self_dependent": 0,
       "multi_product": 0,
       "recipes": 120,
       "self_dependent": 0
@@ -14,16 +16,19 @@
   "build_number": 3473160,
   "calculator_import_counts": {
     "manufacturing": {
+      "identity_self_dependent": 40,
       "multi_product": 0,
       "recipes": 4039,
       "self_dependent": 40
     },
     "reaction": {
+      "identity_self_dependent": 0,
       "multi_product": 0,
       "recipes": 119,
       "self_dependent": 0
     }
   },
+  "calculator_non_identity_self_dependent_recipes": [],
   "multi_product_recipes": [],
   "self_dependent_recipes": [
     {
@@ -31,10 +36,10 @@
       "blueprint_name": "Sovereignty Blockade Unit Blueprint",
       "blueprint_published": false,
       "blueprint_type_id": 2738,
+      "identity_recipe": true,
       "materials": [
         {
           "name": "Sovereignty Blockade Unit",
-          "published": false,
           "quantity": 1,
           "typeID": 32250
         }
@@ -42,13 +47,9 @@
       "products": [
         {
           "name": "Sovereignty Blockade Unit",
-          "published": false,
           "quantity": 1,
           "typeID": 32250
         }
-      ],
-      "shared_type_ids": [
-        32250
       ]
     },
     {
@@ -56,10 +57,10 @@
       "blueprint_name": "Biochemical Silo Blueprint",
       "blueprint_published": true,
       "blueprint_type_id": 2742,
+      "identity_recipe": true,
       "materials": [
         {
           "name": "Biochemical Silo",
-          "published": true,
           "quantity": 1,
           "typeID": 25270
         }
@@ -67,13 +68,9 @@
       "products": [
         {
           "name": "Biochemical Silo",
-          "published": true,
           "quantity": 1,
           "typeID": 25270
         }
-      ],
-      "shared_type_ids": [
-        25270
       ]
     },
     {
@@ -81,10 +78,10 @@
       "blueprint_name": "Catalyst Silo Blueprint",
       "blueprint_published": true,
       "blueprint_type_id": 2743,
+      "identity_recipe": true,
       "materials": [
         {
           "name": "Catalyst Silo",
-          "published": true,
           "quantity": 1,
           "typeID": 25271
         }
@@ -92,13 +89,9 @@
       "products": [
         {
           "name": "Catalyst Silo",
-          "published": true,
           "quantity": 1,
           "typeID": 25271
         }
-      ],
-      "shared_type_ids": [
-        25271
       ]
     },
     {
@@ -106,10 +99,10 @@
       "blueprint_name": "Coupling Array Blueprint",
       "blueprint_published": true,
       "blueprint_type_id": 2744,
+      "identity_recipe": true,
       "materials": [
         {
           "name": "Coupling Array",
-          "published": true,
           "quantity": 1,
           "typeID": 17982
         }
@@ -117,13 +110,9 @@
       "products": [
         {
           "name": "Coupling Array",
-          "published": true,
           "quantity": 1,
           "typeID": 17982
         }
-      ],
-      "shared_type_ids": [
-        17982
       ]
     },
     {
@@ -131,10 +120,10 @@
       "blueprint_name": "General Storage Blueprint",
       "blueprint_published": true,
       "blueprint_type_id": 2745,
+      "identity_recipe": true,
       "materials": [
         {
           "name": "General Storage",
-          "published": true,
           "quantity": 1,
           "typeID": 25821
         }
@@ -142,13 +131,9 @@
       "products": [
         {
           "name": "General Storage",
-          "published": true,
           "quantity": 1,
           "typeID": 25821
         }
-      ],
-      "shared_type_ids": [
-        25821
       ]
     },
     {
@@ -156,10 +141,10 @@
       "blueprint_name": "Hazardous Chemical Silo Blueprint",
       "blueprint_published": true,
       "blueprint_type_id": 2746,
+      "identity_recipe": true,
       "materials": [
         {
           "name": "Hazardous Chemical Silo",
-          "published": true,
           "quantity": 1,
           "typeID": 25280
         }
@@ -167,13 +152,9 @@
       "products": [
         {
           "name": "Hazardous Chemical Silo",
-          "published": true,
           "quantity": 1,
           "typeID": 25280
         }
-      ],
-      "shared_type_ids": [
-        25280
       ]
     },
     {
@@ -181,10 +162,10 @@
       "blueprint_name": "Hybrid Polymer Silo Blueprint",
       "blueprint_published": true,
       "blueprint_type_id": 2747,
+      "identity_recipe": true,
       "materials": [
         {
           "name": "Hybrid Polymer Silo",
-          "published": true,
           "quantity": 1,
           "typeID": 30655
         }
@@ -192,13 +173,9 @@
       "products": [
         {
           "name": "Hybrid Polymer Silo",
-          "published": true,
           "quantity": 1,
           "typeID": 30655
         }
-      ],
-      "shared_type_ids": [
-        30655
       ]
     },
     {
@@ -206,10 +183,10 @@
       "blueprint_name": "Silo Blueprint",
       "blueprint_published": true,
       "blueprint_type_id": 2748,
+      "identity_recipe": true,
       "materials": [
         {
           "name": "Silo",
-          "published": true,
           "quantity": 1,
           "typeID": 14343
         }
@@ -217,13 +194,9 @@
       "products": [
         {
           "name": "Silo",
-          "published": true,
           "quantity": 1,
           "typeID": 14343
         }
-      ],
-      "shared_type_ids": [
-        14343
       ]
     },
     {
@@ -231,10 +204,10 @@
       "blueprint_name": "Advanced Large Ship Assembly Array Blueprint",
       "blueprint_published": true,
       "blueprint_type_id": 2749,
+      "identity_recipe": true,
       "materials": [
         {
           "name": "Advanced Large Ship Assembly Array",
-          "published": true,
           "quantity": 1,
           "typeID": 24657
         }
@@ -242,13 +215,9 @@
       "products": [
         {
           "name": "Advanced Large Ship Assembly Array",
-          "published": true,
           "quantity": 1,
           "typeID": 24657
         }
-      ],
-      "shared_type_ids": [
-        24657
       ]
     },
     {
@@ -256,10 +225,10 @@
       "blueprint_name": "Advanced Medium Ship Assembly Array Blueprint",
       "blueprint_published": true,
       "blueprint_type_id": 2751,
+      "identity_recipe": true,
       "materials": [
         {
           "name": "Advanced Medium Ship Assembly Array",
-          "published": true,
           "quantity": 1,
           "typeID": 24655
         }
@@ -267,13 +236,9 @@
       "products": [
         {
           "name": "Advanced Medium Ship Assembly Array",
-          "published": true,
           "quantity": 1,
           "typeID": 24655
         }
-      ],
-      "shared_type_ids": [
-        24655
       ]
     },
     {
@@ -281,10 +246,10 @@
       "blueprint_name": "Advanced Small Ship Assembly Array Blueprint",
       "blueprint_published": true,
       "blueprint_type_id": 2753,
+      "identity_recipe": true,
       "materials": [
         {
           "name": "Advanced Small Ship Assembly Array",
-          "published": true,
           "quantity": 1,
           "typeID": 24653
         }
@@ -292,13 +257,9 @@
       "products": [
         {
           "name": "Advanced Small Ship Assembly Array",
-          "published": true,
           "quantity": 1,
           "typeID": 24653
         }
-      ],
-      "shared_type_ids": [
-        24653
       ]
     },
     {
@@ -306,10 +267,10 @@
       "blueprint_name": "Ammunition Assembly Array Blueprint",
       "blueprint_published": true,
       "blueprint_type_id": 2754,
+      "identity_recipe": true,
       "materials": [
         {
           "name": "Ammunition Assembly Array",
-          "published": true,
           "quantity": 1,
           "typeID": 24658
         }
@@ -317,13 +278,9 @@
       "products": [
         {
           "name": "Ammunition Assembly Array",
-          "published": true,
           "quantity": 1,
           "typeID": 24658
         }
-      ],
-      "shared_type_ids": [
-        24658
       ]
     },
     {
@@ -331,10 +288,10 @@
       "blueprint_name": "Supercapital Ship Assembly Array Blueprint",
       "blueprint_published": true,
       "blueprint_type_id": 2756,
+      "identity_recipe": true,
       "materials": [
         {
           "name": "Supercapital Ship Assembly Array",
-          "published": true,
           "quantity": 1,
           "typeID": 24575
         }
@@ -342,13 +299,9 @@
       "products": [
         {
           "name": "Supercapital Ship Assembly Array",
-          "published": true,
           "quantity": 1,
           "typeID": 24575
         }
-      ],
-      "shared_type_ids": [
-        24575
       ]
     },
     {
@@ -356,10 +309,10 @@
       "blueprint_name": "Component Assembly Array Blueprint",
       "blueprint_published": true,
       "blueprint_type_id": 2758,
+      "identity_recipe": true,
       "materials": [
         {
           "name": "Component Assembly Array",
-          "published": true,
           "quantity": 1,
           "typeID": 24660
         }
@@ -367,13 +320,9 @@
       "products": [
         {
           "name": "Component Assembly Array",
-          "published": true,
           "quantity": 1,
           "typeID": 24660
         }
-      ],
-      "shared_type_ids": [
-        24660
       ]
     },
     {
@@ -381,10 +330,10 @@
       "blueprint_name": "Drone Assembly Array Blueprint",
       "blueprint_published": true,
       "blueprint_type_id": 2760,
+      "identity_recipe": true,
       "materials": [
         {
           "name": "Drone Assembly Array",
-          "published": true,
           "quantity": 1,
           "typeID": 24659
         }
@@ -392,13 +341,9 @@
       "products": [
         {
           "name": "Drone Assembly Array",
-          "published": true,
           "quantity": 1,
           "typeID": 24659
         }
-      ],
-      "shared_type_ids": [
-        24659
       ]
     },
     {
@@ -406,10 +351,10 @@
       "blueprint_name": "Drug Lab Blueprint",
       "blueprint_published": false,
       "blueprint_type_id": 2762,
+      "identity_recipe": true,
       "materials": [
         {
           "name": "Drug Lab",
-          "published": true,
           "quantity": 1,
           "typeID": 25305
         }
@@ -417,13 +362,9 @@
       "products": [
         {
           "name": "Drug Lab",
-          "published": true,
           "quantity": 1,
           "typeID": 25305
         }
-      ],
-      "shared_type_ids": [
-        25305
       ]
     },
     {
@@ -431,10 +372,10 @@
       "blueprint_name": "Equipment Assembly Array Blueprint",
       "blueprint_published": true,
       "blueprint_type_id": 2764,
+      "identity_recipe": true,
       "materials": [
         {
           "name": "Equipment Assembly Array",
-          "published": true,
           "quantity": 1,
           "typeID": 13780
         }
@@ -442,13 +383,9 @@
       "products": [
         {
           "name": "Equipment Assembly Array",
-          "published": true,
           "quantity": 1,
           "typeID": 13780
         }
-      ],
-      "shared_type_ids": [
-        13780
       ]
     },
     {
@@ -456,10 +393,10 @@
       "blueprint_name": "Intensive Reprocessing Array Blueprint",
       "blueprint_published": true,
       "blueprint_type_id": 2765,
+      "identity_recipe": true,
       "materials": [
         {
           "name": "Intensive Reprocessing Array",
-          "published": true,
           "quantity": 1,
           "typeID": 19470
         }
@@ -467,13 +404,9 @@
       "products": [
         {
           "name": "Intensive Reprocessing Array",
-          "published": true,
           "quantity": 1,
           "typeID": 19470
         }
-      ],
-      "shared_type_ids": [
-        19470
       ]
     },
     {
@@ -481,10 +414,10 @@
       "blueprint_name": "Large Ship Assembly Array Blueprint",
       "blueprint_published": true,
       "blueprint_type_id": 2766,
+      "identity_recipe": true,
       "materials": [
         {
           "name": "Large Ship Assembly Array",
-          "published": true,
           "quantity": 1,
           "typeID": 29613
         }
@@ -492,13 +425,9 @@
       "products": [
         {
           "name": "Large Ship Assembly Array",
-          "published": true,
           "quantity": 1,
           "typeID": 29613
         }
-      ],
-      "shared_type_ids": [
-        29613
       ]
     },
     {
@@ -506,10 +435,10 @@
       "blueprint_name": "Compression Array Blueprint",
       "blueprint_published": true,
       "blueprint_type_id": 2767,
+      "identity_recipe": true,
       "materials": [
         {
           "name": "Compression Array",
-          "published": true,
           "quantity": 1,
           "typeID": 12239
         }
@@ -517,13 +446,9 @@
       "products": [
         {
           "name": "Compression Array",
-          "published": true,
           "quantity": 1,
           "typeID": 12239
         }
-      ],
-      "shared_type_ids": [
-        12239
       ]
     },
     {
@@ -531,10 +456,10 @@
       "blueprint_name": "Medium Ship Assembly Array Blueprint",
       "blueprint_published": true,
       "blueprint_type_id": 2768,
+      "identity_recipe": true,
       "materials": [
         {
           "name": "Medium Ship Assembly Array",
-          "published": true,
           "quantity": 1,
           "typeID": 24654
         }
@@ -542,13 +467,9 @@
       "products": [
         {
           "name": "Medium Ship Assembly Array",
-          "published": true,
           "quantity": 1,
           "typeID": 24654
         }
-      ],
-      "shared_type_ids": [
-        24654
       ]
     },
     {
@@ -556,10 +477,10 @@
       "blueprint_name": "Reprocessing Array Blueprint",
       "blueprint_published": true,
       "blueprint_type_id": 2769,
+      "identity_recipe": true,
       "materials": [
         {
           "name": "Reprocessing Array",
-          "published": true,
           "quantity": 1,
           "typeID": 12238
         }
@@ -567,13 +488,9 @@
       "products": [
         {
           "name": "Reprocessing Array",
-          "published": true,
           "quantity": 1,
           "typeID": 12238
         }
-      ],
-      "shared_type_ids": [
-        12238
       ]
     },
     {
@@ -581,10 +498,10 @@
       "blueprint_name": "Rapid Equipment Assembly Array Blueprint",
       "blueprint_published": true,
       "blueprint_type_id": 2770,
+      "identity_recipe": true,
       "materials": [
         {
           "name": "Rapid Equipment Assembly Array",
-          "published": true,
           "quantity": 1,
           "typeID": 16220
         }
@@ -592,13 +509,9 @@
       "products": [
         {
           "name": "Rapid Equipment Assembly Array",
-          "published": true,
           "quantity": 1,
           "typeID": 16220
         }
-      ],
-      "shared_type_ids": [
-        16220
       ]
     },
     {
@@ -606,10 +519,10 @@
       "blueprint_name": "Small Ship Assembly Array Blueprint",
       "blueprint_published": true,
       "blueprint_type_id": 2771,
+      "identity_recipe": true,
       "materials": [
         {
           "name": "Small Ship Assembly Array",
-          "published": true,
           "quantity": 1,
           "typeID": 24574
         }
@@ -617,13 +530,9 @@
       "products": [
         {
           "name": "Small Ship Assembly Array",
-          "published": true,
           "quantity": 1,
           "typeID": 24574
         }
-      ],
-      "shared_type_ids": [
-        24574
       ]
     },
     {
@@ -631,10 +540,10 @@
       "blueprint_name": "Subsystem Assembly Array Blueprint",
       "blueprint_published": true,
       "blueprint_type_id": 2772,
+      "identity_recipe": true,
       "materials": [
         {
           "name": "Subsystem Assembly Array",
-          "published": true,
           "quantity": 1,
           "typeID": 30389
         }
@@ -642,13 +551,9 @@
       "products": [
         {
           "name": "Subsystem Assembly Array",
-          "published": true,
           "quantity": 1,
           "typeID": 30389
         }
-      ],
-      "shared_type_ids": [
-        30389
       ]
     },
     {
@@ -656,10 +561,10 @@
       "blueprint_name": "Capital Ship Assembly Array Blueprint",
       "blueprint_published": true,
       "blueprint_type_id": 2773,
+      "identity_recipe": true,
       "materials": [
         {
           "name": "Capital Ship Assembly Array",
-          "published": true,
           "quantity": 1,
           "typeID": 24656
         }
@@ -667,13 +572,9 @@
       "products": [
         {
           "name": "Capital Ship Assembly Array",
-          "published": true,
           "quantity": 1,
           "typeID": 24656
         }
-      ],
-      "shared_type_ids": [
-        24656
       ]
     },
     {
@@ -681,10 +582,10 @@
       "blueprint_name": "Moon Harvesting Array Blueprint",
       "blueprint_published": true,
       "blueprint_type_id": 2786,
+      "identity_recipe": true,
       "materials": [
         {
           "name": "Moon Harvesting Array",
-          "published": true,
           "quantity": 1,
           "typeID": 16221
         }
@@ -692,13 +593,9 @@
       "products": [
         {
           "name": "Moon Harvesting Array",
-          "published": true,
           "quantity": 1,
           "typeID": 16221
         }
-      ],
-      "shared_type_ids": [
-        16221
       ]
     },
     {
@@ -706,10 +603,10 @@
       "blueprint_name": "Cynosural Generator Array Blueprint",
       "blueprint_published": true,
       "blueprint_type_id": 2788,
+      "identity_recipe": true,
       "materials": [
         {
           "name": "Cynosural Generator Array",
-          "published": true,
           "quantity": 1,
           "typeID": 27673
         }
@@ -717,13 +614,9 @@
       "products": [
         {
           "name": "Cynosural Generator Array",
-          "published": true,
           "quantity": 1,
           "typeID": 27673
         }
-      ],
-      "shared_type_ids": [
-        27673
       ]
     },
     {
@@ -731,10 +624,10 @@
       "blueprint_name": "Cynosural System Jammer Blueprint",
       "blueprint_published": true,
       "blueprint_type_id": 2789,
+      "identity_recipe": true,
       "materials": [
         {
           "name": "Cynosural System Jammer",
-          "published": true,
           "quantity": 1,
           "typeID": 27674
         }
@@ -742,13 +635,9 @@
       "products": [
         {
           "name": "Cynosural System Jammer",
-          "published": true,
           "quantity": 1,
           "typeID": 27674
         }
-      ],
-      "shared_type_ids": [
-        27674
       ]
     },
     {
@@ -756,10 +645,10 @@
       "blueprint_name": "Biochemical Reactor Array Blueprint",
       "blueprint_published": true,
       "blueprint_type_id": 2790,
+      "identity_recipe": true,
       "materials": [
         {
           "name": "Biochemical Reactor Array",
-          "published": true,
           "quantity": 1,
           "typeID": 24684
         }
@@ -767,13 +656,9 @@
       "products": [
         {
           "name": "Biochemical Reactor Array",
-          "published": true,
           "quantity": 1,
           "typeID": 24684
         }
-      ],
-      "shared_type_ids": [
-        24684
       ]
     },
     {
@@ -781,10 +666,10 @@
       "blueprint_name": "Complex Reactor Array Blueprint",
       "blueprint_published": true,
       "blueprint_type_id": 2791,
+      "identity_recipe": true,
       "materials": [
         {
           "name": "Complex Reactor Array",
-          "published": true,
           "quantity": 1,
           "typeID": 16869
         }
@@ -792,13 +677,9 @@
       "products": [
         {
           "name": "Complex Reactor Array",
-          "published": true,
           "quantity": 1,
           "typeID": 16869
         }
-      ],
-      "shared_type_ids": [
-        16869
       ]
     },
     {
@@ -806,10 +687,10 @@
       "blueprint_name": "Medium Biochemical Reactor Array Blueprint",
       "blueprint_published": true,
       "blueprint_type_id": 2793,
+      "identity_recipe": true,
       "materials": [
         {
           "name": "Medium Biochemical Reactor Array",
-          "published": true,
           "quantity": 1,
           "typeID": 22634
         }
@@ -817,13 +698,9 @@
       "products": [
         {
           "name": "Medium Biochemical Reactor Array",
-          "published": true,
           "quantity": 1,
           "typeID": 22634
         }
-      ],
-      "shared_type_ids": [
-        22634
       ]
     },
     {
@@ -831,10 +708,10 @@
       "blueprint_name": "Polymer Reactor Array Blueprint",
       "blueprint_published": true,
       "blueprint_type_id": 2795,
+      "identity_recipe": true,
       "materials": [
         {
           "name": "Polymer Reactor Array",
-          "published": true,
           "quantity": 1,
           "typeID": 30656
         }
@@ -842,13 +719,9 @@
       "products": [
         {
           "name": "Polymer Reactor Array",
-          "published": true,
           "quantity": 1,
           "typeID": 30656
         }
-      ],
-      "shared_type_ids": [
-        30656
       ]
     },
     {
@@ -856,10 +729,10 @@
       "blueprint_name": "Simple Reactor Array Blueprint",
       "blueprint_published": true,
       "blueprint_type_id": 2797,
+      "identity_recipe": true,
       "materials": [
         {
           "name": "Simple Reactor Array",
-          "published": true,
           "quantity": 1,
           "typeID": 20175
         }
@@ -867,13 +740,9 @@
       "products": [
         {
           "name": "Simple Reactor Array",
-          "published": true,
           "quantity": 1,
           "typeID": 20175
         }
-      ],
-      "shared_type_ids": [
-        20175
       ]
     },
     {
@@ -881,10 +750,10 @@
       "blueprint_name": "Jump Bridge Blueprint",
       "blueprint_published": true,
       "blueprint_type_id": 2800,
+      "identity_recipe": true,
       "materials": [
         {
           "name": "Jump Bridge",
-          "published": true,
           "quantity": 1,
           "typeID": 27897
         }
@@ -892,13 +761,9 @@
       "products": [
         {
           "name": "Jump Bridge",
-          "published": true,
           "quantity": 1,
           "typeID": 27897
         }
-      ],
-      "shared_type_ids": [
-        27897
       ]
     },
     {
@@ -906,10 +771,10 @@
       "blueprint_name": "Experimental Laboratory Blueprint",
       "blueprint_published": true,
       "blueprint_type_id": 2820,
+      "identity_recipe": true,
       "materials": [
         {
           "name": "Experimental Laboratory",
-          "published": true,
           "quantity": 1,
           "typeID": 24567
         }
@@ -917,13 +782,9 @@
       "products": [
         {
           "name": "Experimental Laboratory",
-          "published": true,
           "quantity": 1,
           "typeID": 24567
         }
-      ],
-      "shared_type_ids": [
-        24567
       ]
     },
     {
@@ -931,10 +792,10 @@
       "blueprint_name": "Research Laboratory Blueprint",
       "blueprint_published": true,
       "blueprint_type_id": 2821,
+      "identity_recipe": true,
       "materials": [
         {
           "name": "Research Laboratory",
-          "published": true,
           "quantity": 1,
           "typeID": 16216
         }
@@ -942,13 +803,9 @@
       "products": [
         {
           "name": "Research Laboratory",
-          "published": true,
           "quantity": 1,
           "typeID": 16216
         }
-      ],
-      "shared_type_ids": [
-        16216
       ]
     },
     {
@@ -956,10 +813,10 @@
       "blueprint_name": "Amarr Factory Outpost Platform Blueprint",
       "blueprint_published": false,
       "blueprint_type_id": 21943,
+      "identity_recipe": true,
       "materials": [
         {
           "name": "Amarr Factory Outpost Platform",
-          "published": false,
           "quantity": 1,
           "typeID": 10260
         }
@@ -967,13 +824,9 @@
       "products": [
         {
           "name": "Amarr Factory Outpost Platform",
-          "published": false,
           "quantity": 1,
           "typeID": 10260
         }
-      ],
-      "shared_type_ids": [
-        10260
       ]
     },
     {
@@ -981,10 +834,10 @@
       "blueprint_name": "Caldari Research Outpost Platform Blueprint",
       "blueprint_published": false,
       "blueprint_type_id": 21944,
+      "identity_recipe": true,
       "materials": [
         {
           "name": "Caldari Research Outpost Platform",
-          "published": false,
           "quantity": 1,
           "typeID": 19758
         }
@@ -992,13 +845,9 @@
       "products": [
         {
           "name": "Caldari Research Outpost Platform",
-          "published": false,
           "quantity": 1,
           "typeID": 19758
         }
-      ],
-      "shared_type_ids": [
-        19758
       ]
     },
     {
@@ -1006,10 +855,10 @@
       "blueprint_name": "Gallente Administrative Outpost Platform Blueprint",
       "blueprint_published": false,
       "blueprint_type_id": 21945,
+      "identity_recipe": true,
       "materials": [
         {
           "name": "Gallente Administrative Outpost Platform",
-          "published": false,
           "quantity": 1,
           "typeID": 10257
         }
@@ -1017,13 +866,9 @@
       "products": [
         {
           "name": "Gallente Administrative Outpost Platform",
-          "published": false,
           "quantity": 1,
           "typeID": 10257
         }
-      ],
-      "shared_type_ids": [
-        10257
       ]
     },
     {
@@ -1031,10 +876,10 @@
       "blueprint_name": "Minmatar Service Outpost Platform Blueprint",
       "blueprint_published": false,
       "blueprint_type_id": 21946,
+      "identity_recipe": true,
       "materials": [
         {
           "name": "Minmatar Service Outpost Platform",
-          "published": false,
           "quantity": 1,
           "typeID": 10258
         }
@@ -1042,13 +887,9 @@
       "products": [
         {
           "name": "Minmatar Service Outpost Platform",
-          "published": false,
           "quantity": 1,
           "typeID": 10258
         }
-      ],
-      "shared_type_ids": [
-        10258
       ]
     },
     {
@@ -1056,10 +897,10 @@
       "blueprint_name": "Design Laboratory Blueprint",
       "blueprint_published": true,
       "blueprint_type_id": 28605,
+      "identity_recipe": true,
       "materials": [
         {
           "name": "Design Laboratory",
-          "published": true,
           "quantity": 1,
           "typeID": 28351
         }
@@ -1067,13 +908,9 @@
       "products": [
         {
           "name": "Design Laboratory",
-          "published": true,
           "quantity": 1,
           "typeID": 28351
         }
-      ],
-      "shared_type_ids": [
-        28351
       ]
     },
     {
@@ -1081,10 +918,10 @@
       "blueprint_name": "Orbital Laser S Blueprint",
       "blueprint_published": false,
       "blueprint_type_id": 32800,
+      "identity_recipe": true,
       "materials": [
         {
           "name": "Orbital Laser S",
-          "published": false,
           "quantity": 1,
           "typeID": 32799
         }
@@ -1092,13 +929,9 @@
       "products": [
         {
           "name": "Orbital Laser S",
-          "published": false,
           "quantity": 1,
           "typeID": 32799
         }
-      ],
-      "shared_type_ids": [
-        32799
       ]
     },
     {
@@ -1106,10 +939,10 @@
       "blueprint_name": "Orbital EMP S Blueprint",
       "blueprint_published": false,
       "blueprint_type_id": 32802,
+      "identity_recipe": true,
       "materials": [
         {
           "name": "Orbital EMP S",
-          "published": false,
           "quantity": 1,
           "typeID": 32801
         }
@@ -1117,13 +950,9 @@
       "products": [
         {
           "name": "Orbital EMP S",
-          "published": false,
           "quantity": 1,
           "typeID": 32801
         }
-      ],
-      "shared_type_ids": [
-        32801
       ]
     },
     {
@@ -1131,10 +960,10 @@
       "blueprint_name": "Orbital Hybrid S Blueprint",
       "blueprint_published": false,
       "blueprint_type_id": 32804,
+      "identity_recipe": true,
       "materials": [
         {
           "name": "Orbital Hybrid S",
-          "published": false,
           "quantity": 1,
           "typeID": 32803
         }
@@ -1142,13 +971,9 @@
       "products": [
         {
           "name": "Orbital Hybrid S",
-          "published": false,
           "quantity": 1,
           "typeID": 32803
         }
-      ],
-      "shared_type_ids": [
-        32803
       ]
     },
     {
@@ -1156,10 +981,10 @@
       "blueprint_name": "Small Mobile Siphon Unit Blueprint",
       "blueprint_published": true,
       "blueprint_type_id": 33515,
+      "identity_recipe": true,
       "materials": [
         {
           "name": "Small Mobile Siphon Unit",
-          "published": true,
           "quantity": 1,
           "typeID": 33477
         }
@@ -1167,13 +992,9 @@
       "products": [
         {
           "name": "Small Mobile Siphon Unit",
-          "published": true,
           "quantity": 1,
           "typeID": 33477
         }
-      ],
-      "shared_type_ids": [
-        33477
       ]
     },
     {
@@ -1181,10 +1002,10 @@
       "blueprint_name": "Small Mobile 'Hybrid' Siphon Unit Blueprint",
       "blueprint_published": true,
       "blueprint_type_id": 33582,
+      "identity_recipe": true,
       "materials": [
         {
           "name": "Small Mobile 'Hybrid' Siphon Unit",
-          "published": true,
           "quantity": 1,
           "typeID": 33581
         }
@@ -1192,13 +1013,9 @@
       "products": [
         {
           "name": "Small Mobile 'Hybrid' Siphon Unit",
-          "published": true,
           "quantity": 1,
           "typeID": 33581
         }
-      ],
-      "shared_type_ids": [
-        33581
       ]
     },
     {
@@ -1206,10 +1023,10 @@
       "blueprint_name": "Small Mobile 'Rote' Siphon Unit Blueprint",
       "blueprint_published": true,
       "blueprint_type_id": 33584,
+      "identity_recipe": true,
       "materials": [
         {
           "name": "Small Mobile 'Rote' Siphon Unit",
-          "published": true,
           "quantity": 1,
           "typeID": 33583
         }
@@ -1217,13 +1034,9 @@
       "products": [
         {
           "name": "Small Mobile 'Rote' Siphon Unit",
-          "published": true,
           "quantity": 1,
           "typeID": 33583
         }
-      ],
-      "shared_type_ids": [
-        33583
       ]
     },
     {
@@ -1231,10 +1044,10 @@
       "blueprint_name": "Thukker Component Assembly Array Blueprint",
       "blueprint_published": true,
       "blueprint_type_id": 33868,
+      "identity_recipe": true,
       "materials": [
         {
           "name": "Thukker Component Assembly Array",
-          "published": true,
           "quantity": 1,
           "typeID": 33867
         }
@@ -1242,13 +1055,9 @@
       "products": [
         {
           "name": "Thukker Component Assembly Array",
-          "published": true,
           "quantity": 1,
           "typeID": 33867
         }
-      ],
-      "shared_type_ids": [
-        33867
       ]
     },
     {
@@ -1256,10 +1065,10 @@
       "blueprint_name": "Vanguard Blueprint",
       "blueprint_published": false,
       "blueprint_type_id": 42134,
+      "identity_recipe": true,
       "materials": [
         {
           "name": "Vanguard",
-          "published": false,
           "quantity": 1,
           "typeID": 42132
         }
@@ -1267,13 +1076,9 @@
       "products": [
         {
           "name": "Vanguard",
-          "published": false,
           "quantity": 1,
           "typeID": 42132
         }
-      ],
-      "shared_type_ids": [
-        42132
       ]
     },
     {
@@ -1281,10 +1086,10 @@
       "blueprint_name": "Venerable Blueprint",
       "blueprint_published": false,
       "blueprint_type_id": 42135,
+      "identity_recipe": true,
       "materials": [
         {
           "name": "Venerable",
-          "published": false,
           "quantity": 1,
           "typeID": 42133
         }
@@ -1292,13 +1097,9 @@
       "products": [
         {
           "name": "Venerable",
-          "published": false,
           "quantity": 1,
           "typeID": 42133
         }
-      ],
-      "shared_type_ids": [
-        42133
       ]
     }
   ],
