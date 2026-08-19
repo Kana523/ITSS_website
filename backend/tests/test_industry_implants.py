@@ -11,6 +11,7 @@ from app.industry.implants import (
 from app.industry.models import (
     ActivityKind,
     AppliedProductionModifiers,
+    CharacterIndustrySkills,
     IndustryRecipe,
     ItemQuantity,
     ProductionPlan,
@@ -39,7 +40,10 @@ def _result(activity: ActivityKind) -> DescribedProductionPlan:
         produced_quantity=1,
         surplus_quantity=0,
         blueprint_efficiency=None,
-        production_modifiers=AppliedProductionModifiers(activity=activity, skills=None),
+        production_modifiers=AppliedProductionModifiers(
+            activity=activity,
+            skills=CharacterIndustrySkills(),
+        ),
         base_total_job_time_seconds=100,
         exact_job_time_seconds=Fraction(100),
         inputs=(ItemQuantity(7001, 10),),
