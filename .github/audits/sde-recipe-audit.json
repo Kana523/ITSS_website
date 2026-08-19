@@ -16,561 +16,561 @@
   "self_dependent_recipes": [
     {
       "activity": "manufacturing",
-      "blueprint_name": null,
+      "blueprint_name": "Sovereignty Blockade Unit Blueprint",
       "blueprint_type_id": 2738,
       "shared_types": [
         {
-          "name": null,
+          "name": "Sovereignty Blockade Unit",
           "type_id": 32250
         }
       ]
     },
     {
       "activity": "manufacturing",
-      "blueprint_name": null,
+      "blueprint_name": "Biochemical Silo Blueprint",
       "blueprint_type_id": 2742,
       "shared_types": [
         {
-          "name": null,
+          "name": "Biochemical Silo",
           "type_id": 25270
         }
       ]
     },
     {
       "activity": "manufacturing",
-      "blueprint_name": null,
+      "blueprint_name": "Catalyst Silo Blueprint",
       "blueprint_type_id": 2743,
       "shared_types": [
         {
-          "name": null,
+          "name": "Catalyst Silo",
           "type_id": 25271
         }
       ]
     },
     {
       "activity": "manufacturing",
-      "blueprint_name": null,
+      "blueprint_name": "Coupling Array Blueprint",
       "blueprint_type_id": 2744,
       "shared_types": [
         {
-          "name": null,
+          "name": "Coupling Array",
           "type_id": 17982
         }
       ]
     },
     {
       "activity": "manufacturing",
-      "blueprint_name": null,
+      "blueprint_name": "General Storage Blueprint",
       "blueprint_type_id": 2745,
       "shared_types": [
         {
-          "name": null,
+          "name": "General Storage",
           "type_id": 25821
         }
       ]
     },
     {
       "activity": "manufacturing",
-      "blueprint_name": null,
+      "blueprint_name": "Hazardous Chemical Silo Blueprint",
       "blueprint_type_id": 2746,
       "shared_types": [
         {
-          "name": null,
+          "name": "Hazardous Chemical Silo",
           "type_id": 25280
         }
       ]
     },
     {
       "activity": "manufacturing",
-      "blueprint_name": null,
+      "blueprint_name": "Hybrid Polymer Silo Blueprint",
       "blueprint_type_id": 2747,
       "shared_types": [
         {
-          "name": null,
+          "name": "Hybrid Polymer Silo",
           "type_id": 30655
         }
       ]
     },
     {
       "activity": "manufacturing",
-      "blueprint_name": null,
+      "blueprint_name": "Silo Blueprint",
       "blueprint_type_id": 2748,
       "shared_types": [
         {
-          "name": null,
+          "name": "Silo",
           "type_id": 14343
         }
       ]
     },
     {
       "activity": "manufacturing",
-      "blueprint_name": null,
+      "blueprint_name": "Advanced Large Ship Assembly Array Blueprint",
       "blueprint_type_id": 2749,
       "shared_types": [
         {
-          "name": null,
+          "name": "Advanced Large Ship Assembly Array",
           "type_id": 24657
         }
       ]
     },
     {
       "activity": "manufacturing",
-      "blueprint_name": null,
+      "blueprint_name": "Advanced Medium Ship Assembly Array Blueprint",
       "blueprint_type_id": 2751,
       "shared_types": [
         {
-          "name": null,
+          "name": "Advanced Medium Ship Assembly Array",
           "type_id": 24655
         }
       ]
     },
     {
       "activity": "manufacturing",
-      "blueprint_name": null,
+      "blueprint_name": "Advanced Small Ship Assembly Array Blueprint",
       "blueprint_type_id": 2753,
       "shared_types": [
         {
-          "name": null,
+          "name": "Advanced Small Ship Assembly Array",
           "type_id": 24653
         }
       ]
     },
     {
       "activity": "manufacturing",
-      "blueprint_name": null,
+      "blueprint_name": "Ammunition Assembly Array Blueprint",
       "blueprint_type_id": 2754,
       "shared_types": [
         {
-          "name": null,
+          "name": "Ammunition Assembly Array",
           "type_id": 24658
         }
       ]
     },
     {
       "activity": "manufacturing",
-      "blueprint_name": null,
+      "blueprint_name": "Supercapital Ship Assembly Array Blueprint",
       "blueprint_type_id": 2756,
       "shared_types": [
         {
-          "name": null,
+          "name": "Supercapital Ship Assembly Array",
           "type_id": 24575
         }
       ]
     },
     {
       "activity": "manufacturing",
-      "blueprint_name": null,
+      "blueprint_name": "Component Assembly Array Blueprint",
       "blueprint_type_id": 2758,
       "shared_types": [
         {
-          "name": null,
+          "name": "Component Assembly Array",
           "type_id": 24660
         }
       ]
     },
     {
       "activity": "manufacturing",
-      "blueprint_name": null,
+      "blueprint_name": "Drone Assembly Array Blueprint",
       "blueprint_type_id": 2760,
       "shared_types": [
         {
-          "name": null,
+          "name": "Drone Assembly Array",
           "type_id": 24659
         }
       ]
     },
     {
       "activity": "manufacturing",
-      "blueprint_name": null,
+      "blueprint_name": "Drug Lab Blueprint",
       "blueprint_type_id": 2762,
       "shared_types": [
         {
-          "name": null,
+          "name": "Drug Lab",
           "type_id": 25305
         }
       ]
     },
     {
       "activity": "manufacturing",
-      "blueprint_name": null,
+      "blueprint_name": "Equipment Assembly Array Blueprint",
       "blueprint_type_id": 2764,
       "shared_types": [
         {
-          "name": null,
+          "name": "Equipment Assembly Array",
           "type_id": 13780
         }
       ]
     },
     {
       "activity": "manufacturing",
-      "blueprint_name": null,
+      "blueprint_name": "Intensive Reprocessing Array Blueprint",
       "blueprint_type_id": 2765,
       "shared_types": [
         {
-          "name": null,
+          "name": "Intensive Reprocessing Array",
           "type_id": 19470
         }
       ]
     },
     {
       "activity": "manufacturing",
-      "blueprint_name": null,
+      "blueprint_name": "Large Ship Assembly Array Blueprint",
       "blueprint_type_id": 2766,
       "shared_types": [
         {
-          "name": null,
+          "name": "Large Ship Assembly Array",
           "type_id": 29613
         }
       ]
     },
     {
       "activity": "manufacturing",
-      "blueprint_name": null,
+      "blueprint_name": "Compression Array Blueprint",
       "blueprint_type_id": 2767,
       "shared_types": [
         {
-          "name": null,
+          "name": "Compression Array",
           "type_id": 12239
         }
       ]
     },
     {
       "activity": "manufacturing",
-      "blueprint_name": null,
+      "blueprint_name": "Medium Ship Assembly Array Blueprint",
       "blueprint_type_id": 2768,
       "shared_types": [
         {
-          "name": null,
+          "name": "Medium Ship Assembly Array",
           "type_id": 24654
         }
       ]
     },
     {
       "activity": "manufacturing",
-      "blueprint_name": null,
+      "blueprint_name": "Reprocessing Array Blueprint",
       "blueprint_type_id": 2769,
       "shared_types": [
         {
-          "name": null,
+          "name": "Reprocessing Array",
           "type_id": 12238
         }
       ]
     },
     {
       "activity": "manufacturing",
-      "blueprint_name": null,
+      "blueprint_name": "Rapid Equipment Assembly Array Blueprint",
       "blueprint_type_id": 2770,
       "shared_types": [
         {
-          "name": null,
+          "name": "Rapid Equipment Assembly Array",
           "type_id": 16220
         }
       ]
     },
     {
       "activity": "manufacturing",
-      "blueprint_name": null,
+      "blueprint_name": "Small Ship Assembly Array Blueprint",
       "blueprint_type_id": 2771,
       "shared_types": [
         {
-          "name": null,
+          "name": "Small Ship Assembly Array",
           "type_id": 24574
         }
       ]
     },
     {
       "activity": "manufacturing",
-      "blueprint_name": null,
+      "blueprint_name": "Subsystem Assembly Array Blueprint",
       "blueprint_type_id": 2772,
       "shared_types": [
         {
-          "name": null,
+          "name": "Subsystem Assembly Array",
           "type_id": 30389
         }
       ]
     },
     {
       "activity": "manufacturing",
-      "blueprint_name": null,
+      "blueprint_name": "Capital Ship Assembly Array Blueprint",
       "blueprint_type_id": 2773,
       "shared_types": [
         {
-          "name": null,
+          "name": "Capital Ship Assembly Array",
           "type_id": 24656
         }
       ]
     },
     {
       "activity": "manufacturing",
-      "blueprint_name": null,
+      "blueprint_name": "Moon Harvesting Array Blueprint",
       "blueprint_type_id": 2786,
       "shared_types": [
         {
-          "name": null,
+          "name": "Moon Harvesting Array",
           "type_id": 16221
         }
       ]
     },
     {
       "activity": "manufacturing",
-      "blueprint_name": null,
+      "blueprint_name": "Cynosural Generator Array Blueprint",
       "blueprint_type_id": 2788,
       "shared_types": [
         {
-          "name": null,
+          "name": "Cynosural Generator Array",
           "type_id": 27673
         }
       ]
     },
     {
       "activity": "manufacturing",
-      "blueprint_name": null,
+      "blueprint_name": "Cynosural System Jammer Blueprint",
       "blueprint_type_id": 2789,
       "shared_types": [
         {
-          "name": null,
+          "name": "Cynosural System Jammer",
           "type_id": 27674
         }
       ]
     },
     {
       "activity": "manufacturing",
-      "blueprint_name": null,
+      "blueprint_name": "Biochemical Reactor Array Blueprint",
       "blueprint_type_id": 2790,
       "shared_types": [
         {
-          "name": null,
+          "name": "Biochemical Reactor Array",
           "type_id": 24684
         }
       ]
     },
     {
       "activity": "manufacturing",
-      "blueprint_name": null,
+      "blueprint_name": "Complex Reactor Array Blueprint",
       "blueprint_type_id": 2791,
       "shared_types": [
         {
-          "name": null,
+          "name": "Complex Reactor Array",
           "type_id": 16869
         }
       ]
     },
     {
       "activity": "manufacturing",
-      "blueprint_name": null,
+      "blueprint_name": "Medium Biochemical Reactor Array Blueprint",
       "blueprint_type_id": 2793,
       "shared_types": [
         {
-          "name": null,
+          "name": "Medium Biochemical Reactor Array",
           "type_id": 22634
         }
       ]
     },
     {
       "activity": "manufacturing",
-      "blueprint_name": null,
+      "blueprint_name": "Polymer Reactor Array Blueprint",
       "blueprint_type_id": 2795,
       "shared_types": [
         {
-          "name": null,
+          "name": "Polymer Reactor Array",
           "type_id": 30656
         }
       ]
     },
     {
       "activity": "manufacturing",
-      "blueprint_name": null,
+      "blueprint_name": "Simple Reactor Array Blueprint",
       "blueprint_type_id": 2797,
       "shared_types": [
         {
-          "name": null,
+          "name": "Simple Reactor Array",
           "type_id": 20175
         }
       ]
     },
     {
       "activity": "manufacturing",
-      "blueprint_name": null,
+      "blueprint_name": "Jump Bridge Blueprint",
       "blueprint_type_id": 2800,
       "shared_types": [
         {
-          "name": null,
+          "name": "Jump Bridge",
           "type_id": 27897
         }
       ]
     },
     {
       "activity": "manufacturing",
-      "blueprint_name": null,
+      "blueprint_name": "Experimental Laboratory Blueprint",
       "blueprint_type_id": 2820,
       "shared_types": [
         {
-          "name": null,
+          "name": "Experimental Laboratory",
           "type_id": 24567
         }
       ]
     },
     {
       "activity": "manufacturing",
-      "blueprint_name": null,
+      "blueprint_name": "Research Laboratory Blueprint",
       "blueprint_type_id": 2821,
       "shared_types": [
         {
-          "name": null,
+          "name": "Research Laboratory",
           "type_id": 16216
         }
       ]
     },
     {
       "activity": "manufacturing",
-      "blueprint_name": null,
+      "blueprint_name": "Amarr Factory Outpost Platform Blueprint",
       "blueprint_type_id": 21943,
       "shared_types": [
         {
-          "name": null,
+          "name": "Amarr Factory Outpost Platform",
           "type_id": 10260
         }
       ]
     },
     {
       "activity": "manufacturing",
-      "blueprint_name": null,
+      "blueprint_name": "Caldari Research Outpost Platform Blueprint",
       "blueprint_type_id": 21944,
       "shared_types": [
         {
-          "name": null,
+          "name": "Caldari Research Outpost Platform",
           "type_id": 19758
         }
       ]
     },
     {
       "activity": "manufacturing",
-      "blueprint_name": null,
+      "blueprint_name": "Gallente Administrative Outpost Platform Blueprint",
       "blueprint_type_id": 21945,
       "shared_types": [
         {
-          "name": null,
+          "name": "Gallente Administrative Outpost Platform",
           "type_id": 10257
         }
       ]
     },
     {
       "activity": "manufacturing",
-      "blueprint_name": null,
+      "blueprint_name": "Minmatar Service Outpost Platform Blueprint",
       "blueprint_type_id": 21946,
       "shared_types": [
         {
-          "name": null,
+          "name": "Minmatar Service Outpost Platform",
           "type_id": 10258
         }
       ]
     },
     {
       "activity": "manufacturing",
-      "blueprint_name": null,
+      "blueprint_name": "Design Laboratory Blueprint",
       "blueprint_type_id": 28605,
       "shared_types": [
         {
-          "name": null,
+          "name": "Design Laboratory",
           "type_id": 28351
         }
       ]
     },
     {
       "activity": "manufacturing",
-      "blueprint_name": null,
+      "blueprint_name": "Orbital Laser S Blueprint",
       "blueprint_type_id": 32800,
       "shared_types": [
         {
-          "name": null,
+          "name": "Orbital Laser S",
           "type_id": 32799
         }
       ]
     },
     {
       "activity": "manufacturing",
-      "blueprint_name": null,
+      "blueprint_name": "Orbital EMP S Blueprint",
       "blueprint_type_id": 32802,
       "shared_types": [
         {
-          "name": null,
+          "name": "Orbital EMP S",
           "type_id": 32801
         }
       ]
     },
     {
       "activity": "manufacturing",
-      "blueprint_name": null,
+      "blueprint_name": "Orbital Hybrid S Blueprint",
       "blueprint_type_id": 32804,
       "shared_types": [
         {
-          "name": null,
+          "name": "Orbital Hybrid S",
           "type_id": 32803
         }
       ]
     },
     {
       "activity": "manufacturing",
-      "blueprint_name": null,
+      "blueprint_name": "Small Mobile Siphon Unit Blueprint",
       "blueprint_type_id": 33515,
       "shared_types": [
         {
-          "name": null,
+          "name": "Small Mobile Siphon Unit",
           "type_id": 33477
         }
       ]
     },
     {
       "activity": "manufacturing",
-      "blueprint_name": null,
+      "blueprint_name": "Small Mobile 'Hybrid' Siphon Unit Blueprint",
       "blueprint_type_id": 33582,
       "shared_types": [
         {
-          "name": null,
+          "name": "Small Mobile 'Hybrid' Siphon Unit",
           "type_id": 33581
         }
       ]
     },
     {
       "activity": "manufacturing",
-      "blueprint_name": null,
+      "blueprint_name": "Small Mobile 'Rote' Siphon Unit Blueprint",
       "blueprint_type_id": 33584,
       "shared_types": [
         {
-          "name": null,
+          "name": "Small Mobile 'Rote' Siphon Unit",
           "type_id": 33583
         }
       ]
     },
     {
       "activity": "manufacturing",
-      "blueprint_name": null,
+      "blueprint_name": "Thukker Component Assembly Array Blueprint",
       "blueprint_type_id": 33868,
       "shared_types": [
         {
-          "name": null,
+          "name": "Thukker Component Assembly Array",
           "type_id": 33867
         }
       ]
     },
     {
       "activity": "manufacturing",
-      "blueprint_name": null,
+      "blueprint_name": "Vanguard Blueprint",
       "blueprint_type_id": 42134,
       "shared_types": [
         {
-          "name": null,
+          "name": "Vanguard",
           "type_id": 42132
         }
       ]
     },
     {
       "activity": "manufacturing",
-      "blueprint_name": null,
+      "blueprint_name": "Venerable Blueprint",
       "blueprint_type_id": 42135,
       "shared_types": [
         {
-          "name": null,
+          "name": "Venerable",
           "type_id": 42133
         }
       ]
