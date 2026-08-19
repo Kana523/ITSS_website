@@ -30,6 +30,7 @@ from app.industry.repository import IndustryRepository
 from app.industry.specialist_skills import (
     MissingSpecialistSkillsError,
     SpecialistSkillRequirement,
+    effective_required_skill_level,
     normalize_specialist_skill_levels,
 )
 
@@ -183,6 +184,7 @@ class IndustryPlanningService:
                 )
             frontier = next_frontier
 
+        profile = production_profile or ProductionProfile()
         if enforce_specialist_skills and recipes_by_key:
             skill_loader = getattr(
                 self._repository,
@@ -201,9 +203,10 @@ class IndustryPlanningService:
             ] = []
             for recipe_key in sorted(recipes_by_key):
                 for requirement in requirements_by_recipe.get(recipe_key, ()):
-                    current_level = specialist_skill_levels.get(
+                    current_level = effective_required_skill_level(
                         requirement.type_id,
-                        0,
+                        specialist_skill_levels,
+                        profile.skills,
                     )
                     if current_level < requirement.level:
                         missing.append(
@@ -212,7 +215,6 @@ class IndustryPlanningService:
             if missing:
                 raise MissingSpecialistSkillsError(tuple(missing))
 
-        profile = production_profile or ProductionProfile()
         scoped_rig_product_type_ids = {
             recipe.products[0].type_id
             for recipe in recipes_by_key.values()
