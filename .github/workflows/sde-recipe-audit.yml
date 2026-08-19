@@ -24,7 +24,7 @@ jobs:
           import os
           import urllib.request
           import zipfile
-          from pathlib import Path
+          from pathlib import PurePosixPath, Path
 
           url = "https://developers.eveonline.com/static-data/eve-online-static-data-latest-jsonl.zip"
           with urllib.request.urlopen(url, timeout=120) as response:
@@ -33,9 +33,21 @@ jobs:
 
           with zipfile.ZipFile(io.BytesIO(payload)) as archive:
               names = archive.namelist()
-              blueprint_name = next(name for name in names if name.endswith("blueprints.jsonl"))
-              type_name = next(name for name in names if name.endswith("types.jsonl"))
-              meta_name = next((name for name in names if name.endswith("_sde.jsonl")), None)
+              blueprint_name = next(
+                  name for name in names
+                  if PurePosixPath(name).name == "blueprints.jsonl"
+              )
+              type_name = next(
+                  name for name in names
+                  if PurePosixPath(name).name == "types.jsonl"
+              )
+              meta_name = next(
+                  (
+                      name for name in names
+                      if PurePosixPath(name).name == "_sde.jsonl"
+                  ),
+                  None,
+              )
 
               type_names = {}
               with archive.open(type_name) as stream:
