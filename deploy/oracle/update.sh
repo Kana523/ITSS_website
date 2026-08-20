@@ -5,7 +5,7 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd -- "${SCRIPT_DIR}/../.." && pwd)"
 cd "${REPO_ROOT}"
 
-BRANCH="${INDUSTRY_BRANCH:-indy-calc}"
+BRANCH="${INDUSTRY_BRANCH:-main}"
 
 if [[ -n "$(git status --porcelain --untracked-files=normal)" ]]; then
   echo "Refusing to update because the VM checkout has local changes." >&2
