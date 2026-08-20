@@ -12,10 +12,10 @@ over HTTPS later.
 - Docker Compose plugin (`docker compose`)
 - A clone of this repository on the VM
 
-A typical checkout is:
+A typical production checkout is:
 
 ```bash
-git clone --branch indy-calc --single-branch https://github.com/Kana523/ITSS_website.git /opt/itss-industry
+git clone --branch main --single-branch https://github.com/Kana523/ITSS_website.git /opt/itss-industry
 cd /opt/itss-industry
 ```
 
@@ -61,8 +61,8 @@ Expected result:
 
 ## Updating an existing deployment
 
-Develop and test changes normally, then push them to the `indy-calc` branch on
-GitHub. On the Oracle VM run:
+Develop and test changes normally, then merge or push the production-ready code
+to the `main` branch on GitHub. On the Oracle VM run:
 
 ```bash
 cd /opt/itss-industry
@@ -70,7 +70,7 @@ bash deploy/oracle/update.sh
 ```
 
 `update.sh` refuses to run if the VM checkout contains local tracked/untracked
-changes, pulls `indy-calc` with `--ff-only`, then calls `deploy.sh`. The production
+changes, pulls `main` with `--ff-only`, then calls `deploy.sh`. The production
 secret file is ignored by Git and is not replaced by pulls.
 
 The PostgreSQL data is stored in the Compose named volume `postgres_data`; normal
@@ -101,17 +101,18 @@ docker compose -f compose.production.yaml --profile maintenance run --rm migrate
 docker compose -f compose.production.yaml restart api
 ```
 
-## Branch changes
+## Branch override
 
-If production later deploys from another branch, set `INDUSTRY_BRANCH` when
-running the update script, for example:
+Production defaults to `main`. If you intentionally need to deploy another
+branch temporarily, set `INDUSTRY_BRANCH` when running the update script, for
+example:
 
 ```bash
-INDUSTRY_BRANCH=develop bash deploy/oracle/update.sh
+INDUSTRY_BRANCH=indy-calc bash deploy/oracle/update.sh
 ```
 
-The checkout must already be on that branch. For production, prefer a single
-stable deployment branch rather than switching the VM between branches.
+The checkout must already be on that branch. For normal production updates, keep
+the VM on `main`.
 
 ## Reverse proxy
 
