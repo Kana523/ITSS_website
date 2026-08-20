@@ -2,7 +2,7 @@ name: Backend CI
 
 on:
   push:
-    branches: [indy-calc, develop]
+    branches: [main, indy-calc, develop]
     paths:
       - "backend/**"
       - "compose.production.yaml"
