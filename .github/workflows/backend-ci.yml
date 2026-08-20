@@ -5,10 +5,14 @@ on:
     branches: [indy-calc, develop]
     paths:
       - "backend/**"
+      - "compose.production.yaml"
+      - "deploy/oracle/**"
       - ".github/workflows/backend-ci.yml"
   pull_request:
     paths:
       - "backend/**"
+      - "compose.production.yaml"
+      - "deploy/oracle/**"
       - ".github/workflows/backend-ci.yml"
 
 permissions:
@@ -53,6 +57,14 @@ jobs:
       - name: Check migrations
         working-directory: backend
         run: uv run alembic upgrade head
+      - name: Validate production Compose configuration
+        env:
+          INDUSTRY_ENV_FILE: ./backend/.env.production.example
+        run: docker compose -f compose.production.yaml config -q
+      - name: Build production backend image
+        env:
+          INDUSTRY_ENV_FILE: ./backend/.env.production.example
+        run: docker compose -f compose.production.yaml build api migrate
       - name: Run complete test suite
         id: pytest
         working-directory: backend
