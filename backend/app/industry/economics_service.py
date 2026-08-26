@@ -91,14 +91,12 @@ class IndustryPricingOptions:
     solar_system_id: int = 30_000_142
     facility_tax_basis_points: int = 25
     scc_surcharge_basis_points: int = 400
-    alpha_clone_tax_basis_points: int = 0
     sales_tax_basis_points: int = 0
     broker_fee_basis_points: int = 0
     job_cost_reduction_basis_points: int = 0
     reaction_solar_system_id: int | None = None
     reaction_facility_tax_basis_points: int = 25
     reaction_scc_surcharge_basis_points: int = 400
-    reaction_alpha_clone_tax_basis_points: int = 0
     reaction_job_cost_reduction_basis_points: int = 0
 
     def __post_init__(self) -> None:
@@ -111,13 +109,11 @@ class IndustryPricingOptions:
         for field_name in (
             "facility_tax_basis_points",
             "scc_surcharge_basis_points",
-            "alpha_clone_tax_basis_points",
             "sales_tax_basis_points",
             "broker_fee_basis_points",
             "job_cost_reduction_basis_points",
             "reaction_facility_tax_basis_points",
             "reaction_scc_surcharge_basis_points",
-            "reaction_alpha_clone_tax_basis_points",
             "reaction_job_cost_reduction_basis_points",
         ):
             _require_basis_points(getattr(self, field_name), field_name)
@@ -136,7 +132,6 @@ class IndustryPricingOptions:
                 solar_system_id=self.solar_system_id,
                 facility_tax_rate=_rate(self.facility_tax_basis_points),
                 scc_surcharge_rate=_rate(self.scc_surcharge_basis_points),
-                alpha_clone_tax_rate=_rate(self.alpha_clone_tax_basis_points),
                 default_job_cost_modifier=_rate(
                     10_000 - self.job_cost_reduction_basis_points
                 ),
@@ -152,9 +147,6 @@ class IndustryPricingOptions:
                 ),
                 scc_surcharge_rate=_rate(
                     self.reaction_scc_surcharge_basis_points
-                ),
-                alpha_clone_tax_rate=_rate(
-                    self.reaction_alpha_clone_tax_basis_points
                 ),
                 default_job_cost_modifier=_rate(
                     10_000 - self.reaction_job_cost_reduction_basis_points
@@ -179,7 +171,6 @@ class IndustryPricingOptions:
             solar_system_id=manufacturing.solar_system_id,
             facility_tax_rate=manufacturing.facility_tax_rate,
             scc_surcharge_rate=manufacturing.scc_surcharge_rate,
-            alpha_clone_tax_rate=manufacturing.alpha_clone_tax_rate,
             sales_tax_rate=_rate(self.sales_tax_basis_points),
             broker_fee_rate=_rate(self.broker_fee_basis_points),
             default_job_cost_modifier=manufacturing.default_job_cost_modifier,

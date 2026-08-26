@@ -2,8 +2,9 @@
   --industry-blue: var(--cat-blueprints);
   --industry-purple: var(--cat-boats);
   --industry-yellow: var(--cat-materials);
-  width: min(1440px, calc(100% - 36px));
-  margin: 28px auto 40px;
+  width: 100%;
+  max-width: none;
+  margin: 28px 0 40px;
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -96,10 +97,15 @@
 }
 
 .industry-workbench {
+  width: 100%;
   display: grid;
-  grid-template-columns: minmax(300px, 350px) minmax(0, 1fr);
+  grid-template-columns: 280px minmax(0, 1fr);
   gap: 20px;
   align-items: start;
+}
+
+.industry-output {
+  min-width: 0;
 }
 
 .planner-panel,
@@ -146,6 +152,96 @@
 
 .planner-panel form {
   gap: 16px;
+}
+
+.saved-configs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: var(--border-sm) solid var(--border-subtle);
+  background: color-mix(in oklch, var(--industry-blue) 5%, var(--surface-control));
+}
+
+.saved-configs-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.saved-configs-heading h3 {
+  align-self: flex-start;
+  color: var(--text-strong);
+  font-size: 0.95rem;
+}
+
+.saved-configs-heading small {
+  flex: 0 0 auto;
+  color: var(--industry-blue);
+  font-size: 0.7rem;
+}
+
+.saved-configs > label {
+  color: var(--text);
+  font-size: 0.74rem;
+}
+
+.saved-config-save-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 7px;
+}
+
+.saved-configs input,
+.saved-configs select {
+  width: 100%;
+  min-height: 44px;
+}
+
+.saved-config-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.config-button {
+  min-height: 40px;
+  padding: 7px 9px;
+  border: var(--border-sm) solid var(--border-subtle);
+  border-radius: 3px;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.76rem;
+}
+
+.config-button:hover,
+.config-button:focus-visible {
+  border-color: var(--text-muted);
+  background: var(--surface-hover);
+  color: var(--text-strong);
+}
+
+.config-button--primary {
+  border-color: var(--industry-blue);
+  color: var(--text-strong);
+}
+
+.config-button--danger {
+  border-color: var(--danger-line);
+  color: var(--danger-text);
+}
+
+.config-button--danger:hover,
+.config-button--danger:focus-visible {
+  border-color: var(--red);
+  background: var(--danger-bg-hover);
+  color: var(--danger-text-strong);
+}
+
+.saved-config-status {
+  min-height: 0;
 }
 
 .field-group {
@@ -443,6 +539,7 @@
 }
 
 .profile-field-grid label,
+.activity-config-grid label,
 .rig-scope-grid label,
 .pricing-grid label,
 .wide-field {
@@ -455,10 +552,49 @@
 }
 
 .profile-field-grid select,
+.activity-config-grid select,
 .rig-scope-grid input,
 .wide-field input {
   width: 100%;
   max-width: none !important;
+}
+
+.activity-config-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.modifier-readout {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.modifier-readout div {
+  min-width: 0;
+  padding: 8px 6px;
+  border-top: 2px solid color-mix(in oklch, var(--industry-blue) 70%, var(--border-subtle));
+  background: var(--surface-control);
+}
+
+.modifier-readout dt {
+  color: var(--text);
+  font-size: 0.64rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.modifier-readout dd {
+  margin-top: 3px;
+  color: var(--text-strong);
+  font-family: var(--font-title);
+  font-size: 0.86rem;
+  overflow-wrap: anywhere;
+}
+
+.activity-config .field-help {
+  margin-top: 10px;
 }
 
 .modifier-grid {
@@ -1406,7 +1542,7 @@
 
 @media (max-width: 1100px) {
   .industry-workbench {
-    grid-template-columns: minmax(280px, 320px) minmax(0, 1fr);
+    grid-template-columns: 260px minmax(0, 1fr);
   }
 
   .route-metrics {
@@ -1421,8 +1557,8 @@
 
 @media (max-width: 820px) {
   .industry-page {
-    width: min(100%, calc(100% - 24px));
-    margin: 20px auto 28px;
+    width: 100%;
+    margin: 20px 0 28px;
     gap: 16px;
   }
 
@@ -1554,7 +1690,7 @@
 
 @media (max-width: 360px) {
   .industry-page {
-    width: min(100%, calc(100% - 16px));
+    width: 100%;
   }
 
   .route-step {

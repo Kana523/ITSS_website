@@ -1,4 +1,5 @@
 from collections.abc import Iterable, Mapping
+from fractions import Fraction
 
 from app.industry.errors import (
     IndustryPlanningError,
@@ -51,6 +52,7 @@ class IndustryPlanningService:
         owned_materials: Mapping[int, int] | None = None,
         blueprint_copy_run_limits: Mapping[RecipeKey, int] | None = None,
         specialist_skill_levels: Mapping[int, int] | None = None,
+        manufacturing_time_multiplier: Fraction = Fraction(1),
         expected_sde_build_number: int | None = None,
     ) -> ProductionPlan:
         demand_tuple = tuple(demands)
@@ -120,6 +122,7 @@ class IndustryPlanningService:
                 copy_run_limits,
                 specialist_levels,
                 enforce_specialist_skills,
+                manufacturing_time_multiplier,
                 build_number,
                 root_type_ids,
             )
@@ -137,6 +140,7 @@ class IndustryPlanningService:
         blueprint_copy_run_limits: Mapping[RecipeKey, int],
         specialist_skill_levels: Mapping[int, int],
         enforce_specialist_skills: bool,
+        manufacturing_time_multiplier: Fraction,
         build_number: int,
         root_type_ids: set[int],
     ) -> ProductionPlan:
@@ -248,4 +252,5 @@ class IndustryPlanningService:
             product_types=product_types,
             owned_materials=owned_materials,
             blueprint_copy_run_limits=blueprint_copy_run_limits,
+            manufacturing_time_multiplier=manufacturing_time_multiplier,
         )

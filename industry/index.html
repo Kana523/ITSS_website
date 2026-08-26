@@ -61,6 +61,29 @@
           <h2 id="planner-title">What are you building?</h2>
         </div>
 
+        <section class="saved-configs" aria-labelledby="saved-configs-title">
+          <div class="saved-configs-heading">
+            <h3 id="saved-configs-title">Saved configurations</h3>
+            <small data-config-count>0 saved</small>
+          </div>
+          <label for="config-name">Configuration name</label>
+          <div class="saved-config-save-row">
+            <input id="config-name" data-config-name type="text" maxlength="60" autocomplete="off" placeholder="Capital production">
+            <button class="config-button config-button--primary" data-config-save type="button">Save</button>
+          </div>
+          <label for="saved-config-select">Saved in this browser</label>
+          <select id="saved-config-select" data-config-select>
+            <option value="">Choose a configuration</option>
+          </select>
+          <div class="saved-config-actions">
+            <button class="config-button" data-config-load type="button" disabled>Load</button>
+            <button class="config-button" data-config-new type="button">New</button>
+            <button class="config-button config-button--danger" data-config-delete type="button" disabled>Delete</button>
+          </div>
+          <p class="field-status saved-config-status" data-config-status role="status" aria-live="polite"></p>
+          <p class="field-help">Profiles stay on this browser. Preview and deployed URLs keep separate lists.</p>
+        </section>
+
         <form data-planner-form novalidate>
           <div class="field-group search-field">
             <label for="industry-search">Add an item</label>
@@ -129,44 +152,83 @@
                 </div>
               </fieldset>
 
-              <fieldset class="profile-fieldset" data-activity-profile="manufacturing">
-                <legend>Manufacturing</legend>
-                <div class="modifier-grid">
-                  <span class="modifier-grid-heading">Modifier</span>
-                  <span class="modifier-grid-heading">Material</span>
-                  <span class="modifier-grid-heading">Time</span>
-                  <span>Facility</span>
-                  <label><span class="visually-hidden">Manufacturing facility material reduction</span><input data-profile-modifier="facility" data-profile-activity="manufacturing" data-profile-effect="material" type="number" value="0" min="0" max="99.99" step="0.01" inputmode="decimal"><small>%</small></label>
-                  <label><span class="visually-hidden">Manufacturing facility time reduction</span><input data-profile-modifier="facility" data-profile-activity="manufacturing" data-profile-effect="time" type="number" value="0" min="0" max="99.99" step="0.01" inputmode="decimal"><small>%</small></label>
-                  <span>Rig</span>
-                  <label><span class="visually-hidden">Manufacturing rig material reduction</span><input data-profile-modifier="rig" data-profile-activity="manufacturing" data-profile-effect="material" type="number" value="0" min="0" max="99.99" step="0.01" inputmode="decimal"><small>%</small></label>
-                  <label><span class="visually-hidden">Manufacturing rig time reduction</span><input data-profile-modifier="rig" data-profile-activity="manufacturing" data-profile-effect="time" type="number" value="0" min="0" max="99.99" step="0.01" inputmode="decimal"><small>%</small></label>
+              <fieldset class="profile-fieldset activity-config" data-activity-config="manufacturing">
+                <legend>Manufacturing facility</legend>
+                <div class="activity-config-grid">
+                  <label>Structure
+                    <select data-structure-select data-profile-activity="manufacturing">
+                      <option value="unbonused">NPC station / other Upwell</option>
+                      <option value="raitaru">Raitaru</option>
+                      <option value="azbel">Azbel</option>
+                      <option value="sotiyo">Sotiyo</option>
+                    </select>
+                  </label>
+                  <label>Security
+                    <select data-security-select data-profile-activity="manufacturing">
+                      <option value="highsec">Highsec</option>
+                      <option value="lowsec">Lowsec</option>
+                      <option value="nullsec">Nullsec</option>
+                      <option value="wormhole">Wormhole</option>
+                    </select>
+                  </label>
+                  <label>Applicable rig
+                    <select data-rig-tier-select data-profile-activity="manufacturing">
+                      <option value="none">None</option>
+                      <option value="t1">Tech I</option>
+                      <option value="t2">Tech II</option>
+                    </select>
+                  </label>
                 </div>
-                <div class="rig-scope-grid">
-                  <label>Rig category IDs <input data-rig-scope="category_ids" data-profile-activity="manufacturing" type="text" inputmode="numeric" placeholder="All categories"></label>
-                  <label>Rig group IDs <input data-rig-scope="group_ids" data-profile-activity="manufacturing" type="text" inputmode="numeric" placeholder="All groups"></label>
-                </div>
+                <dl class="modifier-readout" aria-label="Calculated manufacturing modifiers">
+                  <div><dt>Materials</dt><dd data-effective-modifier="material" data-profile-activity="manufacturing">0%</dd></div>
+                  <div><dt>Job time</dt><dd data-effective-modifier="time" data-profile-activity="manufacturing">0%</dd></div>
+                  <div><dt>Install cost</dt><dd data-effective-modifier="cost" data-profile-activity="manufacturing">0%</dd></div>
+                </dl>
+                <input data-profile-modifier="facility" data-profile-activity="manufacturing" data-profile-effect="material" type="hidden" value="0">
+                <input data-profile-modifier="facility" data-profile-activity="manufacturing" data-profile-effect="time" type="hidden" value="0">
+                <input data-profile-modifier="rig" data-profile-activity="manufacturing" data-profile-effect="material" type="hidden" value="0">
+                <input data-profile-modifier="rig" data-profile-activity="manufacturing" data-profile-effect="time" type="hidden" value="0">
+                <input data-rig-scope="category_ids" data-profile-activity="manufacturing" type="hidden" value="">
+                <input data-rig-scope="group_ids" data-profile-activity="manufacturing" type="hidden" value="">
+                <p class="field-help">For now, the selected rig tier is applied to every manufactured item and assumes both material and time coverage.</p>
               </fieldset>
 
-              <fieldset class="profile-fieldset" data-activity-profile="reaction">
-                <legend>Reactions</legend>
-                <div class="modifier-grid">
-                  <span class="modifier-grid-heading">Modifier</span>
-                  <span class="modifier-grid-heading">Material</span>
-                  <span class="modifier-grid-heading">Time</span>
-                  <span>Facility</span>
-                  <label><span class="visually-hidden">Reaction facility material reduction</span><input data-profile-modifier="facility" data-profile-activity="reaction" data-profile-effect="material" type="number" value="0" min="0" max="99.99" step="0.01" inputmode="decimal"><small>%</small></label>
-                  <label><span class="visually-hidden">Reaction facility time reduction</span><input data-profile-modifier="facility" data-profile-activity="reaction" data-profile-effect="time" type="number" value="0" min="0" max="99.99" step="0.01" inputmode="decimal"><small>%</small></label>
-                  <span>Rig</span>
-                  <label><span class="visually-hidden">Reaction rig material reduction</span><input data-profile-modifier="rig" data-profile-activity="reaction" data-profile-effect="material" type="number" value="0" min="0" max="99.99" step="0.01" inputmode="decimal"><small>%</small></label>
-                  <label><span class="visually-hidden">Reaction rig time reduction</span><input data-profile-modifier="rig" data-profile-activity="reaction" data-profile-effect="time" type="number" value="0" min="0" max="99.99" step="0.01" inputmode="decimal"><small>%</small></label>
+              <fieldset class="profile-fieldset activity-config" data-activity-config="reaction">
+                <legend>Reaction facility</legend>
+                <div class="activity-config-grid">
+                  <label>Structure
+                    <select data-structure-select data-profile-activity="reaction">
+                      <option value="athanor">Athanor</option>
+                      <option value="tatara">Tatara</option>
+                    </select>
+                  </label>
+                  <label>Security
+                    <select data-security-select data-profile-activity="reaction">
+                      <option value="lowsec">Lowsec</option>
+                      <option value="nullsec">Nullsec</option>
+                      <option value="wormhole">Wormhole</option>
+                    </select>
+                  </label>
+                  <label>Applicable rig
+                    <select data-rig-tier-select data-profile-activity="reaction">
+                      <option value="none">None</option>
+                      <option value="t1">Tech I</option>
+                      <option value="t2">Tech II</option>
+                    </select>
+                  </label>
                 </div>
-                <div class="rig-scope-grid">
-                  <label>Rig category IDs <input data-rig-scope="category_ids" data-profile-activity="reaction" type="text" inputmode="numeric" placeholder="All categories"></label>
-                  <label>Rig group IDs <input data-rig-scope="group_ids" data-profile-activity="reaction" type="text" inputmode="numeric" placeholder="All groups"></label>
-                </div>
+                <dl class="modifier-readout" aria-label="Calculated reaction modifiers">
+                  <div><dt>Materials</dt><dd data-effective-modifier="material" data-profile-activity="reaction">0%</dd></div>
+                  <div><dt>Job time</dt><dd data-effective-modifier="time" data-profile-activity="reaction">0%</dd></div>
+                </dl>
+                <input data-profile-modifier="facility" data-profile-activity="reaction" data-profile-effect="material" type="hidden" value="0">
+                <input data-profile-modifier="facility" data-profile-activity="reaction" data-profile-effect="time" type="hidden" value="0">
+                <input data-profile-modifier="rig" data-profile-activity="reaction" data-profile-effect="material" type="hidden" value="0">
+                <input data-profile-modifier="rig" data-profile-activity="reaction" data-profile-effect="time" type="hidden" value="0">
+                <input data-rig-scope="category_ids" data-profile-activity="reaction" type="hidden" value="">
+                <input data-rig-scope="group_ids" data-profile-activity="reaction" type="hidden" value="">
+                <p class="field-help">Reactions require lowsec, nullsec, or wormhole space. This interim rig choice assumes both material and time coverage.</p>
               </fieldset>
-              <p class="field-help">Enter final reductions after security-space scaling. Empty rig scopes apply to every product in that activity.</p>
             </div>
           </details>
 
@@ -187,17 +249,15 @@
                 <div class="pricing-grid">
                   <label>Facility tax <span><input data-pricing-percent="facility_tax_basis_points" type="number" value="0.25" min="0" max="100" step="0.01" inputmode="decimal"><small>%</small></span></label>
                   <label>SCC surcharge <span><input data-pricing-percent="scc_surcharge_basis_points" type="number" value="4" min="0" max="100" step="0.01" inputmode="decimal"><small>%</small></span></label>
-                  <label>Alpha tax <span><input data-pricing-percent="alpha_clone_tax_basis_points" type="number" value="0" min="0" max="100" step="0.01" inputmode="decimal"><small>%</small></span></label>
-                  <label>Job cost reduction <span><input data-pricing-percent="job_cost_reduction_basis_points" type="number" value="0" min="0" max="100" step="0.01" inputmode="decimal"><small>%</small></span></label>
                 </div>
+                <input data-pricing-percent="job_cost_reduction_basis_points" data-derived-job-cost="manufacturing" type="hidden" value="0">
                 <p class="pricing-subheading">Reaction jobs</p>
                 <label class="wide-field">Reaction solar system ID <input data-pricing-integer="reaction_solar_system_id" data-pricing-optional type="number" min="1" max="2147483647" step="1" inputmode="numeric" placeholder="Required for reaction routes"></label>
                 <div class="pricing-grid">
                   <label>Facility tax <span><input data-pricing-percent="reaction_facility_tax_basis_points" type="number" value="0.25" min="0" max="100" step="0.01" inputmode="decimal"><small>%</small></span></label>
                   <label>SCC surcharge <span><input data-pricing-percent="reaction_scc_surcharge_basis_points" type="number" value="4" min="0" max="100" step="0.01" inputmode="decimal"><small>%</small></span></label>
-                  <label>Alpha tax <span><input data-pricing-percent="reaction_alpha_clone_tax_basis_points" type="number" value="0" min="0" max="100" step="0.01" inputmode="decimal"><small>%</small></span></label>
-                  <label>Job cost reduction <span><input data-pricing-percent="reaction_job_cost_reduction_basis_points" type="number" value="0" min="0" max="100" step="0.01" inputmode="decimal"><small>%</small></span></label>
                 </div>
+                <input data-pricing-percent="reaction_job_cost_reduction_basis_points" data-derived-job-cost="reaction" type="hidden" value="0">
                 <p class="pricing-subheading">Immediate sale</p>
                 <div class="pricing-grid">
                   <label>Sales tax <span><input data-pricing-percent="sales_tax_basis_points" type="number" value="0" min="0" max="100" step="0.01" inputmode="decimal"><small>%</small></span></label>

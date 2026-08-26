@@ -1,3 +1,4 @@
+from fractions import Fraction
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Path, Query
@@ -17,7 +18,6 @@ from app.api.schemas.industry_calculation import (
     industry_calculation_response,
 )
 from app.industry.application import IndustryApplicationService
-from app.industry.implants import apply_manufacturing_time_implant
 
 
 router = APIRouter(prefix="/api/industry", tags=["industry"])
@@ -28,6 +28,8 @@ IndustryServiceDependency = Annotated[
 ERROR_RESPONSES = {
     404: {"model": ErrorResponse, "description": "EVE type not found"},
     409: {"model": ErrorResponse, "description": "Plan conflict"},
+    413: {"model": ErrorResponse, "description": "Request body too large"},
+    429: {"model": ErrorResponse, "description": "Too many requests"},
     422: {"model": ErrorResponse, "description": "Invalid request"},
     500: {"model": ErrorResponse, "description": "Internal server error"},
     503: {"model": ErrorResponse, "description": "Data unavailable"},
@@ -81,23 +83,38 @@ def get_product_recipes(
 @router.post(
     "/calculate",
     response_model=IndustryCalculationResponse,
-    responses=ERROR_RESPONSES,
+    responses={
+        404: ERROR_RESPONSES[404],
+        409: ERROR_RESPONSES[409],
+        413: ERROR_RESPONSES[413],
+        422: ERROR_RESPONSES[422],
+        429: ERROR_RESPONSES[429],
+        500: ERROR_RESPONSES[500],
+        503: ERROR_RESPONSES[503],
+    },
 )
 def calculate(
     request: IndustryCalculationRequest,
     service: IndustryServiceDependency,
 ) -> IndustryCalculationResponse:
     implant = request.to_manufacturing_time_implant()
+    owned_materials = request.to_owned_materials()
     result = service.create_plan(
         request.to_demands(),
         choices=request.to_choices(),
         blueprint_efficiencies=request.to_blueprint_efficiencies(),
         production_profile=request.to_production_profile(),
-        owned_materials=request.to_owned_materials(),
+        owned_materials=owned_materials,
         blueprint_copy_run_limits=request.to_blueprint_copy_run_limits(),
         specialist_skill_levels=request.to_specialist_skill_levels(),
         pricing_options=request.to_pricing_options(),
+        manufacturing_time_multiplier=(
+            implant.time_multiplier if implant is not None else Fraction(1)
+        ),
         expected_sde_build_number=request.expected_sde_build_number,
     )
-    result = apply_manufacturing_time_implant(result, implant)
-    return industry_calculation_response(result, implant)
+    return industry_calculation_response(
+        result,
+        implant,
+        owned_materials_included=bool(owned_materials),
+    )

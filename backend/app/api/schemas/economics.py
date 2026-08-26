@@ -28,14 +28,12 @@ class IndustryPricingRequest(EconomicsApiModel):
     solar_system_id: TypeId = 30_000_142
     facility_tax_basis_points: BasisPoints = 25
     scc_surcharge_basis_points: BasisPoints = 400
-    alpha_clone_tax_basis_points: BasisPoints = 0
     sales_tax_basis_points: BasisPoints = 0
     broker_fee_basis_points: ZeroBasisPoints = 0
     job_cost_reduction_basis_points: BasisPoints = 0
     reaction_solar_system_id: TypeId | None = None
     reaction_facility_tax_basis_points: BasisPoints = 25
     reaction_scc_surcharge_basis_points: BasisPoints = 400
-    reaction_alpha_clone_tax_basis_points: BasisPoints = 0
     reaction_job_cost_reduction_basis_points: BasisPoints = 0
 
     def to_domain(self) -> IndustryPricingOptions:
@@ -43,9 +41,6 @@ class IndustryPricingRequest(EconomicsApiModel):
             solar_system_id=self.solar_system_id,
             facility_tax_basis_points=self.facility_tax_basis_points,
             scc_surcharge_basis_points=self.scc_surcharge_basis_points,
-            alpha_clone_tax_basis_points=(
-                self.alpha_clone_tax_basis_points
-            ),
             sales_tax_basis_points=self.sales_tax_basis_points,
             broker_fee_basis_points=self.broker_fee_basis_points,
             job_cost_reduction_basis_points=(
@@ -57,9 +52,6 @@ class IndustryPricingRequest(EconomicsApiModel):
             ),
             reaction_scc_surcharge_basis_points=(
                 self.reaction_scc_surcharge_basis_points
-            ),
-            reaction_alpha_clone_tax_basis_points=(
-                self.reaction_alpha_clone_tax_basis_points
             ),
             reaction_job_cost_reduction_basis_points=(
                 self.reaction_job_cost_reduction_basis_points
@@ -100,14 +92,12 @@ class PricingOptionsResponse(EconomicsApiModel):
     solar_system_id: int
     facility_tax_basis_points: int
     scc_surcharge_basis_points: int
-    alpha_clone_tax_basis_points: int
     sales_tax_basis_points: int
     broker_fee_basis_points: int
     job_cost_reduction_basis_points: int
     reaction_solar_system_id: int | None
     reaction_facility_tax_basis_points: int
     reaction_scc_surcharge_basis_points: int
-    reaction_alpha_clone_tax_basis_points: int
     reaction_job_cost_reduction_basis_points: int
 
 
@@ -488,9 +478,6 @@ def valuation_response(
             solar_system_id=options.solar_system_id,
             facility_tax_basis_points=options.facility_tax_basis_points,
             scc_surcharge_basis_points=options.scc_surcharge_basis_points,
-            alpha_clone_tax_basis_points=(
-                options.alpha_clone_tax_basis_points
-            ),
             sales_tax_basis_points=options.sales_tax_basis_points,
             broker_fee_basis_points=options.broker_fee_basis_points,
             job_cost_reduction_basis_points=(
@@ -502,9 +489,6 @@ def valuation_response(
             ),
             reaction_scc_surcharge_basis_points=(
                 options.reaction_scc_surcharge_basis_points
-            ),
-            reaction_alpha_clone_tax_basis_points=(
-                options.reaction_alpha_clone_tax_basis_points
             ),
             reaction_job_cost_reduction_basis_points=(
                 options.reaction_job_cost_reduction_basis_points

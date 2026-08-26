@@ -15,6 +15,23 @@ class Settings(BaseSettings):
     postgres_user: str
     postgres_password: SecretStr
     database_url: SecretStr
+    database_timeout_seconds: int = Field(default=3, ge=1, le=30)
+    calculation_max_body_bytes: int = Field(
+        default=1_048_576,
+        ge=1_024,
+        le=10_485_760,
+    )
+    calculation_rate_limit_requests: int = Field(default=30, ge=1, le=10_000)
+    calculation_rate_limit_window_seconds: int = Field(
+        default=60,
+        ge=1,
+        le=3_600,
+    )
+    calculation_max_concurrent_requests: int = Field(
+        default=4,
+        ge=1,
+        le=100,
+    )
     cors_origins: str = ""
     esi_base_url: str = "https://esi.evetech.net"
     esi_compatibility_date: date = date(2026, 8, 13)

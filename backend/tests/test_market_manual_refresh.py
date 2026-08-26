@@ -8,7 +8,6 @@ from fastapi.testclient import TestClient
 
 from app.api.dependencies import get_market_application_service
 from app.market.application import (
-    JitaRefreshView,
     JitaSnapshotStatus,
     JitaSnapshotView,
     MarketApplicationService,
@@ -149,7 +148,6 @@ def test_fresh_jita_snapshot_makes_zero_esi_requests() -> None:
 
 class FakeMarketApplicationService:
     def __init__(self) -> None:
-        self.refresh_calls = 0
         self.snapshot = JitaSnapshotView(
             region_id=REGION_ID,
             location_id=LOCATION_ID,
@@ -164,12 +162,8 @@ class FakeMarketApplicationService:
     def jita_status(self) -> JitaSnapshotView:
         return self.snapshot
 
-    def refresh_jita_prices(self) -> JitaRefreshView:
-        self.refresh_calls += 1
-        return JitaRefreshView(RefreshStatus.FRESH, self.snapshot)
 
-
-def test_market_api_exposes_status_and_explicit_refresh() -> None:
+def test_market_api_exposes_status_but_not_refresh() -> None:
     application = create_app(cors_origins=())
     fake_service = FakeMarketApplicationService()
     application.dependency_overrides[get_market_application_service] = (
@@ -185,13 +179,11 @@ def test_market_api_exposes_status_and_explicit_refresh() -> None:
     assert status_response.status_code == 200
     assert status_response.json()["age_minutes"] == 3
     assert status_response.json()["status"] == "fresh"
-    assert refresh_response.status_code == 200
-    assert refresh_response.json()["refresh_status"] == "fresh"
-    assert refresh_response.json()["snapshot"]["row_count"] == 987
-    assert fake_service.refresh_calls == 1
+    assert refresh_response.status_code == 404
+    assert "/api/market/jita/refresh" not in application.openapi()["paths"]
 
 
-def test_market_frontend_refreshes_only_on_page_load_or_button() -> None:
+def test_market_frontend_reads_status_without_refresh_controls() -> None:
     root = Path(__file__).resolve().parents[2]
     loader = (root / "assets" / "js" / "industry.js").read_text(
         encoding="utf-8"
@@ -201,10 +193,27 @@ def test_market_frontend_refreshes_only_on_page_load_or_button() -> None:
     )
 
     assert "industry-market.js" in loader
-    assert "/api/market/jita/refresh" in script
+    assert "/api/market/jita/refresh" not in script
     assert "/api/market/jita/status" in script
-    assert "Fetch new prices" in script
-    assert 'button.addEventListener("click"' in script
-    assert "refreshPrices();" in script
+    assert "Fetch new prices" not in script
+    assert 'button.addEventListener("click"' not in script
+    assert "loadStatus();" in script
     assert "setInterval" not in script
     assert "setTimeout" not in script
+
+
+def test_oracle_timer_uses_only_the_private_market_cli() -> None:
+    root = Path(__file__).resolve().parents[2]
+    systemd_dir = root / "deploy" / "oracle" / "systemd"
+    service = (systemd_dir / "itss-market-refresh.service").read_text(
+        encoding="utf-8"
+    )
+    timer = (systemd_dir / "itss-market-refresh.timer").read_text(
+        encoding="utf-8"
+    )
+
+    assert "python -m app.market refresh --resource all" in service
+    assert "/api/market" not in service
+    assert "TimeoutStartSec=15min" in service
+    assert "OnCalendar=*:0/5" in timer
+    assert "Persistent=true" in timer

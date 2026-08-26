@@ -140,7 +140,6 @@ def _inputs(
                 solar_system_id=30000142,
                 facility_tax_rate=Decimal("0.0025"),
                 scc_surcharge_rate=Decimal("0.04"),
-                alpha_clone_tax_rate=Decimal("0.02"),
                 sales_tax_rate=Decimal("0.036"),
                 broker_fee_rate=Decimal("0.01"),
                 default_job_cost_modifier=Decimal("0.9"),
@@ -171,33 +170,33 @@ def test_values_whole_plan_without_double_counting_built_intermediates() -> None
         Decimal("56"),
     ]
     assert [job.installation_rate for job in result.job_costs] == [
-        Decimal("0.1525"),
-        Decimal("0.1525"),
+        Decimal("0.1325"),
+        Decimal("0.1325"),
     ]
     assert [job.installation_cost for job in result.job_costs] == [
-        Decimal("1.83000"),
-        Decimal("8.5400"),
+        Decimal("1.59000"),
+        Decimal("7.4200"),
     ]
     assert result.estimated_item_value_total == Decimal("68.0")
-    assert result.installation_cost_total == Decimal("10.37000")
+    assert result.installation_cost_total == Decimal("9.01000")
     assert result.sales_tax == Decimal("4.320")
     assert result.broker_fee == Decimal("1.20")
     assert result.transaction_fees_total == Decimal("5.520")
     assert result.net_output_value == Decimal("114.480")
-    assert result.total_cost == Decimal("61.89000")
-    assert result.profit == Decimal("58.11000")
+    assert result.total_cost == Decimal("60.53000")
+    assert result.profit == Decimal("59.47000")
     assert result.profit_margin == ExactDecimalRatio(
-        numerator=Decimal("58.11000"),
+        numerator=Decimal("59.47000"),
         denominator=Decimal("120"),
     )
     assert result.sales_tax_including_surplus == Decimal("7.200")
     assert result.broker_fee_including_surplus == Decimal("2.00")
     assert result.transaction_fees_total_including_surplus == Decimal("9.200")
     assert result.net_output_value_including_surplus == Decimal("190.800")
-    assert result.total_cost_including_surplus == Decimal("65.57000")
-    assert result.profit_including_surplus == Decimal("134.43000")
+    assert result.total_cost_including_surplus == Decimal("64.21000")
+    assert result.profit_including_surplus == Decimal("135.79000")
     assert result.profit_margin_including_surplus == ExactDecimalRatio(
-        numerator=Decimal("134.43000"),
+        numerator=Decimal("135.79000"),
         denominator=Decimal("200"),
     )
     assert result.is_complete
@@ -211,22 +210,22 @@ def test_step_comparisons_are_direct_and_do_not_change_the_plan() -> None:
 
     component, finished_product = result.step_comparisons
     assert component.direct_input_market_cost == Decimal("16")
-    assert component.direct_build_cost == Decimal("17.83000")
+    assert component.direct_build_cost == Decimal("17.59000")
     assert component.surplus_quantity == 0
     assert component.surplus_market_value == Decimal("0")
     assert component.surplus_net_value == Decimal("0")
-    assert component.effective_build_cost == Decimal("17.83000")
+    assert component.effective_build_cost == Decimal("17.59000")
     assert component.direct_buy_cost == Decimal("36")
-    assert component.savings_if_built == Decimal("18.17000")
+    assert component.savings_if_built == Decimal("18.41000")
     assert component.lower_cost_option == LowerCostOption.BUILD
     assert finished_product.direct_input_market_cost == Decimal("66")
-    assert finished_product.direct_build_cost == Decimal("74.5400")
+    assert finished_product.direct_build_cost == Decimal("73.4200")
     assert finished_product.surplus_quantity == 4
     assert finished_product.surplus_market_value == Decimal("80")
     assert finished_product.surplus_net_value == Decimal("76.320")
-    assert finished_product.effective_build_cost == Decimal("-1.7800")
+    assert finished_product.effective_build_cost == Decimal("-2.9000")
     assert finished_product.direct_buy_cost == Decimal("132")
-    assert finished_product.savings_if_built == Decimal("133.7800")
+    assert finished_product.savings_if_built == Decimal("134.9000")
     assert finished_product.lower_cost_option == LowerCostOption.BUILD
     assert result.shopping_list_cost.amount == Decimal("46")
     assert result.shopping_list == tuple(
@@ -352,7 +351,7 @@ def test_missing_comparison_quote_does_not_invalidate_complete_profit() -> None:
     result = calculate_industry_economics(_plan(), inputs)
 
     assert result.is_complete
-    assert result.profit == Decimal("58.11000")
+    assert result.profit == Decimal("59.47000")
     assert result.step_comparisons[0].missing_sell_quote_type_ids == (1002,)
     assert not result.step_comparisons[0].is_complete
     assert result.step_comparisons[1].missing_sell_quote_type_ids == (
@@ -439,7 +438,7 @@ def test_surplus_profitability_requires_depth_for_all_marketable_units() -> None
     result = calculate_industry_economics(_plan(), inputs)
 
     assert result.is_complete
-    assert result.profit == Decimal("58.11000")
+    assert result.profit == Decimal("59.47000")
     assert result.surplus_inventory_value.amount == Decimal("80")
     assert result.marketable_inventory_value.amount is None
     assert result.marketable_inventory_value.insufficient_liquidity_type_ids == (
@@ -490,8 +489,8 @@ def test_zero_is_a_real_price_not_missing_data() -> None:
 
     assert result.shopping_list_cost.amount == Decimal("0")
     assert result.requested_output_value.amount == Decimal("0")
-    assert result.total_cost == Decimal("10.37000")
-    assert result.profit == Decimal("-10.37000")
+    assert result.total_cost == Decimal("9.01000")
+    assert result.profit == Decimal("-9.01000")
     assert result.profit_margin is None
     assert result.is_complete
 
@@ -503,7 +502,6 @@ def test_recipe_specific_job_cost_modifier_wins_over_default() -> None:
         solar_system_id=30000142,
         facility_tax_rate=Decimal("0"),
         scc_surcharge_rate=Decimal("0"),
-        alpha_clone_tax_rate=Decimal("0"),
         sales_tax_rate=Decimal("0"),
         broker_fee_rate=Decimal("0"),
         default_job_cost_modifier=Decimal("1"),
@@ -536,7 +534,6 @@ def test_manufacturing_and_reaction_jobs_use_separate_fee_contexts() -> None:
         solar_system_id=30000142,
         facility_tax_rate=Decimal("0.0025"),
         scc_surcharge_rate=Decimal("0.04"),
-        alpha_clone_tax_rate=Decimal("0.02"),
         sales_tax_rate=Decimal("0"),
         broker_fee_rate=Decimal("0"),
         default_job_cost_modifier=Decimal("0.9"),
@@ -546,7 +543,6 @@ def test_manufacturing_and_reaction_jobs_use_separate_fee_contexts() -> None:
                 solar_system_id=30000142,
                 facility_tax_rate=Decimal("0.0025"),
                 scc_surcharge_rate=Decimal("0.04"),
-                alpha_clone_tax_rate=Decimal("0.02"),
                 default_job_cost_modifier=Decimal("0.9"),
             ),
             ActivityFeeRates(
@@ -554,7 +550,6 @@ def test_manufacturing_and_reaction_jobs_use_separate_fee_contexts() -> None:
                 solar_system_id=30000144,
                 facility_tax_rate=Decimal("0.005"),
                 scc_surcharge_rate=Decimal("0.04"),
-                alpha_clone_tax_rate=Decimal("0.01"),
                 default_job_cost_modifier=Decimal("0.8"),
             ),
         ),
@@ -590,13 +585,13 @@ def test_manufacturing_and_reaction_jobs_use_separate_fee_contexts() -> None:
     assert reaction_job.activity == ActivityKind.REACTION
     assert reaction_job.solar_system_id == 30000144
     assert reaction_job.estimated_item_value == Decimal("6.0")
-    assert reaction_job.installation_rate == Decimal("0.215")
-    assert reaction_job.installation_cost == Decimal("1.2900")
+    assert reaction_job.installation_rate == Decimal("0.205")
+    assert reaction_job.installation_cost == Decimal("1.2300")
     assert manufacturing_job.activity == ActivityKind.MANUFACTURING
     assert manufacturing_job.solar_system_id == 30000142
     assert manufacturing_job.estimated_item_value == Decimal("16")
-    assert manufacturing_job.installation_rate == Decimal("0.1525")
-    assert manufacturing_job.installation_cost == Decimal("2.4400")
+    assert manufacturing_job.installation_rate == Decimal("0.1325")
+    assert manufacturing_job.installation_cost == Decimal("2.1200")
 
 
 def test_calculation_is_independent_of_global_decimal_precision() -> None:
@@ -607,7 +602,7 @@ def test_calculation_is_independent_of_global_decimal_precision() -> None:
     finally:
         getcontext().prec = original_precision
 
-    assert result.profit == Decimal("58.11000")
+    assert result.profit == Decimal("59.47000")
 
 
 def test_input_dtos_are_immutable_and_reject_floats_and_duplicates() -> None:

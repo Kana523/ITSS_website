@@ -35,7 +35,6 @@ def _inputs() -> IndustryValuationInputs:
             solar_system_id=30_000_142,
             facility_tax_rate=Decimal("0"),
             scc_surcharge_rate=Decimal("0"),
-            alpha_clone_tax_rate=Decimal("0"),
             sales_tax_rate=Decimal("0"),
             broker_fee_rate=Decimal("0"),
         ),

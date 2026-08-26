@@ -1,4 +1,5 @@
 from collections.abc import Iterable, Mapping
+from fractions import Fraction
 
 from app.industry.errors import (
     IndustryPlanningError,
@@ -107,6 +108,7 @@ class IndustryApplicationService:
         blueprint_copy_run_limits: Mapping[RecipeKey, int] | None = None,
         specialist_skill_levels: Mapping[int, int] | None = None,
         pricing_options: IndustryPricingOptions | None = None,
+        manufacturing_time_multiplier: Fraction = Fraction(1),
         expected_sde_build_number: int | None = None,
     ) -> DescribedProductionPlan:
         plan = self._planning.create_plan(
@@ -117,6 +119,7 @@ class IndustryApplicationService:
             owned_materials=owned_materials,
             blueprint_copy_run_limits=blueprint_copy_run_limits,
             specialist_skill_levels=specialist_skill_levels,
+            manufacturing_time_multiplier=manufacturing_time_multiplier,
             expected_sde_build_number=expected_sde_build_number,
         )
         related_type_ids = {item.type_id for item in plan.requested}

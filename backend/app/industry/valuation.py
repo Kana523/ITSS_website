@@ -265,7 +265,6 @@ class ActivityFeeRates:
     solar_system_id: int
     facility_tax_rate: Decimal
     scc_surcharge_rate: Decimal
-    alpha_clone_tax_rate: Decimal
     default_job_cost_modifier: Decimal = ONE
 
     def __post_init__(self) -> None:
@@ -277,7 +276,6 @@ class ActivityFeeRates:
         for field_name in (
             "facility_tax_rate",
             "scc_surcharge_rate",
-            "alpha_clone_tax_rate",
             "default_job_cost_modifier",
         ):
             _require_decimal(
@@ -298,7 +296,6 @@ class IndustryFeeRates:
     solar_system_id: int
     facility_tax_rate: Decimal
     scc_surcharge_rate: Decimal
-    alpha_clone_tax_rate: Decimal
     sales_tax_rate: Decimal
     broker_fee_rate: Decimal
     default_job_cost_modifier: Decimal = ONE
@@ -310,7 +307,6 @@ class IndustryFeeRates:
         for field_name in (
             "facility_tax_rate",
             "scc_surcharge_rate",
-            "alpha_clone_tax_rate",
             "sales_tax_rate",
             "broker_fee_rate",
             "default_job_cost_modifier",
@@ -372,7 +368,6 @@ class IndustryFeeRates:
             solar_system_id=self.solar_system_id,
             facility_tax_rate=self.facility_tax_rate,
             scc_surcharge_rate=self.scc_surcharge_rate,
-            alpha_clone_tax_rate=self.alpha_clone_tax_rate,
             default_job_cost_modifier=self.default_job_cost_modifier,
         )
 
@@ -768,7 +763,6 @@ def calculate_industry_economics(
                     system_cost_index * job_cost_modifier
                     + activity_fees.facility_tax_rate
                     + activity_fees.scc_surcharge_rate
-                    + activity_fees.alpha_clone_tax_rate
                 )
                 installation_cost = eiv * installation_rate
                 installation_total += installation_cost

@@ -392,7 +392,6 @@ def test_cached_values_map_exactly_and_default_basis_point_fees_are_explicit(
     assert rates.solar_system_id == SYSTEM_ID
     assert rates.facility_tax_rate == Decimal("0.0025")
     assert rates.scc_surcharge_rate == Decimal("0.04")
-    assert rates.alpha_clone_tax_rate == Decimal("0")
     assert rates.sales_tax_rate == Decimal("0")
     assert rates.broker_fee_rate == Decimal("0")
     assert rates.default_job_cost_modifier == Decimal("1")
@@ -476,7 +475,6 @@ def test_non_default_basis_points_convert_without_float_rounding() -> None:
         solar_system_id=30_002_665,
         facility_tax_basis_points=37,
         scc_surcharge_basis_points=401,
-        alpha_clone_tax_basis_points=200,
         sales_tax_basis_points=359,
         broker_fee_basis_points=0,
         job_cost_reduction_basis_points=1_234,
@@ -492,7 +490,6 @@ def test_non_default_basis_points_convert_without_float_rounding() -> None:
     assert rates.solar_system_id == 30_002_665
     assert rates.facility_tax_rate == Decimal("0.0037")
     assert rates.scc_surcharge_rate == Decimal("0.0401")
-    assert rates.alpha_clone_tax_rate == Decimal("0.02")
     assert rates.sales_tax_rate == Decimal("0.0359")
     assert rates.broker_fee_rate == Decimal("0")
     assert rates.default_job_cost_modifier == Decimal("0.8766")
@@ -539,7 +536,6 @@ def test_mixed_plan_loads_and_applies_activity_costs_from_different_systems(
         reaction_solar_system_id=reaction_system,
         reaction_facility_tax_basis_points=50,
         reaction_scc_surcharge_basis_points=400,
-        reaction_alpha_clone_tax_basis_points=100,
         reaction_job_cost_reduction_basis_points=2_000,
     )
 
@@ -550,8 +546,8 @@ def test_mixed_plan_loads_and_applies_activity_costs_from_different_systems(
     assert reaction_job.solar_system_id == reaction_system
     assert reaction_job.system_cost_index == Decimal("0.2")
     assert reaction_job.job_cost_modifier == Decimal("0.8")
-    assert reaction_job.installation_rate == Decimal("0.215")
-    assert reaction_job.installation_cost == Decimal("1.2900")
+    assert reaction_job.installation_rate == Decimal("0.205")
+    assert reaction_job.installation_cost == Decimal("1.2300")
     assert manufacturing_job.activity == ActivityKind.MANUFACTURING
     assert manufacturing_job.solar_system_id == manufacturing_system
     assert manufacturing_job.system_cost_index == Decimal("0.1")

@@ -40,6 +40,7 @@ class ImplantProductionProfileRequest(ProductionProfileRequest):
 
 
 AppliedModifier = Literal[
+    "owned_materials",
     "blueprint_material_efficiency",
     "blueprint_time_efficiency",
     "industry_skill_time",
@@ -140,17 +141,23 @@ def _multiply_fraction_payload(
 def industry_calculation_response(
     result: DescribedProductionPlan,
     implant: ManufacturingTimeImplant | None,
+    *,
+    owned_materials_included: bool,
 ) -> IndustryCalculationResponse:
     """Build the stable calculation response plus implant-specific metadata."""
     base = calculation_response(result)
     payload = base.model_dump(mode="python")
 
-    if implant is None:
-        return IndustryCalculationResponse.model_validate(payload)
-
-    multiplier = implant.time_multiplier
     labels = list(payload["applied_modifiers"])
-    if any(step["activity"] == "manufacturing" for step in payload["build_steps"]):
+    if owned_materials_included:
+        labels.insert(0, "owned_materials")
+
+    has_manufacturing = any(
+        step["activity"] == "manufacturing"
+        for step in payload["build_steps"]
+    )
+    if implant is not None and has_manufacturing:
+        multiplier = implant.time_multiplier
         insert_at = next(
             (
                 index
@@ -160,8 +167,6 @@ def industry_calculation_response(
             len(labels),
         )
         labels.insert(insert_at, "manufacturing_implant_time")
-        payload["applied_modifiers"] = tuple(labels)
-
         for step in payload["build_steps"]:
             if step["activity"] != "manufacturing":
                 continue
@@ -170,10 +175,16 @@ def industry_calculation_response(
                 modifiers["time_multiplier"],
                 multiplier,
             )
+    payload["applied_modifiers"] = tuple(labels)
 
+    included_modifiers = set()
+    if owned_materials_included:
+        included_modifiers.add("owned_materials")
+    if implant is not None and has_manufacturing:
+        included_modifiers.add("character_implants")
     payload["excluded_modifiers"] = tuple(
         modifier
         for modifier in payload["excluded_modifiers"]
-        if modifier != "character_implants"
+        if modifier not in included_modifiers
     )
     return IndustryCalculationResponse.model_validate(payload)

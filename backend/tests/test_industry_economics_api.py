@@ -310,7 +310,6 @@ def _calculation_request(*, include_pricing: bool = True) -> dict:
         {"solar_system_id": True},
         {"facility_tax_basis_points": -1},
         {"scc_surcharge_basis_points": 10_001},
-        {"alpha_clone_tax_basis_points": False},
         {"sales_tax_basis_points": "359"},
         {"broker_fee_basis_points": 1},
         {"broker_fee_basis_points": 1.5},
@@ -366,14 +365,12 @@ def test_fresh_valuation_serializes_every_decimal_as_an_exact_string() -> None:
         "solar_system_id": SYSTEM_ID,
         "facility_tax_basis_points": 25,
         "scc_surcharge_basis_points": 400,
-        "alpha_clone_tax_basis_points": 0,
         "sales_tax_basis_points": 0,
         "broker_fee_basis_points": 0,
         "job_cost_reduction_basis_points": 0,
         "reaction_solar_system_id": None,
         "reaction_facility_tax_basis_points": 25,
         "reaction_scc_surcharge_basis_points": 400,
-        "reaction_alpha_clone_tax_basis_points": 0,
         "reaction_job_cost_reduction_basis_points": 0,
     }
 

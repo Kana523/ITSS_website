@@ -13,10 +13,19 @@
     implants.src = new URL("industry-implants.js", baseUrl).href;
     implants.async = false;
     implants.addEventListener("load", () => {
-      const market = document.createElement("script");
-      market.src = new URL("industry-market.js", baseUrl).href;
-      market.async = false;
-      document.head.append(market);
+      const configs = document.createElement("script");
+      configs.src = new URL("industry-configs.js", baseUrl).href;
+      configs.async = false;
+
+      const loadMarket = () => {
+        const market = document.createElement("script");
+        market.src = new URL("industry-market.js", baseUrl).href;
+        market.async = false;
+        document.head.append(market);
+      };
+      configs.addEventListener("load", loadMarket, { once: true });
+      configs.addEventListener("error", loadMarket, { once: true });
+      document.head.append(configs);
     });
     document.head.append(implants);
   });

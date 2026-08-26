@@ -1,0 +1,11 @@
+[Unit]
+Description=Refresh ITS-S private EVE market caches
+Requires=docker.service
+After=docker.service
+ConditionPathExists=/opt/itss-industry/compose.production.yaml
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/itss-industry
+ExecStart=/usr/bin/env docker compose -f compose.production.yaml exec -T api python -m app.market refresh --resource all
+TimeoutStartSec=15min

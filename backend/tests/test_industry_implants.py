@@ -160,3 +160,4 @@ def test_api_implant_does_not_affect_reaction_step(api_client: TestClient) -> No
         "numerator": "60",
         "denominator": "1",
     }
+    assert "character_implants" in body["excluded_modifiers"]

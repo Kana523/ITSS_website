@@ -62,8 +62,13 @@ uv sync
 uv run alembic upgrade head
 uv run python -m app.sde C:\path\to\eve-online-static-data-latest-jsonl.zip
 uv run python -m app.market refresh --resource all
+uv run --locked pip-audit --local --progress-spinner off
 uv run fastapi dev app/main.py
 ```
+
+Market refreshes are intentionally server-only. The public API exposes cached
+Jita status but has no refresh endpoint; run the `app.market` command manually or
+from a server-side scheduler.
 
 Then open `http://127.0.0.1:5500/industry/`.
 
@@ -88,8 +93,9 @@ Manufacturing and reaction jobs can use separate system IDs and fee assumptions.
 Enter a low-security reaction system when a selected route contains reactions;
 the page does not silently reuse the manufacturing system.
 
-Each production step currently represents one combined job. Blueprint-copy run
-limits, job splitting, implants, blueprint-required specialist skills, and
-owned-material deduction are not applied yet. The minimal UI currently accepts
-one scoped rig rule per activity, although the API supports multiple scoped
-rules.
+Material calculations account for jobs split by blueprint-copy run limits and a
+maximum of 30 days of modified craft time per job, with at least one run per job.
+The API also accepts manufacturing implants, blueprint-required specialist
+skills, and owned-material deductions. The current UI exposes the implant and
+one scoped rig rule per activity; the other inputs and multiple scoped rig rules
+remain API-only.

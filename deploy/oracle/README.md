@@ -32,6 +32,10 @@ At minimum, replace the PostgreSQL password and confirm the ESI user agent and
 CORS origin. The password in `POSTGRES_PASSWORD` must match the password embedded
 in `DATABASE_URL`.
 
+The `CALCULATION_*` settings bound calculation body size, request rate, and
+concurrency. Rate and concurrency limits are enforced per API worker; the
+production image currently runs two workers.
+
 Then deploy:
 
 ```bash
@@ -97,8 +101,33 @@ docker compose -f compose.production.yaml logs -f --tail=200 postgres
 # Run migrations manually
 docker compose -f compose.production.yaml --profile maintenance run --rm migrate
 
+# Refresh private market caches from the server
+docker compose -f compose.production.yaml exec -T api python -m app.market refresh --resource all
+
 # Restart only the API
 docker compose -f compose.production.yaml restart api
+```
+
+The public API exposes cache status only and cannot start refresh work. Install
+the included systemd timer once to run the private CLI approximately every five
+minutes:
+
+```bash
+sudo install -m 0644 deploy/oracle/systemd/itss-market-refresh.service /etc/systemd/system/
+sudo install -m 0644 deploy/oracle/systemd/itss-market-refresh.timer /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now itss-market-refresh.timer
+sudo systemctl list-timers itss-market-refresh.timer
+```
+
+The unit assumes the documented checkout path, `/opt/itss-industry`, and gives a
+refresh at most 15 minutes to finish. Its calendar schedule catches up after host
+downtime, and the refresher's database lock prevents
+overlapping refresh work. Inspect its last result with:
+
+```bash
+sudo systemctl status itss-market-refresh.service
+sudo journalctl -u itss-market-refresh.service -n 100
 ```
 
 ## Branch override

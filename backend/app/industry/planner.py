@@ -35,6 +35,9 @@ from app.industry.models import (
 )
 
 
+MAX_JOB_TIME_SECONDS = 30 * 24 * 60 * 60
+
+
 def _require_safe_integer(value: int, field_name: str) -> int:
     if value > MAX_SAFE_INTEGER:
         raise QuantityTooLargeError(field_name, MAX_SAFE_INTEGER)
@@ -45,12 +48,16 @@ def _ceil_fraction(value: Fraction) -> int:
     return (value.numerator + value.denominator - 1) // value.denominator
 
 
-def _job_run_chunks(runs: int, max_runs_per_job: int | None) -> tuple[int, ...]:
-    """Split only jobs explicitly backed by a limited-run blueprint copy."""
-    if max_runs_per_job is None or runs <= max_runs_per_job:
-        return (runs,)
-    full_jobs, remainder = divmod(runs, max_runs_per_job)
-    return (max_runs_per_job,) * full_jobs + ((remainder,) if remainder else ())
+def _max_runs_within_job_time(exact_time_per_run: Fraction) -> int:
+    """Return the largest run count whose final job time is at most 30 days."""
+    if exact_time_per_run <= 0:
+        raise InvalidIndustryDataError(
+            "Exact job time per run must be greater than zero"
+        )
+    runs = (MAX_JOB_TIME_SECONDS * exact_time_per_run.denominator) // (
+        exact_time_per_run.numerator
+    )
+    return max(1, runs)
 
 
 def _job_material_quantity(
@@ -61,13 +68,33 @@ def _job_material_quantity(
     max_runs_per_job: int | None = None,
 ) -> int:
     """Apply factors and EVE's final material ceiling independently per job."""
-    total = 0
-    for job_runs in _job_run_chunks(runs, max_runs_per_job):
+    if max_runs_per_job is None or runs <= max_runs_per_job:
         reduced_total = _ceil_fraction(
-            quantity_per_run * job_runs * material_multiplier
+            quantity_per_run * runs * material_multiplier
+        )
+        return _require_safe_integer(
+            max(runs, reduced_total),
+            "Adjusted material quantity",
+        )
+
+    full_jobs, remainder = divmod(runs, max_runs_per_job)
+    full_job_quantity = max(
+        max_runs_per_job,
+        _ceil_fraction(
+            quantity_per_run * max_runs_per_job * material_multiplier
+        ),
+    )
+    total = _require_safe_integer(
+        full_jobs * full_job_quantity,
+        "Adjusted material quantity",
+    )
+    if remainder:
+        remainder_quantity = max(
+            remainder,
+            _ceil_fraction(quantity_per_run * remainder * material_multiplier),
         )
         total = _require_safe_integer(
-            total + max(job_runs, reduced_total),
+            total + remainder_quantity,
             "Adjusted material quantity",
         )
     return total
@@ -325,6 +352,7 @@ def plan_production(
     product_types: Mapping[int, IndustryType] | None = None,
     owned_materials: Mapping[int, int] | None = None,
     blueprint_copy_run_limits: Mapping[RecipeKey, int] | None = None,
+    manufacturing_time_multiplier: Fraction = Fraction(1),
 ) -> ProductionPlan:
     """Create a deterministic production plan without database access."""
     if (
@@ -334,6 +362,14 @@ def plan_production(
     ):
         raise InvalidIndustryDataError(
             "sde_build_number must be a positive integer"
+        )
+    if (
+        not isinstance(manufacturing_time_multiplier, Fraction)
+        or not 0 < manufacturing_time_multiplier <= 1
+    ):
+        raise InvalidIndustryDataError(
+            "manufacturing_time_multiplier must be a Fraction greater than 0 "
+            "and at most 1"
         )
 
     requested = _aggregate_demands(demands)
@@ -499,21 +535,36 @@ def plan_production(
             if efficiency is not None
             else Fraction(1)
         )
+        activity_time_multiplier = (
+            manufacturing_time_multiplier
+            if recipe.activity == ActivityKind.MANUFACTURING
+            else Fraction(1)
+        )
         material_multiplier = (
             blueprint_material_multiplier * production_modifiers.material_multiplier
         )
-        exact_job_time_seconds = (
-            Fraction(base_total_job_time_seconds)
+        exact_time_per_run = (
+            Fraction(recipe.time_seconds)
             * blueprint_time_multiplier
             * production_modifiers.time_multiplier
+            * activity_time_multiplier
         )
+        exact_job_time_seconds = exact_time_per_run * runs
+        max_runs_per_job = _max_runs_within_job_time(exact_time_per_run)
+        copy_run_limit = copy_run_limit_by_recipe.get(recipe.key)
+        if copy_run_limit is not None:
+            max_runs_per_job = min(max_runs_per_job, copy_run_limit)
         inputs_list: list[ItemQuantity] = []
         for material in recipe.materials:
+            _require_safe_integer(
+                material.quantity * runs,
+                f"Base input quantity for type {material.type_id}",
+            )
             adjusted_quantity = _job_material_quantity(
                 material.quantity,
                 runs,
                 material_multiplier,
-                max_runs_per_job=copy_run_limit_by_recipe.get(recipe.key),
+                max_runs_per_job=max_runs_per_job,
             )
             inputs_list.append(
                 ItemQuantity(

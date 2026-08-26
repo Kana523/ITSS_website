@@ -315,6 +315,23 @@ def test_calculation_contract_aggregates_demands_and_honors_buy(
     ]
 
 
+def test_owned_materials_are_reported_as_applied(api_client: TestClient) -> None:
+    response = api_client.post(
+        "/api/industry/calculate",
+        json={
+            "demands": [{"type_id": 1003, "quantity": 1}],
+            "choices": [{"type_id": 1002, "decision": "buy"}],
+            "owned_materials": [{"type_id": 1002, "quantity": 1}],
+        },
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["applied_modifiers"] == ["owned_materials"]
+    assert "owned_materials" not in body["excluded_modifiers"]
+    assert body["purchases"][0]["quantity"] == 3
+
+
 def test_calculation_applies_blueprint_me_te_exactly(
     api_client: TestClient,
 ) -> None:
@@ -1033,6 +1050,65 @@ def test_openapi_documents_the_shared_error_envelope() -> None:
             "application/json"
         ]["schema"]
         assert response_schema["$ref"].endswith("/ErrorResponse")
+
+    calculation_responses = schema["paths"]["/api/industry/calculate"][
+        "post"
+    ]["responses"]
+    for status_code in ("413", "429"):
+        response_schema = calculation_responses[status_code]["content"][
+            "application/json"
+        ]["schema"]
+        assert response_schema["$ref"].endswith("/ErrorResponse")
+
+
+def test_calculation_request_body_limit_is_structured() -> None:
+    application = create_app(
+        cors_origins=(),
+        calculation_max_body_bytes=1_024,
+    )
+
+    with TestClient(application) as client:
+        response = client.post(
+            "/api/industry/calculate",
+            content=b"x" * 1_025,
+            headers={"Content-Type": "application/json"},
+        )
+
+    assert response.status_code == 413
+    assert response.json() == {
+        "error": {
+            "code": "request_too_large",
+            "message": "Calculation request body is too large",
+            "details": {"maximum_bytes": 1_024},
+        }
+    }
+
+
+def test_calculation_rate_limit_is_structured() -> None:
+    application = create_app(
+        cors_origins=(),
+        calculation_rate_limit_requests=1,
+        calculation_rate_limit_window_seconds=60,
+    )
+    service = IndustryApplicationService(FakeIndustryDataRepository())
+    application.dependency_overrides[get_industry_application_service] = (
+        lambda: service
+    )
+
+    with TestClient(application) as client:
+        first = client.post(
+            "/api/industry/calculate",
+            json={"demands": [{"type_id": 1003, "quantity": 1}]},
+        )
+        limited = client.post(
+            "/api/industry/calculate",
+            json={"demands": [{"type_id": 1003, "quantity": 1}]},
+        )
+
+    assert first.status_code == 200
+    assert limited.status_code == 429
+    assert limited.headers["retry-after"] == "60"
+    assert limited.json()["error"]["code"] == "calculation_rate_limited"
 
 
 def test_cors_allows_only_the_configured_frontend_origin() -> None:
