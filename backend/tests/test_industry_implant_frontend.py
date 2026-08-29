@@ -11,7 +11,9 @@ def test_industry_frontend_loads_implant_extension() -> None:
 
     assert "industry-core.js" in loader
     assert "industry-implants.js" in loader
-    assert 'data-profile-skill="industry_level"' in core
+    assert 'productionSkillLevel("industry_level")' in core
+    assert 'data-production-profile-field="reactions_level"' in implants
+    assert 'data-production-skill-extras' in implants
     assert 'select.dataset.profileImplant = "manufacturing_time_implant"' in implants
     assert '["27170", "BX-801 · 1%"]' in implants
     assert '["27167", "BX-802 · 2%"]' in implants

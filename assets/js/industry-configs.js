@@ -70,12 +70,12 @@
     name: app.querySelector("[data-config-name]"),
     select: app.querySelector("[data-config-select]"),
     save: app.querySelector("[data-config-save]"),
-    load: app.querySelector("[data-config-load]"),
     createNew: app.querySelector("[data-config-new]"),
     delete: app.querySelector("[data-config-delete]"),
     count: app.querySelector("[data-config-count]"),
     status: app.querySelector("[data-config-status]"),
     pricingEnabled: app.querySelector("[data-pricing-enabled]"),
+    activeProfile: app.querySelector("[data-active-profile-name]"),
   };
 
   function isRecord(value) {
@@ -161,12 +161,25 @@
     return [...app.querySelectorAll("[data-profile-skill]")];
   }
 
-  function sourcePricingPercentInputs() {
-    return [...app.querySelectorAll("[data-pricing-percent]:not([data-derived-job-cost])")];
+  function skillStorageKey(input) {
+    return input.dataset.skillTypeId || input.dataset.profileSkill;
   }
 
-  function pricingIntegerInputs() {
-    return [...app.querySelectorAll("[data-pricing-integer]")];
+  function sourcePricingPercentInputs() {
+    return [...app.querySelectorAll(
+      "[data-pricing-percent]:not([data-derived-job-cost]), [data-config-percent]",
+    )];
+  }
+
+  function sourcePricingIntegerInputs() {
+    return [...app.querySelectorAll("[data-pricing-integer], [data-config-integer]")];
+  }
+
+  function pricingStorageKey(input) {
+    return input.dataset.pricingInteger
+      || input.dataset.pricingPercent
+      || input.dataset.configInteger
+      || input.dataset.configPercent;
   }
 
   function sourceControls() {
@@ -176,7 +189,7 @@
       ...app.querySelectorAll(
         "[data-structure-select], [data-security-select], [data-rig-tier-select]",
       ),
-      ...pricingIntegerInputs(),
+      ...sourcePricingIntegerInputs(),
       ...sourcePricingPercentInputs(),
       elements.pricingEnabled,
     ].filter(Boolean);
@@ -185,7 +198,7 @@
   function captureConfiguration() {
     const skills = {};
     profileSkillInputs().forEach((input) => {
-      skills[input.dataset.profileSkill] = Number(input.value);
+      skills[skillStorageKey(input)] = Number(input.value);
     });
 
     const activities = {};
@@ -199,12 +212,12 @@
     });
 
     const integers = {};
-    pricingIntegerInputs().forEach((input) => {
-      integers[input.dataset.pricingInteger] = input.value.trim();
+    sourcePricingIntegerInputs().forEach((input) => {
+      integers[pricingStorageKey(input)] = input.value.trim();
     });
     const percents = {};
     sourcePricingPercentInputs().forEach((input) => {
-      percents[input.dataset.pricingPercent] = input.value.trim();
+      percents[pricingStorageKey(input)] = input.value.trim();
     });
 
     return {
@@ -223,8 +236,11 @@
     if (typeof rawValue !== "string" && typeof rawValue !== "number") return null;
     const value = String(rawValue);
     if (!value) return input.hasAttribute("data-pricing-optional") ? "" : null;
-    if (input.hasAttribute("data-pricing-integer") && !/^\d+$/.test(value)) return null;
-    if (input.hasAttribute("data-pricing-percent") && !/^\d+(?:\.\d{1,2})?$/.test(value)) {
+    if (input.matches("[data-pricing-integer], [data-config-integer]") && !/^\d+$/.test(value)) {
+      return null;
+    }
+    if (input.matches("[data-pricing-percent], [data-config-percent]")
+      && !/^\d+(?:\.\d{1,2})?$/.test(value)) {
       return null;
     }
     if (input.type === "number") {
@@ -255,9 +271,12 @@
     };
 
     for (const input of profileSkillInputs()) {
-      const value = String(raw.skills[input.dataset.profileSkill]);
+      const key = skillStorageKey(input);
+      const legacyKey = input.dataset.productionProfileField;
+      const rawValue = raw.skills[key] ?? (legacyKey ? raw.skills[legacyKey] : undefined) ?? 0;
+      const value = String(rawValue);
       if (!selectOptionExists(input, value)) return null;
-      normalized.skills[input.dataset.profileSkill] = Number(value);
+      normalized.skills[key] = Number(value);
     }
 
     const implant = app.querySelector("[data-profile-implant]");
@@ -280,15 +299,17 @@
       normalized.activities[activity] = { structure, security, rig };
     }
 
-    for (const input of pricingIntegerInputs()) {
-      const key = input.dataset.pricingInteger;
-      const value = normalizedFieldValue(input, raw.pricing.integers[key]);
+    for (const input of sourcePricingIntegerInputs()) {
+      const key = pricingStorageKey(input);
+      const rawValue = raw.pricing.integers[key] ?? input.defaultValue;
+      const value = normalizedFieldValue(input, rawValue);
       if (value === null) return null;
       normalized.pricing.integers[key] = value;
     }
     for (const input of sourcePricingPercentInputs()) {
-      const key = input.dataset.pricingPercent;
-      const value = normalizedFieldValue(input, raw.pricing.percents[key]);
+      const key = pricingStorageKey(input);
+      const rawValue = raw.pricing.percents[key] ?? input.defaultValue;
+      const value = normalizedFieldValue(input, rawValue);
       if (value === null) return null;
       normalized.pricing.percents[key] = value;
     }
@@ -300,7 +321,7 @@
     if (!configuration) return false;
 
     profileSkillInputs().forEach((input) => {
-      input.value = String(configuration.skills[input.dataset.profileSkill]);
+      input.value = String(configuration.skills[skillStorageKey(input)]);
     });
     const implant = app.querySelector("[data-profile-implant]");
     if (implant) implant.value = configuration.manufacturing_time_implant;
@@ -313,12 +334,12 @@
     });
 
     if (elements.pricingEnabled) elements.pricingEnabled.checked = configuration.pricing.enabled;
-    pricingIntegerInputs().forEach((input) => {
-      input.value = configuration.pricing.integers[input.dataset.pricingInteger];
+    sourcePricingIntegerInputs().forEach((input) => {
+      input.value = configuration.pricing.integers[pricingStorageKey(input)];
       input.setCustomValidity("");
     });
     sourcePricingPercentInputs().forEach((input) => {
-      input.value = configuration.pricing.percents[input.dataset.pricingPercent];
+      input.value = configuration.pricing.percents[pricingStorageKey(input)];
       input.setCustomValidity("");
     });
 
@@ -405,13 +426,19 @@
     if (elements.status) elements.status.textContent = message;
   }
 
+  function setActiveProfile(configuration = null) {
+    const name = configuration?.name || "Default";
+    if (elements.activeProfile) elements.activeProfile.textContent = name;
+  }
+
+  const defaultConfiguration = normalizeConfiguration(captureConfiguration());
   let storeResult = readStore();
   let store = storeResult.store;
   let draftTimer = null;
 
   function renderSavedConfigurations(selectedId = store.active_configuration_id) {
     if (!elements.select) return;
-    elements.select.replaceChildren(new Option("Choose a configuration", ""));
+    elements.select.replaceChildren(new Option("Default", ""));
     [...store.configurations]
       .sort((left, right) => left.name.localeCompare(right.name))
       .forEach((configuration) => {
@@ -420,9 +447,7 @@
     elements.select.value = selectedId && store.configurations.some(({ id }) => id === selectedId)
       ? selectedId
       : "";
-    const hasSelection = Boolean(elements.select.value);
-    if (elements.load) elements.load.disabled = !hasSelection;
-    if (elements.delete) elements.delete.disabled = !hasSelection;
+    if (elements.delete) elements.delete.disabled = !elements.select.value;
     if (elements.count) {
       const count = store.configurations.length;
       elements.count.textContent = `${count} saved`;
@@ -433,6 +458,7 @@
     draftTimer = null;
     if (!writeStorage(DRAFT_KEY, {
       schema_version: SCHEMA_VERSION,
+      active_configuration_id: store.active_configuration_id,
       configuration: captureConfiguration(),
     })) {
       setStatus("Browser storage is unavailable; changes will last only for this tab.");
@@ -450,10 +476,37 @@
       if (!serialized) return false;
       const raw = JSON.parse(serialized);
       if (!isRecord(raw) || raw.schema_version !== SCHEMA_VERSION) return false;
+      if (!store.active_configuration_id
+        || raw.active_configuration_id !== store.active_configuration_id) return false;
       return applyConfiguration(raw.configuration);
     } catch (_error) {
       return false;
     }
+  }
+
+  function activateProfile(profileId, { announce = true } = {}) {
+    const selected = store.configurations.find(({ id }) => id === profileId) || null;
+    const configuration = selected?.configuration || defaultConfiguration;
+    if (!configuration || !applyConfiguration(configuration)) {
+      setStatus(selected
+        ? `${selected.name} is no longer compatible with this calculator.`
+        : "Default settings could not be restored.");
+      return false;
+    }
+
+    const nextStore = { ...store, active_configuration_id: selected?.id || null };
+    const persisted = writeStorage(STORAGE_KEY, nextStore);
+    store = nextStore;
+    renderSavedConfigurations(selected?.id || "");
+    if (elements.name) elements.name.value = selected?.name || "";
+    setActiveProfile(selected);
+    queueDraftSave();
+    if (announce) {
+      setStatus(selected ? `Loaded ${selected.name}.` : "Using Default.");
+    } else if (!persisted) {
+      setStatus("Browser storage is unavailable; the active profile will not persist.");
+    }
+    return true;
   }
 
   activityPanels.forEach((panel) => {
@@ -470,26 +523,19 @@
   });
 
   elements.select?.addEventListener("change", () => {
-    const selected = store.configurations.find(({ id }) => id === elements.select.value);
-    const hasSelection = Boolean(selected);
-    if (elements.load) elements.load.disabled = !hasSelection;
-    if (elements.delete) elements.delete.disabled = !hasSelection;
-    if (selected && elements.name) elements.name.value = selected.name;
+    activateProfile(elements.select.value);
   });
 
   elements.createNew?.addEventListener("click", () => {
-    elements.select.value = "";
-    elements.name.value = "";
-    elements.load.disabled = true;
-    elements.delete.disabled = true;
-    elements.name.focus();
-    setStatus("Enter a name to save the current settings as a new configuration.");
+    if (!activateProfile("", { announce: false })) return;
+    elements.name?.focus();
+    setStatus("Default restored. Enter a name to create a profile.");
   });
 
   elements.save?.addEventListener("click", () => {
     const name = elements.name.value.trim();
     if (!name) {
-      setStatus("Enter a configuration name before saving.");
+      setStatus("Enter a profile name before saving.");
       elements.name.focus();
       return;
     }
@@ -514,7 +560,7 @@
     );
     const existing = store.configurations.find(({ id }) => id === selectedId) || matchingName;
     if (!existing && store.configurations.length >= MAX_CONFIGURATIONS) {
-      setStatus(`You can save up to ${MAX_CONFIGURATIONS} configurations.`);
+      setStatus(`You can save up to ${MAX_CONFIGURATIONS} profiles.`);
       return;
     }
 
@@ -535,44 +581,35 @@
       configurations,
     };
     if (!writeStorage(STORAGE_KEY, nextStore)) {
-      setStatus("The configuration could not be written to browser storage.");
+      setStatus("The profile could not be written to browser storage.");
       return;
     }
     store = nextStore;
     renderSavedConfigurations(saved.id);
     elements.name.value = saved.name;
+    setActiveProfile(saved);
     queueDraftSave();
     setStatus(existing ? `Updated ${saved.name}.` : `Saved ${saved.name}.`);
   });
 
-  elements.load?.addEventListener("click", () => {
-    const selected = store.configurations.find(({ id }) => id === elements.select.value);
-    if (!selected) return;
-    if (!applyConfiguration(selected.configuration)) {
-      setStatus(`${selected.name} is no longer compatible with this calculator.`);
-      return;
-    }
-    const nextStore = { ...store, active_configuration_id: selected.id };
-    if (writeStorage(STORAGE_KEY, nextStore)) store = nextStore;
-    elements.name.value = selected.name;
-    setStatus(`Loaded ${selected.name}. Calculate to refresh the route.`);
-  });
-
   elements.delete?.addEventListener("click", () => {
     const selected = store.configurations.find(({ id }) => id === elements.select.value);
-    if (!selected || !window.confirm(`Delete the local configuration "${selected.name}"?`)) return;
+    if (!selected || !window.confirm(`Delete the local profile "${selected.name}"?`)) return;
     const nextStore = {
       schema_version: SCHEMA_VERSION,
       active_configuration_id: null,
       configurations: store.configurations.filter(({ id }) => id !== selected.id),
     };
     if (!writeStorage(STORAGE_KEY, nextStore)) {
-      setStatus("The configuration could not be removed from browser storage.");
+      setStatus("The profile could not be removed from browser storage.");
       return;
     }
     store = nextStore;
-    renderSavedConfigurations("");
-    elements.name.value = "";
+    if (defaultConfiguration) applyConfiguration(defaultConfiguration);
+    renderSavedConfigurations();
+    if (elements.name) elements.name.value = "";
+    setActiveProfile();
+    queueDraftSave();
     setStatus(`Deleted ${selected.name}.`);
   });
 
@@ -581,16 +618,22 @@
     storeResult = readStore();
     store = storeResult.store;
     renderSavedConfigurations();
-    setStatus("The saved configuration list changed in another tab.");
+    const active = store.configurations.find(({ id }) => id === store.active_configuration_id) || null;
+    if (active) applyConfiguration(active.configuration);
+    else if (defaultConfiguration) applyConfiguration(defaultConfiguration);
+    if (elements.name) elements.name.value = active?.name || "";
+    setActiveProfile(active);
+    setStatus("The profile list changed in another tab.");
   });
 
   updateAllActivities({ notify: false });
   renderSavedConfigurations();
-  const restoredDraft = restoreDraft();
-  if (store.active_configuration_id) {
-    const active = store.configurations.find(({ id }) => id === store.active_configuration_id);
-    if (active && elements.name) elements.name.value = active.name;
-  }
+  const active = store.configurations.find(({ id }) => id === store.active_configuration_id) || null;
+  const restoredDraft = active ? restoreDraft() : false;
+  if (active && !restoredDraft) applyConfiguration(active.configuration);
+  if (!active && defaultConfiguration) applyConfiguration(defaultConfiguration);
+  if (elements.name) elements.name.value = active?.name || "";
+  setActiveProfile(active);
   if (storeResult.warning) setStatus(storeResult.warning);
   else if (restoredDraft) setStatus("Restored your last local settings.");
 

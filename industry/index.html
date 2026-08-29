@@ -35,355 +35,399 @@
   </header>
 
   <main class="industry-page" data-industry-app>
-    <section class="industry-hero panel" aria-labelledby="industry-title">
-      <div class="industry-hero-copy">
-        <p class="kicker">Production planning</p>
-        <h1 id="industry-title">Industry calculator</h1>
-        <p>
-          Pick an item and turn it into a dependency-ordered build route,
-          from final job to the materials you need to buy.
-        </p>
-      </div>
+    <div class="industry-console">
+      <nav class="industry-tabs panel" role="tablist" aria-label="Industry workspace" aria-orientation="vertical">
+        <button id="industry-tab-config" data-industry-tab="config" type="button" role="tab" aria-selected="false" aria-controls="industry-panel-config" tabindex="-1">
+          <span>Config</span>
+        </button>
+        <button id="industry-tab-build" data-industry-tab="build" type="button" role="tab" aria-selected="true" aria-controls="industry-panel-build">
+          <span>Build</span>
+        </button>
+        <button id="industry-tab-shopping" data-industry-tab="shopping" type="button" role="tab" aria-selected="false" aria-controls="industry-panel-shopping" tabindex="-1">
+          <span>Shopping</span>
+        </button>
+      </nav>
 
-      <div class="api-state" data-api-state data-state="checking" role="status" aria-live="polite">
-        <span class="api-state-light" aria-hidden="true"></span>
-        <span class="api-state-copy">
-          <strong data-api-label>Checking calculator</strong>
-          <small data-api-detail>Connecting to the local API</small>
-        </span>
-      </div>
-    </section>
-
-    <div class="industry-workbench">
-      <aside class="planner-panel panel" aria-labelledby="planner-title">
-        <div class="section-heading">
-          <p class="kicker">Build request</p>
-          <h2 id="planner-title">What are you building?</h2>
-        </div>
-
-        <section class="saved-configs" aria-labelledby="saved-configs-title">
-          <div class="saved-configs-heading">
-            <h3 id="saved-configs-title">Saved configurations</h3>
-            <small data-config-count>0 saved</small>
-          </div>
-          <label for="config-name">Configuration name</label>
-          <div class="saved-config-save-row">
-            <input id="config-name" data-config-name type="text" maxlength="60" autocomplete="off" placeholder="Capital production">
-            <button class="config-button config-button--primary" data-config-save type="button">Save</button>
-          </div>
-          <label for="saved-config-select">Saved in this browser</label>
-          <select id="saved-config-select" data-config-select>
-            <option value="">Choose a configuration</option>
-          </select>
-          <div class="saved-config-actions">
-            <button class="config-button" data-config-load type="button" disabled>Load</button>
-            <button class="config-button" data-config-new type="button">New</button>
-            <button class="config-button config-button--danger" data-config-delete type="button" disabled>Delete</button>
-          </div>
-          <p class="field-status saved-config-status" data-config-status role="status" aria-live="polite"></p>
-          <p class="field-help">Profiles stay on this browser. Preview and deployed URLs keep separate lists.</p>
-        </section>
-
-        <form data-planner-form novalidate>
-          <div class="field-group search-field">
-            <label for="industry-search">Add an item</label>
-            <div class="search-control">
-              <input
-                id="industry-search"
-                data-search-input
-                type="search"
-                placeholder="Bantam, Rifter, 582..."
-                autocomplete="off"
-                spellcheck="false"
-                maxlength="255"
-                aria-controls="industry-search-results"
-                aria-describedby="industry-search-help search-status"
-              >
-            </div>
-            <p id="industry-search-help" class="field-help">
-              Search published items with a manufacturing or reaction recipe. Add up to 50 outputs.
-            </p>
-            <p id="search-status" class="field-status" data-search-status role="status" aria-live="polite"></p>
-            <ul id="industry-search-results" class="search-results" data-search-results hidden aria-label="Matching EVE items"></ul>
-          </div>
-
-          <section class="demand-editor" data-demand-editor hidden aria-labelledby="demand-title">
-            <div class="demand-heading">
-              <div>
-                <p class="kicker">Build list</p>
-                <h3 id="demand-title">Requested outputs</h3>
-              </div>
-              <button class="text-button" data-clear-demands type="button">Clear all</button>
-            </div>
-            <p class="field-status" data-demand-status role="status" aria-live="polite"></p>
-            <ul class="demand-list" data-demand-list aria-label="Requested production outputs"></ul>
-          </section>
-
-          <details class="planner-details" data-profile-details>
-            <summary>
-              <span>Production profile</span>
-              <small data-profile-summary>Unbonused</small>
-            </summary>
-            <div class="planner-details-body">
-              <fieldset class="profile-fieldset">
-                <legend>Character skills</legend>
-                <div class="profile-field-grid profile-field-grid--skills">
-                  <label>
-                    <span>Industry</span>
-                    <select data-profile-skill="industry_level" aria-label="Industry skill level">
-                      <option value="0">0</option><option value="1">1</option><option value="2">2</option>
-                      <option value="3">3</option><option value="4">4</option><option value="5">5</option>
-                    </select>
-                  </label>
-                  <label>
-                    <span>Advanced Industry</span>
-                    <select data-profile-skill="advanced_industry_level" aria-label="Advanced Industry skill level">
-                      <option value="0">0</option><option value="1">1</option><option value="2">2</option>
-                      <option value="3">3</option><option value="4">4</option><option value="5">5</option>
-                    </select>
-                  </label>
-                  <label>
-                    <span>Reactions</span>
-                    <select data-profile-skill="reactions_level" aria-label="Reactions skill level">
-                      <option value="0">0</option><option value="1">1</option><option value="2">2</option>
-                      <option value="3">3</option><option value="4">4</option><option value="5">5</option>
-                    </select>
-                  </label>
-                </div>
-              </fieldset>
-
-              <fieldset class="profile-fieldset activity-config" data-activity-config="manufacturing">
-                <legend>Manufacturing facility</legend>
-                <div class="activity-config-grid">
-                  <label>Structure
-                    <select data-structure-select data-profile-activity="manufacturing">
-                      <option value="unbonused">NPC station / other Upwell</option>
-                      <option value="raitaru">Raitaru</option>
-                      <option value="azbel">Azbel</option>
-                      <option value="sotiyo">Sotiyo</option>
-                    </select>
-                  </label>
-                  <label>Security
-                    <select data-security-select data-profile-activity="manufacturing">
-                      <option value="highsec">Highsec</option>
-                      <option value="lowsec">Lowsec</option>
-                      <option value="nullsec">Nullsec</option>
-                      <option value="wormhole">Wormhole</option>
-                    </select>
-                  </label>
-                  <label>Applicable rig
-                    <select data-rig-tier-select data-profile-activity="manufacturing">
-                      <option value="none">None</option>
-                      <option value="t1">Tech I</option>
-                      <option value="t2">Tech II</option>
-                    </select>
-                  </label>
-                </div>
-                <dl class="modifier-readout" aria-label="Calculated manufacturing modifiers">
-                  <div><dt>Materials</dt><dd data-effective-modifier="material" data-profile-activity="manufacturing">0%</dd></div>
-                  <div><dt>Job time</dt><dd data-effective-modifier="time" data-profile-activity="manufacturing">0%</dd></div>
-                  <div><dt>Install cost</dt><dd data-effective-modifier="cost" data-profile-activity="manufacturing">0%</dd></div>
-                </dl>
-                <input data-profile-modifier="facility" data-profile-activity="manufacturing" data-profile-effect="material" type="hidden" value="0">
-                <input data-profile-modifier="facility" data-profile-activity="manufacturing" data-profile-effect="time" type="hidden" value="0">
-                <input data-profile-modifier="rig" data-profile-activity="manufacturing" data-profile-effect="material" type="hidden" value="0">
-                <input data-profile-modifier="rig" data-profile-activity="manufacturing" data-profile-effect="time" type="hidden" value="0">
-                <input data-rig-scope="category_ids" data-profile-activity="manufacturing" type="hidden" value="">
-                <input data-rig-scope="group_ids" data-profile-activity="manufacturing" type="hidden" value="">
-                <p class="field-help">For now, the selected rig tier is applied to every manufactured item and assumes both material and time coverage.</p>
-              </fieldset>
-
-              <fieldset class="profile-fieldset activity-config" data-activity-config="reaction">
-                <legend>Reaction facility</legend>
-                <div class="activity-config-grid">
-                  <label>Structure
-                    <select data-structure-select data-profile-activity="reaction">
-                      <option value="athanor">Athanor</option>
-                      <option value="tatara">Tatara</option>
-                    </select>
-                  </label>
-                  <label>Security
-                    <select data-security-select data-profile-activity="reaction">
-                      <option value="lowsec">Lowsec</option>
-                      <option value="nullsec">Nullsec</option>
-                      <option value="wormhole">Wormhole</option>
-                    </select>
-                  </label>
-                  <label>Applicable rig
-                    <select data-rig-tier-select data-profile-activity="reaction">
-                      <option value="none">None</option>
-                      <option value="t1">Tech I</option>
-                      <option value="t2">Tech II</option>
-                    </select>
-                  </label>
-                </div>
-                <dl class="modifier-readout" aria-label="Calculated reaction modifiers">
-                  <div><dt>Materials</dt><dd data-effective-modifier="material" data-profile-activity="reaction">0%</dd></div>
-                  <div><dt>Job time</dt><dd data-effective-modifier="time" data-profile-activity="reaction">0%</dd></div>
-                </dl>
-                <input data-profile-modifier="facility" data-profile-activity="reaction" data-profile-effect="material" type="hidden" value="0">
-                <input data-profile-modifier="facility" data-profile-activity="reaction" data-profile-effect="time" type="hidden" value="0">
-                <input data-profile-modifier="rig" data-profile-activity="reaction" data-profile-effect="material" type="hidden" value="0">
-                <input data-profile-modifier="rig" data-profile-activity="reaction" data-profile-effect="time" type="hidden" value="0">
-                <input data-rig-scope="category_ids" data-profile-activity="reaction" type="hidden" value="">
-                <input data-rig-scope="group_ids" data-profile-activity="reaction" type="hidden" value="">
-                <p class="field-help">Reactions require lowsec, nullsec, or wormhole space. This interim rig choice assumes both material and time coverage.</p>
-              </fieldset>
-            </div>
-          </details>
-
-          <details class="planner-details" data-pricing-details>
-            <summary>
-              <span>Market and job costs</span>
-              <small data-pricing-summary>Jita pricing on</small>
-            </summary>
-            <div class="planner-details-body">
-              <label class="pricing-toggle">
-                <input data-pricing-enabled type="checkbox" checked>
-                <span>Include cached Jita 4-4 prices</span>
-              </label>
-              <fieldset class="profile-fieldset pricing-fields" data-pricing-fields>
-                <legend>Cost assumptions</legend>
-                <p class="pricing-subheading">Manufacturing jobs</p>
-                <label class="wide-field">Manufacturing solar system ID <input data-pricing-integer="solar_system_id" type="number" value="30000142" min="1" max="2147483647" step="1" inputmode="numeric"></label>
-                <div class="pricing-grid">
-                  <label>Facility tax <span><input data-pricing-percent="facility_tax_basis_points" type="number" value="0.25" min="0" max="100" step="0.01" inputmode="decimal"><small>%</small></span></label>
-                  <label>SCC surcharge <span><input data-pricing-percent="scc_surcharge_basis_points" type="number" value="4" min="0" max="100" step="0.01" inputmode="decimal"><small>%</small></span></label>
-                </div>
-                <input data-pricing-percent="job_cost_reduction_basis_points" data-derived-job-cost="manufacturing" type="hidden" value="0">
-                <p class="pricing-subheading">Reaction jobs</p>
-                <label class="wide-field">Reaction solar system ID <input data-pricing-integer="reaction_solar_system_id" data-pricing-optional type="number" min="1" max="2147483647" step="1" inputmode="numeric" placeholder="Required for reaction routes"></label>
-                <div class="pricing-grid">
-                  <label>Facility tax <span><input data-pricing-percent="reaction_facility_tax_basis_points" type="number" value="0.25" min="0" max="100" step="0.01" inputmode="decimal"><small>%</small></span></label>
-                  <label>SCC surcharge <span><input data-pricing-percent="reaction_scc_surcharge_basis_points" type="number" value="4" min="0" max="100" step="0.01" inputmode="decimal"><small>%</small></span></label>
-                </div>
-                <input data-pricing-percent="reaction_job_cost_reduction_basis_points" data-derived-job-cost="reaction" type="hidden" value="0">
-                <p class="pricing-subheading">Immediate sale</p>
-                <div class="pricing-grid">
-                  <label>Sales tax <span><input data-pricing-percent="sales_tax_basis_points" type="number" value="0" min="0" max="100" step="0.01" inputmode="decimal"><small>%</small></span></label>
-                </div>
-              </fieldset>
-              <p class="field-help">Inputs use the cached best sell price. Outputs use the best unrestricted buy level, so no broker fee applies. A reaction system is required only when the route contains reactions. Missing prices or top-level liquidity remain incomplete, never zero.</p>
-            </div>
-          </details>
-
-          <button class="buy-button buy-button--primary calculate-button" data-calculate-button type="submit" disabled>
-            Add an item to calculate
-          </button>
-        </form>
-
-        <section class="override-panel" data-overrides-panel hidden aria-labelledby="overrides-title">
-          <div class="override-heading">
-            <h3 id="overrides-title">Planning overrides</h3>
-            <button class="text-button" data-clear-overrides type="button">Reset all</button>
-          </div>
-          <ul data-overrides-list></ul>
-        </section>
-
-        <div class="calculation-note">
-          <p class="kicker">Current basis</p>
-          <p>Blueprint, skill, facility, and rig modifiers are applied to each combined job with exact arithmetic. Cached market prices are estimates; owned materials are not deducted yet.</p>
-        </div>
-      </aside>
-
-      <section class="industry-output" data-output aria-labelledby="output-title">
-        <h2 id="output-title" class="page-title">Calculation output</h2>
-        <p class="output-status" data-output-status role="status" aria-live="polite"></p>
-
-        <section class="output-placeholder panel" data-output-placeholder>
-          <p class="kicker">Production ledger</p>
-          <h2>Your build route will appear here</h2>
-          <p>Search for an item, set the quantity, and calculate. Try <strong>Bantam</strong> for a small first test.</p>
-        </section>
-
-        <section class="output-loading panel" data-output-loading hidden aria-hidden="true">
-          <span class="loading-track"><span></span></span>
-          <p>Resolving the production chain...</p>
-        </section>
-
-        <section class="output-error panel" data-output-error hidden role="alert">
-          <p class="kicker">Route interrupted</p>
-          <h2 data-error-title>Calculation failed</h2>
-          <p data-error-message></p>
-          <div class="error-actions" data-error-actions></div>
-        </section>
-
-        <div class="plan-output" data-plan-output hidden>
-          <section class="plan-summary panel" aria-labelledby="summary-title">
+      <div class="industry-tab-stage">
+        <section id="industry-panel-config" class="industry-tab-panel" data-industry-panel="config" role="tabpanel" aria-labelledby="industry-tab-config" tabindex="0" hidden>
+          <header class="tab-heading panel">
             <div>
-              <p class="kicker">Requested output</p>
-              <h2 id="summary-title" data-summary-title></h2>
-              <p data-summary-meta></p>
-              <ul class="requested-output-list" data-requested-outputs aria-label="Requested outputs"></ul>
+              <p class="kicker">Production setup</p>
+              <h2>Config</h2>
             </div>
-            <dl class="summary-counts">
-              <div>
-                <dt>Jobs</dt>
-                <dd data-step-count>0</dd>
+          </header>
+
+          <div class="config-workspace">
+            <section class="saved-configs panel" aria-labelledby="saved-configs-title">
+              <div class="saved-configs-heading">
+                <h3 id="saved-configs-title">Profiles</h3>
+                <small data-config-count>0 saved</small>
               </div>
-              <div>
-                <dt>Purchases</dt>
-                <dd data-purchase-count>0</dd>
+              <label for="saved-config-select">Active profile</label>
+              <select id="saved-config-select" data-config-select>
+                <option value="">Default</option>
+              </select>
+              <label for="config-name">Profile name</label>
+              <div class="saved-config-save-row">
+                <input id="config-name" data-config-name type="text" maxlength="60" autocomplete="off" placeholder="Bork1">
+                <button class="config-button config-button--primary" data-config-save type="button">Save profile</button>
               </div>
-              <div>
-                <dt>SDE build</dt>
-                <dd data-sde-build>—</dd>
+              <div class="saved-config-actions">
+                <button class="config-button" data-config-new type="button">New profile</button>
+                <button class="config-button config-button--danger" data-config-delete type="button" disabled>Delete</button>
               </div>
-            </dl>
+              <p class="field-status saved-config-status" data-config-status role="status" aria-live="polite"></p>
+            </section>
+
+            <section class="config-card panel" data-profile-details aria-labelledby="profile-title">
+              <div class="config-card-heading">
+                <h3 id="profile-title">Production profile</h3>
+                <small data-profile-summary>Unbonused</small>
+              </div>
+              <div class="planner-details-body">
+                <fieldset class="profile-fieldset">
+                  <legend>Character skills</legend>
+                  <div class="skill-category-list" data-industry-skill-groups></div>
+                </fieldset>
+
+                <div class="facility-config-grid">
+                  <fieldset class="profile-fieldset activity-config" data-activity-config="manufacturing">
+                    <legend>Manufacturing facility</legend>
+                    <div class="activity-config-grid">
+                      <label>Structure
+                        <select data-structure-select data-profile-activity="manufacturing">
+                          <option value="unbonused">No structure bonus</option>
+                          <option value="raitaru">Raitaru</option>
+                          <option value="azbel">Azbel</option>
+                          <option value="sotiyo">Sotiyo</option>
+                        </select>
+                      </label>
+                      <label>Security
+                        <select data-security-select data-profile-activity="manufacturing">
+                          <option value="highsec">Highsec</option>
+                          <option value="lowsec">Lowsec</option>
+                          <option value="nullsec">Nullsec</option>
+                          <option value="wormhole">Wormhole</option>
+                        </select>
+                      </label>
+                      <label>Rig
+                        <select data-rig-tier-select data-profile-activity="manufacturing">
+                          <option value="none">None</option>
+                          <option value="t1">Tech I</option>
+                          <option value="t2">Tech II</option>
+                        </select>
+                      </label>
+                    </div>
+                    <dl class="modifier-readout" aria-label="Calculated manufacturing modifiers">
+                      <div><dt>Materials</dt><dd data-effective-modifier="material" data-profile-activity="manufacturing">0%</dd></div>
+                      <div><dt>Job time</dt><dd data-effective-modifier="time" data-profile-activity="manufacturing">0%</dd></div>
+                      <div><dt>Install cost</dt><dd data-effective-modifier="cost" data-profile-activity="manufacturing">0%</dd></div>
+                    </dl>
+                    <input data-profile-modifier="facility" data-profile-activity="manufacturing" data-profile-effect="material" type="hidden" value="0">
+                    <input data-profile-modifier="facility" data-profile-activity="manufacturing" data-profile-effect="time" type="hidden" value="0">
+                    <input data-profile-modifier="rig" data-profile-activity="manufacturing" data-profile-effect="material" type="hidden" value="0">
+                    <input data-profile-modifier="rig" data-profile-activity="manufacturing" data-profile-effect="time" type="hidden" value="0">
+                    <input data-rig-scope="category_ids" data-profile-activity="manufacturing" type="hidden" value="">
+                    <input data-rig-scope="group_ids" data-profile-activity="manufacturing" type="hidden" value="">
+                  </fieldset>
+
+                  <fieldset class="profile-fieldset activity-config" data-activity-config="reaction">
+                    <legend>Reaction facility</legend>
+                    <div class="activity-config-grid">
+                      <label>Structure
+                        <select data-structure-select data-profile-activity="reaction">
+                          <option value="athanor">Athanor</option>
+                          <option value="tatara">Tatara</option>
+                        </select>
+                      </label>
+                      <label>Security
+                        <select data-security-select data-profile-activity="reaction">
+                          <option value="lowsec">Lowsec</option>
+                          <option value="nullsec">Nullsec</option>
+                          <option value="wormhole">Wormhole</option>
+                        </select>
+                      </label>
+                      <label>Rig
+                        <select data-rig-tier-select data-profile-activity="reaction">
+                          <option value="none">None</option>
+                          <option value="t1">Tech I</option>
+                          <option value="t2">Tech II</option>
+                        </select>
+                      </label>
+                    </div>
+                    <dl class="modifier-readout modifier-readout--reaction" aria-label="Calculated reaction modifiers">
+                      <div><dt>Materials</dt><dd data-effective-modifier="material" data-profile-activity="reaction">0%</dd></div>
+                      <div><dt>Job time</dt><dd data-effective-modifier="time" data-profile-activity="reaction">0%</dd></div>
+                    </dl>
+                    <input data-profile-modifier="facility" data-profile-activity="reaction" data-profile-effect="material" type="hidden" value="0">
+                    <input data-profile-modifier="facility" data-profile-activity="reaction" data-profile-effect="time" type="hidden" value="0">
+                    <input data-profile-modifier="rig" data-profile-activity="reaction" data-profile-effect="material" type="hidden" value="0">
+                    <input data-profile-modifier="rig" data-profile-activity="reaction" data-profile-effect="time" type="hidden" value="0">
+                    <input data-rig-scope="category_ids" data-profile-activity="reaction" type="hidden" value="">
+                    <input data-rig-scope="group_ids" data-profile-activity="reaction" type="hidden" value="">
+                  </fieldset>
+                </div>
+              </div>
+            </section>
+
+            <section class="config-card panel" data-pricing-details aria-labelledby="pricing-title">
+              <div class="config-card-heading">
+                <h3 id="pricing-title">Market and job costs</h3>
+                <small data-pricing-summary>Jita pricing on</small>
+              </div>
+              <div class="planner-details-body">
+                <label class="pricing-toggle">
+                  <input data-pricing-enabled type="checkbox" checked>
+                  <span>Include cached Jita 4-4 prices</span>
+                </label>
+                <fieldset class="profile-fieldset pricing-fields" data-pricing-fields>
+                  <legend>Cost assumptions</legend>
+                  <p class="pricing-subheading">SCC surcharges</p>
+                  <div class="pricing-grid">
+                    <label>Industry &amp; reactions <span><input data-pricing-percent="scc_surcharge_basis_points" type="number" value="4" min="0" max="100" step="0.01" inputmode="decimal"><small>%</small></span></label>
+                    <label>Science <span><input data-config-percent="science_scc_surcharge_basis_points" type="number" value="2" min="0" max="100" step="0.01" inputmode="decimal"><small>%</small></span></label>
+                  </div>
+
+                  <div class="skill-category-list trade-skill-list" data-trade-skill-groups></div>
+
+                  <p class="pricing-subheading">Industry</p>
+                  <label class="wide-field">Solar system ID <input data-pricing-integer="solar_system_id" type="number" value="30000142" min="1" max="2147483647" step="1" inputmode="numeric"></label>
+                  <div class="pricing-grid">
+                    <label>Facility tax <span><input data-pricing-percent="facility_tax_basis_points" type="number" value="0.25" min="0" max="100" step="0.01" inputmode="decimal"><small>%</small></span></label>
+                  </div>
+                  <input data-pricing-percent="job_cost_reduction_basis_points" data-derived-job-cost="manufacturing" type="hidden" value="0">
+
+                  <p class="pricing-subheading">Reactions</p>
+                  <label class="wide-field">Solar system ID <input data-pricing-integer="reaction_solar_system_id" data-pricing-optional type="number" min="1" max="2147483647" step="1" inputmode="numeric" placeholder="Required for reaction routes"></label>
+                  <div class="pricing-grid">
+                    <label>Facility tax <span><input data-pricing-percent="reaction_facility_tax_basis_points" type="number" value="0.25" min="0" max="100" step="0.01" inputmode="decimal"><small>%</small></span></label>
+                  </div>
+                  <input data-pricing-percent="reaction_job_cost_reduction_basis_points" data-derived-job-cost="reaction" type="hidden" value="0">
+
+                  <p class="pricing-subheading">Science</p>
+                  <label class="wide-field">Solar system ID <input data-config-integer="science_solar_system_id" data-pricing-optional type="number" min="1" max="2147483647" step="1" inputmode="numeric" placeholder="Saved for science planning"></label>
+                  <div class="pricing-grid">
+                    <label>Facility tax <span><input data-config-percent="science_facility_tax_basis_points" type="number" value="0.25" min="0" max="100" step="0.01" inputmode="decimal"><small>%</small></span></label>
+                  </div>
+
+                  <p class="pricing-subheading">Taxes</p>
+                  <div class="pricing-grid">
+                    <label>Sales tax <span><input data-pricing-percent="sales_tax_basis_points" type="number" value="0" min="0" max="100" step="0.01" inputmode="decimal"><small>%</small></span></label>
+                    <label>Broker's fee <span><input data-pricing-percent="broker_fee_basis_points" type="number" value="0" min="0" max="100" step="0.01" inputmode="decimal"><small>%</small></span></label>
+                    <label>PI tax <span><input data-config-percent="pi_tax_basis_points" type="number" value="0" min="0" max="100" step="0.01" inputmode="decimal"><small>%</small></span></label>
+                  </div>
+                </fieldset>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <section id="industry-panel-build" class="industry-tab-panel" data-industry-panel="build" role="tabpanel" aria-labelledby="industry-tab-build" tabindex="0">
+          <header class="tab-heading tab-heading--build panel">
+            <div>
+              <p class="kicker">Production route</p>
+              <h2>Build</h2>
+            </div>
+            <div class="build-heading-meta">
+              <p class="active-profile">Profile: <strong data-active-profile-name>Default</strong></p>
+              <div class="api-state" data-api-state data-state="checking" role="status" aria-live="polite">
+                <span class="api-state-light" aria-hidden="true"></span>
+                <span class="api-state-copy">
+                  <strong data-api-label>Checking calculator</strong>
+                  <small data-api-detail>Connecting to the local API</small>
+                </span>
+              </div>
+            </div>
+          </header>
+
+          <div class="industry-workbench">
+            <aside class="planner-panel panel" aria-labelledby="planner-title">
+              <div class="section-heading">
+                <p class="kicker">Build request</p>
+                <h2 id="planner-title">What are you building?</h2>
+              </div>
+
+              <form data-planner-form novalidate>
+                <div class="field-group search-field build-search-field">
+                  <label for="industry-search">Add an item</label>
+                  <div class="search-control">
+                    <input
+                      id="industry-search"
+                      data-search-input
+                      type="search"
+                      placeholder="Bantam, Rifter, 582..."
+                      autocomplete="off"
+                      spellcheck="false"
+                      maxlength="255"
+                      aria-controls="industry-search-results"
+                      aria-describedby="search-status"
+                    >
+                  </div>
+                  <p id="search-status" class="field-status" data-search-status role="status" aria-live="polite"></p>
+                  <ul id="industry-search-results" class="search-results" data-search-results hidden aria-label="Matching EVE items"></ul>
+                </div>
+
+                <section class="demand-editor" data-demand-editor hidden aria-labelledby="demand-title">
+                  <div class="demand-heading">
+                    <div>
+                      <p class="kicker">Build list</p>
+                      <h3 id="demand-title">Requested outputs</h3>
+                    </div>
+                    <button class="text-button" data-clear-demands type="button">Clear all</button>
+                  </div>
+                  <p class="field-status" data-demand-status role="status" aria-live="polite"></p>
+                  <ul class="demand-list" data-demand-list aria-label="Requested production outputs"></ul>
+                </section>
+
+                <details class="planner-details inventory-details" data-owned-details>
+                  <summary>
+                    <span>Owned materials</span>
+                    <small data-owned-summary>None</small>
+                  </summary>
+                  <div class="planner-details-body">
+                    <div class="field-group search-field owned-search-field">
+                      <label for="industry-owned-search">Add owned material</label>
+                      <input
+                        id="industry-owned-search"
+                        data-owned-search-input
+                        type="search"
+                        placeholder="Tritanium, Pyerite..."
+                        autocomplete="off"
+                        spellcheck="false"
+                        maxlength="255"
+                        aria-controls="industry-owned-search-results"
+                        aria-describedby="owned-search-status"
+                      >
+                      <p id="owned-search-status" class="field-status" data-owned-search-status role="status" aria-live="polite"></p>
+                      <ul id="industry-owned-search-results" class="search-results" data-owned-search-results hidden aria-label="Matching owned materials"></ul>
+                    </div>
+                    <section class="owned-editor" data-owned-editor hidden aria-labelledby="owned-list-title">
+                      <div class="demand-heading">
+                        <h3 id="owned-list-title">Inventory</h3>
+                        <button class="text-button" data-clear-owned type="button">Clear all</button>
+                      </div>
+                      <ul class="demand-list owned-list" data-owned-list aria-label="Owned material quantities"></ul>
+                    </section>
+                  </div>
+                </details>
+
+                <button class="buy-button buy-button--primary calculate-button" data-calculate-button type="submit" disabled>
+                  Add an item to calculate
+                </button>
+              </form>
+
+              <section class="override-panel" data-overrides-panel hidden aria-labelledby="overrides-title">
+                <div class="override-heading">
+                  <h3 id="overrides-title">Planning overrides</h3>
+                  <button class="text-button" data-clear-overrides type="button">Reset all</button>
+                </div>
+                <ul data-overrides-list></ul>
+              </section>
+            </aside>
+
+            <section class="industry-output" data-output aria-labelledby="output-title">
+              <h2 id="output-title" class="page-title">Calculation output</h2>
+              <p class="output-status" data-output-status role="status" aria-live="polite"></p>
+
+              <section class="output-placeholder panel" data-output-placeholder>
+                <p class="kicker">Production ledger</p>
+                <h2>Your build route will appear here</h2>
+                <p>Search for an item, set the quantity, and calculate.</p>
+              </section>
+
+              <section class="output-loading panel" data-output-loading hidden aria-hidden="true">
+                <span class="loading-track"><span></span></span>
+                <p>Resolving the production chain...</p>
+              </section>
+
+              <section class="output-error panel" data-output-error hidden role="alert">
+                <p class="kicker">Route interrupted</p>
+                <h2 data-error-title>Calculation failed</h2>
+                <p data-error-message></p>
+                <div class="error-actions" data-error-actions></div>
+              </section>
+
+              <div class="plan-output" data-plan-output hidden>
+                <section class="plan-summary panel" aria-labelledby="summary-title">
+                  <div>
+                    <p class="kicker">Requested output</p>
+                    <h2 id="summary-title" data-summary-title></h2>
+                    <ul class="requested-output-list" data-requested-outputs aria-label="Requested outputs"></ul>
+                  </div>
+                  <dl class="summary-counts">
+                    <div>
+                      <dt>Jobs</dt>
+                      <dd data-step-count>0</dd>
+                    </div>
+                    <div>
+                      <dt>Purchases</dt>
+                      <dd data-purchase-count>0</dd>
+                    </div>
+                  </dl>
+                </section>
+
+                <section class="valuation-panel panel" data-valuation-panel hidden aria-labelledby="valuation-title">
+                  <div class="market-stamp" data-market-stamp data-state="fresh">
+                    <div>
+                      <p class="kicker">Market snapshot</p>
+                      <h2 id="valuation-title" data-market-location>Jita 4-4</h2>
+                    </div>
+                    <div class="market-stamp-status">
+                      <strong data-market-status>Fresh</strong>
+                      <small data-market-detail></small>
+                    </div>
+                  </div>
+                  <dl class="economics-grid">
+                    <div><dt>Shopping list</dt><dd data-economics-shopping>—</dd></div>
+                    <div><dt>Installation</dt><dd data-economics-installation>—</dd></div>
+                    <div><dt>Total cost</dt><dd data-economics-cost>—</dd></div>
+                    <div><dt>Requested net output</dt><dd data-economics-output>—</dd></div>
+                    <div data-profit-state="neutral"><dt>Requested profit</dt><dd data-economics-profit>—</dd></div>
+                    <div><dt>Requested margin</dt><dd data-economics-margin>—</dd></div>
+                    <div><dt>Surplus inventory</dt><dd data-economics-surplus>—</dd></div>
+                    <div data-profit-state="neutral"><dt>Profit incl. surplus</dt><dd data-economics-profit-surplus>—</dd></div>
+                    <div><dt>Margin incl. surplus</dt><dd data-economics-margin-surplus>—</dd></div>
+                  </dl>
+                  <p class="valuation-note" data-valuation-note></p>
+                </section>
+
+                <section class="production-panel panel" data-production-panel aria-labelledby="production-title">
+                  <div class="result-heading">
+                    <div>
+                      <p class="kicker">Dependency order</p>
+                      <h2 id="production-title">Production route</h2>
+                    </div>
+                  </div>
+                  <ol class="production-route" data-build-steps></ol>
+                </section>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <section id="industry-panel-shopping" class="industry-tab-panel shopping-tab" data-industry-panel="shopping" role="tabpanel" aria-labelledby="industry-tab-shopping" tabindex="0" hidden>
+          <header class="tab-heading shopping-header panel">
+            <div>
+              <p class="kicker">Purchase manifest</p>
+              <h2 id="purchases-title">Shopping</h2>
+            </div>
+            <div class="shopping-actions">
+              <span data-shopping-count>0 items</span>
+              <button class="purchase-action" data-copy-shopping type="button" disabled>Copy multibuy</button>
+            </div>
+            <p class="export-status" data-export-status role="status" aria-live="polite"></p>
+          </header>
+
+          <section class="output-placeholder panel" data-shopping-placeholder>
+            <p class="kicker">Shopping list</p>
+            <h2>Calculate a build to create a purchase list</h2>
           </section>
 
-          <section class="valuation-panel panel" data-valuation-panel hidden aria-labelledby="valuation-title">
-            <div class="market-stamp" data-market-stamp data-state="fresh">
-              <div>
-                <p class="kicker">Market snapshot</p>
-                <h2 id="valuation-title" data-market-location>Jita 4-4</h2>
-              </div>
-              <div class="market-stamp-status">
-                <strong data-market-status>Fresh</strong>
-                <small data-market-detail></small>
-              </div>
-            </div>
-            <dl class="economics-grid">
-              <div><dt>Shopping list</dt><dd data-economics-shopping>—</dd></div>
-              <div><dt>Installation</dt><dd data-economics-installation>—</dd></div>
-              <div><dt>Total cost</dt><dd data-economics-cost>—</dd></div>
-              <div><dt>Requested net output</dt><dd data-economics-output>—</dd></div>
-              <div data-profit-state="neutral"><dt>Requested profit</dt><dd data-economics-profit>—</dd></div>
-              <div><dt>Requested margin</dt><dd data-economics-margin>—</dd></div>
-              <div><dt>Surplus inventory</dt><dd data-economics-surplus>—</dd></div>
-              <div data-profit-state="neutral"><dt>Profit incl. surplus</dt><dd data-economics-profit-surplus>—</dd></div>
-              <div><dt>Margin incl. surplus</dt><dd data-economics-margin-surplus>—</dd></div>
-            </dl>
-            <p class="valuation-note" data-valuation-note></p>
-          </section>
-
-          <section class="production-panel panel" data-production-panel aria-labelledby="production-title">
-            <div class="result-heading">
-              <div>
-                <p class="kicker">Dependency order</p>
-                <h2 id="production-title">Production route</h2>
-              </div>
-              <p>Build from top to bottom.</p>
-            </div>
-            <ol class="production-route" data-build-steps></ol>
-          </section>
-
-          <section class="purchases-panel panel" aria-labelledby="purchases-title">
-            <div class="result-heading">
-              <div>
-                <p class="kicker">Shopping list</p>
-                <h2 id="purchases-title">Purchases</h2>
-              </div>
-              <div class="shopping-actions">
-                <button class="purchase-action" data-copy-shopping type="button" disabled>Copy list</button>
-                <button class="purchase-action" data-download-shopping type="button" disabled>Download CSV</button>
-              </div>
-            </div>
-            <p class="export-status" data-export-status role="status" aria-live="polite">Aggregated across the full route.</p>
+          <section class="purchases-panel panel" data-shopping-output hidden aria-labelledby="purchases-title">
             <ul class="purchase-list" data-purchases></ul>
           </section>
-        </div>
-      </section>
+        </section>
+      </div>
     </div>
 
     <noscript>

@@ -6,8 +6,8 @@
 
   const profileDetails = app.querySelector("[data-profile-details]");
   const profileSummary = app.querySelector("[data-profile-summary]");
-  const reactionsSelect = app.querySelector('[data-profile-skill="reactions_level"]');
-  const skillGrid = reactionsSelect?.closest(".profile-field-grid");
+  const reactionsSelect = app.querySelector('[data-production-profile-field="reactions_level"]');
+  const skillGrid = app.querySelector("[data-production-skill-extras]");
   if (!profileDetails || !profileSummary || !reactionsSelect || !skillGrid) return;
 
   const label = document.createElement("label");
@@ -30,16 +30,6 @@
   });
   label.append(caption, select);
   skillGrid.append(label);
-
-  const help = document.createElement("p");
-  help.className = "field-help";
-  help.textContent = "Zainou Beancounter BX hardwirings use implant slot 8 and reduce manufacturing job time only.";
-  skillGrid.insertAdjacentElement("afterend", help);
-
-  const note = app.querySelector(".calculation-note p:last-child");
-  if (note) {
-    note.textContent = "Blueprint, skill, implant, facility, and rig modifiers are applied to each combined job with exact arithmetic. Cached market prices are estimates.";
-  }
 
   function profileHasCustomValue() {
     const hasSkill = [...app.querySelectorAll("[data-profile-skill]")]

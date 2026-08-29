@@ -15,7 +15,6 @@ from app.industry.valuation import IndustryEconomics, ValuedItem
 
 TypeId = Annotated[int, Field(strict=True, gt=0, le=2_147_483_647)]
 BasisPoints = Annotated[int, Field(strict=True, ge=0, le=10_000)]
-ZeroBasisPoints = Annotated[int, Field(strict=True, ge=0, le=0)]
 
 
 class EconomicsApiModel(BaseModel):
@@ -29,7 +28,7 @@ class IndustryPricingRequest(EconomicsApiModel):
     facility_tax_basis_points: BasisPoints = 25
     scc_surcharge_basis_points: BasisPoints = 400
     sales_tax_basis_points: BasisPoints = 0
-    broker_fee_basis_points: ZeroBasisPoints = 0
+    broker_fee_basis_points: BasisPoints = 0
     job_cost_reduction_basis_points: BasisPoints = 0
     reaction_solar_system_id: TypeId | None = None
     reaction_facility_tax_basis_points: BasisPoints = 25

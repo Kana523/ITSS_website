@@ -311,8 +311,8 @@ def _calculation_request(*, include_pricing: bool = True) -> dict:
         {"facility_tax_basis_points": -1},
         {"scc_surcharge_basis_points": 10_001},
         {"sales_tax_basis_points": "359"},
-        {"broker_fee_basis_points": 1},
         {"broker_fee_basis_points": 1.5},
+        {"broker_fee_basis_points": 10_001},
         {"job_cost_reduction_basis_points": 10_001},
         {"unexpected_rate": 10},
     ),
@@ -333,6 +333,19 @@ def test_pricing_request_validation_uses_the_api_error_envelope(
 
     assert response.status_code == 422
     assert response.json()["error"]["code"] == "validation_error"
+
+
+def test_manual_broker_fee_is_applied_to_output_value() -> None:
+    request = _calculation_request()
+    request["pricing"]["broker_fee_basis_points"] = 100
+
+    with _api_client(_complete_market_repository()) as client:
+        response = client.post("/api/industry/calculate", json=request)
+
+    assert response.status_code == 200
+    economics = response.json()["valuation"]["economics"]
+    assert economics["broker_fee_isk"] == "0.5325"
+    assert economics["broker_fee_including_surplus_isk"] == "0.71"
 
 
 def test_fresh_valuation_serializes_every_decimal_as_an_exact_string() -> None:

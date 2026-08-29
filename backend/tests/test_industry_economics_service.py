@@ -495,12 +495,12 @@ def test_non_default_basis_points_convert_without_float_rounding() -> None:
     assert rates.default_job_cost_modifier == Decimal("0.8766")
 
 
-def test_best_buy_pricing_rejects_a_nonzero_broker_fee() -> None:
-    with pytest.raises(
-        ValueError,
-        match="broker_fee_basis_points must be zero",
-    ):
-        IndustryPricingOptions(broker_fee_basis_points=1)
+def test_manual_broker_fee_converts_without_float_rounding() -> None:
+    rates = IndustryPricingOptions(
+        broker_fee_basis_points=125,
+    ).to_fee_rates()
+
+    assert rates.broker_fee_rate == Decimal("0.0125")
 
 
 def test_mixed_plan_loads_and_applies_activity_costs_from_different_systems(

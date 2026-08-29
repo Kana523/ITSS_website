@@ -117,11 +117,6 @@ class IndustryPricingOptions:
             "reaction_job_cost_reduction_basis_points",
         ):
             _require_basis_points(getattr(self, field_name), field_name)
-        if self.broker_fee_basis_points:
-            raise ValueError(
-                "broker_fee_basis_points must be zero for immediate best-buy sales"
-            )
-
     def activity_fee_rates(
         self,
         activity: ActivityKind,

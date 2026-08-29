@@ -6,6 +6,7 @@
 
   const MAX_SAFE_INTEGER = 9_007_199_254_740_991;
   const MAX_DEMANDS = 50;
+  const MAX_OWNED_MATERIALS = 500;
   const SEARCH_DELAY_MS = 260;
   const MAX_RECOVERY_ATTEMPTS = 4;
   const numberFormatter = new Intl.NumberFormat("en-US");
@@ -22,9 +23,15 @@
     demandList: app.querySelector("[data-demand-list]"),
     demandStatus: app.querySelector("[data-demand-status]"),
     clearDemands: app.querySelector("[data-clear-demands]"),
-    profileDetails: app.querySelector("[data-profile-details]"),
+    ownedDetails: app.querySelector("[data-owned-details]"),
+    ownedSummary: app.querySelector("[data-owned-summary]"),
+    ownedSearchInput: app.querySelector("[data-owned-search-input]"),
+    ownedSearchStatus: app.querySelector("[data-owned-search-status]"),
+    ownedSearchResults: app.querySelector("[data-owned-search-results]"),
+    ownedEditor: app.querySelector("[data-owned-editor]"),
+    ownedList: app.querySelector("[data-owned-list]"),
+    clearOwned: app.querySelector("[data-clear-owned]"),
     profileSummary: app.querySelector("[data-profile-summary]"),
-    pricingDetails: app.querySelector("[data-pricing-details]"),
     pricingSummary: app.querySelector("[data-pricing-summary]"),
     pricingEnabled: app.querySelector("[data-pricing-enabled]"),
     pricingFields: app.querySelector("[data-pricing-fields]"),
@@ -42,11 +49,9 @@
     errorActions: app.querySelector("[data-error-actions]"),
     planOutput: app.querySelector("[data-plan-output]"),
     summaryTitle: app.querySelector("[data-summary-title]"),
-    summaryMeta: app.querySelector("[data-summary-meta]"),
     requestedOutputs: app.querySelector("[data-requested-outputs]"),
     stepCount: app.querySelector("[data-step-count]"),
     purchaseCount: app.querySelector("[data-purchase-count]"),
-    sdeBuild: app.querySelector("[data-sde-build]"),
     productionPanel: app.querySelector("[data-production-panel]"),
     buildSteps: app.querySelector("[data-build-steps]"),
     purchases: app.querySelector("[data-purchases]"),
@@ -66,12 +71,15 @@
     economicsMarginSurplus: app.querySelector("[data-economics-margin-surplus]"),
     valuationNote: app.querySelector("[data-valuation-note]"),
     copyShopping: app.querySelector("[data-copy-shopping]"),
-    downloadShopping: app.querySelector("[data-download-shopping]"),
     exportStatus: app.querySelector("[data-export-status]"),
+    shoppingCount: app.querySelector("[data-shopping-count]"),
+    shoppingPlaceholder: app.querySelector("[data-shopping-placeholder]"),
+    shoppingOutput: app.querySelector("[data-shopping-output]"),
   };
 
   const state = {
     demands: new Map(),
+    ownedMaterials: new Map(),
     sdeBuildNumber: null,
     choices: new Map(),
     blueprintEfficiencies: new Map(),
@@ -81,10 +89,14 @@
     searchController: null,
     calculationController: null,
     searchRequestId: 0,
+    ownedSearchTimer: null,
+    ownedSearchController: null,
+    ownedSearchRequestId: 0,
     calculationRequestId: 0,
     pendingNotice: "",
     pendingEfficiencyFocusKey: null,
     pendingChoiceFocusTypeId: null,
+    pendingChoiceOriginTab: null,
     inputRevision: 0,
   };
 
@@ -178,29 +190,6 @@
     return `${negative ? "-" : ""}${whole}.${fraction}%`;
   }
 
-  function formatDuration(totalSeconds) {
-    if (!Number.isSafeInteger(totalSeconds) || totalSeconds < 0) {
-      return `${totalSeconds} seconds`;
-    }
-
-    const units = [
-      [86_400, "d"],
-      [3_600, "h"],
-      [60, "m"],
-      [1, "s"],
-    ];
-    let remaining = totalSeconds;
-    const parts = [];
-    units.forEach(([seconds, suffix]) => {
-      const amount = Math.floor(remaining / seconds);
-      if (amount > 0 || (suffix === "s" && parts.length === 0)) {
-        parts.push(`${amount}${suffix}`);
-        remaining %= seconds;
-      }
-    });
-    return parts.slice(0, 3).join(" ");
-  }
-
   function formatDurationCentiseconds(totalCentiseconds) {
     let exactCentiseconds;
     try {
@@ -263,14 +252,6 @@
     }
   }
 
-  function isBaseJobTime(exactSeconds, baseSeconds) {
-    try {
-      return BigInt(exactSeconds.numerator) === BigInt(baseSeconds) * BigInt(exactSeconds.denominator);
-    } catch (_error) {
-      return false;
-    }
-  }
-
   function recipeKeyId(recipeKey) {
     return `${recipeKey.blueprint_type_id}:${recipeKey.activity_id}`;
   }
@@ -287,6 +268,19 @@
     elements.apiState.dataset.state = status;
     elements.apiLabel.textContent = label;
     elements.apiDetail.textContent = detail;
+  }
+
+  function showConfigTab() {
+    window.industryTabs?.activate("config");
+  }
+
+  function acceptIndustryDataVersion(buildNumber) {
+    if (state.sdeBuildNumber && state.sdeBuildNumber !== buildNumber) {
+      state.choices.clear();
+      state.blueprintEfficiencies.clear();
+      state.pendingNotice = "Industry data changed; recipe-specific settings were reset.";
+    }
+    state.sdeBuildNumber = buildNumber;
   }
 
   async function requestJson(path, options = {}) {
@@ -342,7 +336,7 @@
       });
       const payload = await response.json();
       if (response.ok && payload.api === "ok" && payload.database === "ok") {
-        setApiState("online", "Calculator online", "SDE database connected");
+        setApiState("online", "Calculator online", "Industry data connected");
         return;
       }
       setApiState("offline", "Calculator unavailable", "Database connection failed");
@@ -430,7 +424,7 @@
       if (requestId !== state.searchRequestId) return;
       result.items.forEach((item) => state.typeNames.set(item.type_id, item.name));
       renderSearchResults(result.items, result.sde_build_number);
-      setApiState("online", "Calculator online", `SDE build ${formatNumber(result.sde_build_number)}`);
+      setApiState("online", "Calculator online", "Industry data connected");
     } catch (error) {
       if (error.name === "AbortError" || requestId !== state.searchRequestId) return;
       hideSearchResults();
@@ -445,6 +439,87 @@
     }
   }
 
+  function invalidateOwnedSearch() {
+    window.clearTimeout(state.ownedSearchTimer);
+    state.ownedSearchTimer = null;
+    state.ownedSearchController?.abort();
+    state.ownedSearchController = null;
+    state.ownedSearchRequestId += 1;
+    elements.ownedSearchInput.removeAttribute("aria-busy");
+  }
+
+  function hideOwnedSearchResults() {
+    elements.ownedSearchResults.hidden = true;
+    elements.ownedSearchResults.replaceChildren();
+  }
+
+  function renderOwnedSearchResults(items, buildNumber) {
+    elements.ownedSearchResults.replaceChildren();
+    if (!items.length) {
+      hideOwnedSearchResults();
+      elements.ownedSearchStatus.textContent = "No items matched that search.";
+      return;
+    }
+
+    const fragment = document.createDocumentFragment();
+    items.forEach((item) => {
+      const listItem = createElement("li");
+      const button = createElement("button", "search-result-button");
+      button.type = "button";
+      button.append(
+        createElement("span", "search-result-name", item.name),
+        createElement("span", "search-result-id", `ID ${item.type_id}`),
+        createElement("span", "search-result-context", `${item.group_name} · ${item.category_name}`),
+      );
+      button.setAttribute("aria-label", `Add owned ${item.name}`);
+      button.addEventListener("click", () => addOwnedMaterial(item, buildNumber));
+      listItem.append(button);
+      fragment.append(listItem);
+    });
+
+    elements.ownedSearchResults.append(fragment);
+    elements.ownedSearchResults.hidden = false;
+    elements.ownedSearchStatus.textContent = `${items.length} matching item${items.length === 1 ? "" : "s"}.`;
+  }
+
+  async function runOwnedSearch(query) {
+    state.ownedSearchController?.abort();
+    state.ownedSearchController = new AbortController();
+    const requestId = ++state.ownedSearchRequestId;
+    elements.ownedSearchInput.setAttribute("aria-busy", "true");
+    elements.ownedSearchStatus.textContent = "Searching EVE types...";
+
+    const params = new URLSearchParams({ search: query, limit: "10" });
+    try {
+      const result = await requestJson(`/api/industry/types?${params}`, {
+        signal: state.ownedSearchController.signal,
+      });
+      if (requestId !== state.ownedSearchRequestId) return;
+      result.items.forEach((item) => state.typeNames.set(item.type_id, item.name));
+      renderOwnedSearchResults(result.items, result.sde_build_number);
+      setApiState("online", "Calculator online", "Industry data connected");
+    } catch (error) {
+      if (error.name === "AbortError" || requestId !== state.ownedSearchRequestId) return;
+      hideOwnedSearchResults();
+      elements.ownedSearchStatus.textContent = error.message;
+      if (error.code === "network_error" || error.status === 503) {
+        setApiState("offline", "Calculator unavailable", "Inventory search failed");
+      }
+    } finally {
+      if (requestId === state.ownedSearchRequestId) {
+        elements.ownedSearchInput.removeAttribute("aria-busy");
+      }
+    }
+  }
+
+  function resetShopping() {
+    elements.purchases.replaceChildren();
+    elements.shoppingPlaceholder.hidden = false;
+    elements.shoppingOutput.hidden = true;
+    elements.shoppingCount.textContent = "0 items";
+    elements.exportStatus.textContent = "";
+  }
+
   function resetOutput() {
     elements.placeholder.hidden = false;
     elements.loading.hidden = true;
@@ -453,6 +528,7 @@
     elements.output.removeAttribute("aria-busy");
     elements.outputStatus.textContent = "No calculation is currently displayed.";
     state.latestPlan = null;
+    resetShopping();
     updateExportActions();
   }
 
@@ -522,6 +598,77 @@
     }
   }
 
+  function renderOwnedList({ focusTypeId = null } = {}) {
+    elements.ownedList.replaceChildren();
+    const fragment = document.createDocumentFragment();
+    state.ownedMaterials.forEach((owned, typeId) => {
+      const item = createElement("li", "demand-item owned-item");
+      const copy = createElement("div", "demand-item-copy");
+      copy.append(
+        createElement("strong", "", owned.item.name),
+        createElement("span", "", `${owned.item.group_name} · Type ID ${typeId}`),
+      );
+
+      const quantityLabel = createElement("label", "demand-quantity");
+      quantityLabel.append(createElement("span", "visually-hidden", `Owned quantity of ${owned.item.name}`));
+      const quantity = document.createElement("input");
+      quantity.type = "number";
+      quantity.value = String(owned.quantity);
+      quantity.min = "1";
+      quantity.max = String(MAX_SAFE_INTEGER);
+      quantity.step = "1";
+      quantity.inputMode = "numeric";
+      quantity.dataset.ownedQuantity = String(typeId);
+      quantity.setAttribute("aria-label", `Owned quantity of ${owned.item.name}`);
+      quantityLabel.append(quantity);
+
+      const remove = createElement("button", "demand-remove", "Remove");
+      remove.type = "button";
+      remove.dataset.removeOwned = String(typeId);
+      remove.setAttribute("aria-label", `Remove owned ${owned.item.name}`);
+      item.append(copy, quantityLabel, remove);
+      fragment.append(item);
+    });
+    elements.ownedList.append(fragment);
+
+    const count = state.ownedMaterials.size;
+    elements.ownedEditor.hidden = count === 0;
+    elements.ownedSummary.textContent = count
+      ? `${count} item${count === 1 ? "" : "s"}`
+      : "None";
+    if (focusTypeId !== null) {
+      elements.ownedList.querySelector(`[data-owned-quantity="${focusTypeId}"]`)?.focus();
+    }
+  }
+
+  function addOwnedMaterial(item, buildNumber) {
+    invalidateOwnedSearch();
+    if (state.ownedMaterials.has(item.type_id)) {
+      hideOwnedSearchResults();
+      elements.ownedSearchInput.value = "";
+      elements.ownedSearchStatus.textContent = `${item.name} is already in owned materials.`;
+      elements.ownedDetails.open = true;
+      renderOwnedList({ focusTypeId: item.type_id });
+      return;
+    }
+    if (state.ownedMaterials.size >= MAX_OWNED_MATERIALS) {
+      hideOwnedSearchResults();
+      elements.ownedSearchStatus.textContent = `Owned materials can contain at most ${MAX_OWNED_MATERIALS} items.`;
+      return;
+    }
+
+    acceptIndustryDataVersion(buildNumber);
+    state.typeNames.set(item.type_id, item.name);
+    state.ownedMaterials.set(item.type_id, { item, quantity: 1 });
+    elements.ownedSearchInput.value = "";
+    elements.ownedSearchStatus.textContent = `${item.name} added to owned materials.`;
+    hideOwnedSearchResults();
+    elements.ownedDetails.open = true;
+    markCalculationDirty("Owned materials changed. Calculate a new production route.");
+    renderOverrides();
+    renderOwnedList({ focusTypeId: item.type_id });
+  }
+
   function addDemand(item, buildNumber) {
     invalidateSearch();
     if (state.demands.has(item.type_id)) {
@@ -536,12 +683,7 @@
       elements.searchStatus.textContent = `The build list can contain at most ${MAX_DEMANDS} products.`;
       return;
     }
-    if (state.sdeBuildNumber && state.sdeBuildNumber !== buildNumber) {
-      state.choices.clear();
-      state.blueprintEfficiencies.clear();
-      state.pendingNotice = "The SDE changed; recipe-specific settings were reset.";
-    }
-    state.sdeBuildNumber = buildNumber;
+    acceptIndustryDataVersion(buildNumber);
     state.typeNames.set(item.type_id, item.name);
     state.demands.set(item.type_id, { item, quantity: 1 });
     elements.searchInput.value = "";
@@ -581,6 +723,26 @@
       demands.push({ type_id: typeId, quantity });
     }
     return demands;
+  }
+
+  function readOwnedMaterials() {
+    const ownedMaterials = [];
+    for (const input of elements.ownedList.querySelectorAll("[data-owned-quantity]")) {
+      const value = input.value.trim();
+      const quantity = /^\d+$/.test(value) ? Number(value) : null;
+      if (!Number.isSafeInteger(quantity) || quantity < 1 || quantity > MAX_SAFE_INTEGER) {
+        input.setCustomValidity("Enter a whole quantity from 1 to 9,007,199,254,740,991.");
+        elements.ownedDetails.open = true;
+        input.reportValidity();
+        input.focus();
+        return null;
+      }
+      input.setCustomValidity("");
+      const typeId = Number(input.dataset.ownedQuantity);
+      state.ownedMaterials.get(typeId).quantity = quantity;
+      ownedMaterials.push({ type_id: typeId, quantity });
+    }
+    return ownedMaterials;
   }
 
   function percentToBasisPoints(input, maximum = 9_999) {
@@ -632,13 +794,16 @@
     return app.querySelector(`[data-rig-scope="${scope}"][data-profile-activity="${activity}"]`);
   }
 
+  function productionSkillLevel(field) {
+    const input = app.querySelector(`[data-production-profile-field="${field}"]`);
+    return Number(input?.value || 0);
+  }
+
   function readProductionProfile() {
     const profile = {
-      industry_level: Number(app.querySelector('[data-profile-skill="industry_level"]').value),
-      advanced_industry_level: Number(
-        app.querySelector('[data-profile-skill="advanced_industry_level"]').value,
-      ),
-      reactions_level: Number(app.querySelector('[data-profile-skill="reactions_level"]').value),
+      industry_level: productionSkillLevel("industry_level"),
+      advanced_industry_level: productionSkillLevel("advanced_industry_level"),
+      reactions_level: productionSkillLevel("reactions_level"),
       facility_modifiers: [],
       rig_modifiers: [],
     };
@@ -667,7 +832,7 @@
       if ([facilityMaterial, facilityTime, rigMaterial, rigTime, categoryIds, groupIds]
         .some((value) => value === null)) {
         const invalid = inputs.find((input) => !input.validity.valid);
-        elements.profileDetails.open = true;
+        showConfigTab();
         invalid?.reportValidity();
         invalid?.focus();
         return { ok: false, value: null };
@@ -689,7 +854,7 @@
         });
       } else if (categoryIds.length || groupIds.length) {
         rigMaterialInput.setCustomValidity("Enter a rig material or time reduction for this scope.");
-        elements.profileDetails.open = true;
+        showConfigTab();
         rigMaterialInput.reportValidity();
         rigMaterialInput.focus();
         return { ok: false, value: null };
@@ -704,6 +869,23 @@
     return { ok: true, value: hasEffect ? profile : null };
   }
 
+  function readSpecialistSkills() {
+    const inputs = [...app.querySelectorAll(
+      '[data-skill-role="industry"][data-skill-type-id]',
+    )];
+    const hasSpecialistLevel = inputs.some(
+      (input) => !input.dataset.productionProfileField && Number(input.value) > 0,
+    );
+    if (!hasSpecialistLevel) return null;
+    return inputs
+      .map((input) => ({
+        type_id: Number(input.dataset.skillTypeId),
+        level: Number(input.value),
+      }))
+      .filter(({ level }) => level > 0)
+      .sort((left, right) => left.type_id - right.type_id);
+  }
+
   function readPricing() {
     if (!elements.pricingEnabled.checked) return { ok: true, value: null };
     const pricing = {};
@@ -716,7 +898,7 @@
       const value = /^\d+$/.test(rawValue) ? Number(rawValue) : null;
       if (!Number.isSafeInteger(value) || value < 1 || value > 2_147_483_647) {
         input.setCustomValidity("Enter a valid positive solar system ID.");
-        elements.pricingDetails.open = true;
+        showConfigTab();
         input.reportValidity();
         input.focus();
         return { ok: false, value: null };
@@ -727,13 +909,14 @@
     for (const input of app.querySelectorAll("[data-pricing-percent]")) {
       const basisPoints = percentToBasisPoints(input, 10_000);
       if (basisPoints === null) {
-        elements.pricingDetails.open = true;
+        showConfigTab();
         input.reportValidity();
         input.focus();
         return { ok: false, value: null };
       }
       pricing[input.dataset.pricingPercent] = basisPoints;
     }
+    pricing.reaction_scc_surcharge_basis_points = pricing.scc_surcharge_basis_points;
     return { ok: true, value: pricing };
   }
 
@@ -824,6 +1007,7 @@
     elements.outputStatus.textContent = "Calculating the production route.";
     elements.calculateButton.disabled = true;
     elements.calculateButton.textContent = "Calculating...";
+    resetShopping();
   }
 
   function finishLoading(requestId) {
@@ -860,13 +1044,7 @@
   }
 
   function renderEfficiencyControls(step) {
-    if (step.activity !== "manufacturing") {
-      return createElement(
-        "p",
-        "route-efficiency-fixed",
-        "Reaction formula: blueprint ME/TE does not apply.",
-      );
-    }
+    if (step.activity !== "manufacturing") return null;
 
     const efficiency = step.blueprint_efficiency || {
       material_efficiency: 0,
@@ -912,40 +1090,6 @@
 
     controls.append(fields, actions);
     return controls;
-  }
-
-  function formatBasisPoints(value) {
-    const whole = Math.floor(value / 100);
-    const fraction = String(value % 100).padStart(2, "0").replace(/0+$/, "");
-    return `${whole}${fraction ? `.${fraction}` : ""}%`;
-  }
-
-  function renderProductionModifiers(step) {
-    const applied = step.production_modifiers;
-    if (!applied) return null;
-    const parts = [];
-    if (step.activity === "manufacturing") {
-      if (applied.skills.industry_level) parts.push(`Industry ${applied.skills.industry_level}`);
-      if (applied.skills.advanced_industry_level) {
-        parts.push(`Advanced Industry ${applied.skills.advanced_industry_level}`);
-      }
-    } else if (applied.skills.reactions_level) {
-      parts.push(`Reactions ${applied.skills.reactions_level}`);
-    }
-    if (applied.facility_material_reduction_basis_points) {
-      parts.push(`facility material -${formatBasisPoints(applied.facility_material_reduction_basis_points)}`);
-    }
-    if (applied.facility_time_reduction_basis_points) {
-      parts.push(`facility time -${formatBasisPoints(applied.facility_time_reduction_basis_points)}`);
-    }
-    if (applied.rig_material_reduction_basis_points) {
-      parts.push(`rig material -${formatBasisPoints(applied.rig_material_reduction_basis_points)}`);
-    }
-    if (applied.rig_time_reduction_basis_points) {
-      parts.push(`rig time -${formatBasisPoints(applied.rig_time_reduction_basis_points)}`);
-    }
-    if (!parts.length) return null;
-    return createElement("p", "route-profile-summary", `Profile · ${parts.join(" · ")}`);
   }
 
   function renderCostComparison(comparison) {
@@ -1025,15 +1169,7 @@
       step.exact_job_time_seconds,
       step.total_job_time_centiseconds,
     );
-    const baseJobTime = formatDuration(step.base_total_job_time_seconds);
-    const timeMetric = addMetric(
-      metrics,
-      "Job time",
-      isBaseJobTime(step.exact_job_time_seconds, step.base_total_job_time_seconds)
-        ? exactJobTime
-        : `${exactJobTime} (base ${baseJobTime})`,
-    );
-    timeMetric.querySelector("dd").title = `Exact duration: ${step.exact_job_time_seconds.numerator}/${step.exact_job_time_seconds.denominator} seconds`;
+    addMetric(metrics, "Job time", exactJobTime);
 
     const inputs = createElement("div", "route-inputs");
     if (step.inputs.length) {
@@ -1043,14 +1179,8 @@
         state.typeNames.set(input.item.type_id, input.item.name);
         const inputItem = createElement("li");
         const inputName = createElement("span", "", input.item.name);
-        inputName.title = `${formatNumber(input.quantity_per_run)} per run`;
         const inputTotal = createElement("span", "route-input-total");
         inputTotal.append(createElement("strong", "", formatNumber(input.total_quantity)));
-        if (input.total_quantity !== input.base_total_quantity) {
-          inputTotal.append(
-            createElement("small", "", `Base ${formatNumber(input.base_total_quantity)}`),
-          );
-        }
         inputItem.append(inputName, inputTotal);
         inputList.append(inputItem);
       });
@@ -1059,10 +1189,10 @@
       inputs.append(createElement("p", "route-zero-inputs", "This job has no material inputs."));
     }
 
-    const cardParts = [header, renderEfficiencyControls(step)];
-    const profileSummary = renderProductionModifiers(step);
+    const cardParts = [header];
+    const efficiencyControls = renderEfficiencyControls(step);
     const costComparison = renderCostComparison(comparison);
-    if (profileSummary) cardParts.push(profileSummary);
+    if (efficiencyControls) cardParts.push(efficiencyControls);
     cardParts.push(metrics);
     if (costComparison) cardParts.push(costComparison);
     cardParts.push(inputs);
@@ -1236,9 +1366,6 @@
     } else {
       elements.summaryTitle.textContent = `${formatNumber(plan.requested.length)} requested products`;
     }
-    elements.summaryMeta.textContent = plan.applied_modifiers?.length
-      ? `${formatNumber(plan.applied_modifiers.length)} production modifier${plan.applied_modifiers.length === 1 ? "" : "s"} applied · dependency-first route`
-      : "Base production profile · dependency-first route";
     elements.requestedOutputs.replaceChildren();
     plan.requested.forEach((requested) => {
       elements.requestedOutputs.append(
@@ -1247,7 +1374,6 @@
     });
     elements.stepCount.textContent = formatNumber(plan.build_steps.length);
     elements.purchaseCount.textContent = formatNumber(plan.purchases.length);
-    elements.sdeBuild.textContent = formatNumber(plan.sde_build_number);
 
     const comparisonByRecipe = new Map(
       (plan.valuation?.economics.step_comparisons || [])
@@ -1282,6 +1408,10 @@
         createElement("li", "empty-result", "No material purchases are required."),
       );
     }
+    const purchaseCount = plan.purchases.length;
+    elements.shoppingCount.textContent = `${formatNumber(purchaseCount)} item${purchaseCount === 1 ? "" : "s"}`;
+    elements.shoppingPlaceholder.hidden = true;
+    elements.shoppingOutput.hidden = false;
     renderValuation(plan.valuation);
 
     elements.placeholder.hidden = true;
@@ -1299,10 +1429,22 @@
         ?.focus();
       state.pendingEfficiencyFocusKey = null;
     } else if (state.pendingChoiceFocusTypeId !== null) {
-      elements.planOutput
-        .querySelector(`[data-choice-action][data-type-id="${state.pendingChoiceFocusTypeId}"]`)
-        ?.focus();
+      const typeId = state.pendingChoiceFocusTypeId;
+      if (state.pendingChoiceOriginTab === "shopping") {
+        const shoppingIsActive = app.querySelector(
+          '[data-industry-tab="shopping"][aria-selected="true"]',
+        );
+        if (shoppingIsActive) {
+          (elements.copyShopping.disabled ? shoppingIsActive : elements.copyShopping).focus();
+        }
+      } else {
+        const nextAction = elements.planOutput.querySelector(
+          `[data-choice-action][data-type-id="${typeId}"]`,
+        ) || elements.overridesList.querySelector(`[data-remove-choice="${typeId}"]`);
+        nextAction?.focus();
+      }
       state.pendingChoiceFocusTypeId = null;
+      state.pendingChoiceOriginTab = null;
     }
     const pricingIncomplete = plan.valuation && !plan.valuation.economics.complete;
     elements.outputStatus.textContent = state.pendingNotice
@@ -1312,7 +1454,7 @@
     state.pendingNotice = "";
     renderOverrides();
     updateExportActions();
-    setApiState("online", "Calculator online", `SDE build ${formatNumber(plan.sde_build_number)}`);
+    setApiState("online", "Calculator online", "Industry data connected");
   }
 
   function updateExportActions() {
@@ -1322,74 +1464,42 @@
       && !state.calculationController,
     );
     elements.copyShopping.disabled = !enabled;
-    elements.downloadShopping.disabled = !enabled;
   }
 
   function shoppingListText(plan) {
     return plan.purchases
-      .map((purchase) => `${purchase.item.name}\t${purchase.quantity}`)
+      .map((purchase) => `${purchase.item.name} ${purchase.quantity}`)
       .join("\n");
   }
 
-  function csvCell(value) {
-    let text = String(value ?? "");
-    if (/^[=+\-@]/.test(text)) text = `'${text}`;
-    return `"${text.replace(/"/g, '""')}"`;
-  }
-
-  function shoppingListCsv(plan) {
-    const valuedByType = new Map(
-      (plan.valuation?.economics.shopping_list || [])
-        .map((item) => [item.item.type_id, item]),
-    );
-    const rows = [["type_id", "item_name", "quantity", "unit_price_isk", "total_price_isk"]];
-    plan.purchases.forEach((purchase) => {
-      const valued = valuedByType.get(purchase.item.type_id);
-      rows.push([
-        purchase.item.type_id,
-        purchase.item.name,
-        purchase.quantity,
-        valued?.unit_price_isk ?? "",
-        valued?.total_isk ?? "",
-      ]);
-    });
-    return rows.map((row) => row.map(csvCell).join(",")).join("\r\n");
-  }
-
   async function copyShoppingList() {
-    if (!state.latestPlan?.purchases.length) return;
-    const value = shoppingListText(state.latestPlan);
+    const plan = state.latestPlan;
+    if (!plan?.purchases.length) return;
+    const count = plan.purchases.length;
+    const value = shoppingListText(plan);
+    let fallback = null;
     try {
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(value);
       } else {
-        const fallback = document.createElement("textarea");
+        fallback = document.createElement("textarea");
         fallback.value = value;
         fallback.style.position = "fixed";
         fallback.style.opacity = "0";
         document.body.append(fallback);
         fallback.select();
         if (!document.execCommand("copy")) throw new Error("Copy command failed");
-        fallback.remove();
       }
-      elements.exportStatus.textContent = `${state.latestPlan.purchases.length} shopping-list item${state.latestPlan.purchases.length === 1 ? "" : "s"} copied.`;
+      if (state.latestPlan === plan) {
+        elements.exportStatus.textContent = `${count} item${count === 1 ? "" : "s"} copied for EVE Multibuy.`;
+      }
     } catch (_error) {
-      elements.exportStatus.textContent = "Copy failed. Download the CSV instead.";
+      if (state.latestPlan === plan) {
+        elements.exportStatus.textContent = "Copy failed. Allow clipboard access and try again.";
+      }
+    } finally {
+      fallback?.remove();
     }
-  }
-
-  function downloadShoppingList() {
-    if (!state.latestPlan?.purchases.length) return;
-    const blob = new Blob([shoppingListCsv(state.latestPlan)], { type: "text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `eve-industry-shopping-list-${new Date().toISOString().slice(0, 10)}.csv`;
-    document.body.append(link);
-    link.click();
-    link.remove();
-    window.setTimeout(() => URL.revokeObjectURL(url), 0);
-    elements.exportStatus.textContent = `${state.latestPlan.purchases.length} shopping-list item${state.latestPlan.purchases.length === 1 ? "" : "s"} downloaded.`;
   }
 
   function addErrorAction(label, action, data = {}) {
@@ -1404,14 +1514,21 @@
 
   function showCalculationError(error) {
     state.pendingEfficiencyFocusKey = null;
+    state.pendingChoiceFocusTypeId = null;
+    state.pendingChoiceOriginTab = null;
     elements.placeholder.hidden = true;
     elements.loading.hidden = true;
     elements.planOutput.hidden = true;
     elements.error.hidden = false;
     elements.errorActions.replaceChildren();
     elements.errorTitle.textContent = "Build route unavailable";
-    elements.errorMessage.textContent = error.message;
-    elements.outputStatus.textContent = `Calculation failed: ${error.message}`;
+    const message = error.code === "sde_version_mismatch"
+      ? "Industry data changed. Calculate the route again."
+      : error.message;
+    elements.errorMessage.textContent = message;
+    elements.outputStatus.textContent = `Calculation failed: ${message}`;
+    resetShopping();
+    window.industryTabs?.activate("build");
 
     if (error.code === "recipe_cycle" && Array.isArray(error.details?.type_path)) {
       elements.errorTitle.textContent = "Production cycle found";
@@ -1441,7 +1558,7 @@
       addErrorAction("Reset planning overrides", "reset");
     } else if (error.code === "missing_activity_pricing") {
       elements.errorTitle.textContent = "Reaction job location required";
-      elements.pricingDetails.open = true;
+      showConfigTab();
       addErrorAction("Enter reaction costs", "pricing");
     } else if (error.code === "unknown_type") {
       addErrorAction("Choose another item", "change");
@@ -1463,14 +1580,17 @@
 
     const demands = readDemands();
     if (demands === null) return;
+    const ownedMaterials = readOwnedMaterials();
+    if (ownedMaterials === null) return;
     const productionProfile = readProductionProfile();
     if (!productionProfile.ok) {
-      elements.profileDetails.open = true;
+      showConfigTab();
       return;
     }
+    const specialistSkills = readSpecialistSkills();
     const pricing = readPricing();
     if (!pricing.ok) {
-      elements.pricingDetails.open = true;
+      showConfigTab();
       return;
     }
 
@@ -1494,7 +1614,9 @@
         time_efficiency: setting.time_efficiency,
       })),
     };
+    if (ownedMaterials.length) body.owned_materials = ownedMaterials;
     if (productionProfile.value) body.production_profile = productionProfile.value;
+    if (specialistSkills) body.specialist_skills = specialistSkills;
     if (pricing.value) body.pricing = pricing.value;
     if (state.sdeBuildNumber) {
       body.expected_sde_build_number = state.sdeBuildNumber;
@@ -1541,7 +1663,7 @@
           if (choice.recipe_key) state.choices.delete(typeId);
         });
         state.blueprintEfficiencies.clear();
-        state.pendingNotice = "The SDE changed; recipe-specific settings were reset.";
+        state.pendingNotice = "Industry data changed; recipe-specific settings were reset.";
         renderOverrides();
         return calculate({ recoveryAttempts: recoveryAttempts - 1 });
       }
@@ -1591,13 +1713,55 @@
     buttons[nextIndex].focus();
   });
 
+  elements.ownedSearchInput.addEventListener("input", () => {
+    const query = elements.ownedSearchInput.value.trim();
+    invalidateOwnedSearch();
+    hideOwnedSearchResults();
+    if (query.length < 2) {
+      elements.ownedSearchStatus.textContent = query ? "Enter at least two characters." : "";
+      return;
+    }
+    state.ownedSearchTimer = window.setTimeout(() => runOwnedSearch(query), SEARCH_DELAY_MS);
+  });
+
+  elements.ownedSearchInput.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") hideOwnedSearchResults();
+    if (event.key === "ArrowDown" && !elements.ownedSearchResults.hidden) {
+      const firstResult = elements.ownedSearchResults.querySelector("button");
+      if (firstResult) {
+        event.preventDefault();
+        firstResult.focus();
+      }
+    }
+  });
+
+  elements.ownedSearchResults.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      hideOwnedSearchResults();
+      elements.ownedSearchInput.focus();
+      return;
+    }
+    if (!["ArrowDown", "ArrowUp"].includes(event.key)) return;
+    const buttons = [...elements.ownedSearchResults.querySelectorAll("button")];
+    const currentIndex = buttons.indexOf(document.activeElement);
+    if (currentIndex === -1) return;
+    event.preventDefault();
+    const delta = event.key === "ArrowDown" ? 1 : -1;
+    const nextIndex = (currentIndex + delta + buttons.length) % buttons.length;
+    buttons[nextIndex].focus();
+  });
+
   document.addEventListener("click", (event) => {
-    if (!event.target.closest(".search-field")) hideSearchResults();
+    if (!event.target.closest(".build-search-field")) hideSearchResults();
+    if (!event.target.closest(".owned-search-field")) hideOwnedSearchResults();
   });
 
   elements.demandList.addEventListener("input", (event) => {
     const quantityInput = event.target.closest("[data-demand-quantity]");
     if (!quantityInput) return;
+    const demand = state.demands.get(Number(quantityInput.dataset.demandQuantity));
+    if (demand) demand.quantity = quantityInput.value;
     quantityInput.setCustomValidity("");
     markCalculationDirty("Quantity changed. Calculate a new production route.");
   });
@@ -1624,6 +1788,39 @@
     elements.searchInput.focus();
   });
 
+  elements.ownedList.addEventListener("input", (event) => {
+    const quantityInput = event.target.closest("[data-owned-quantity]");
+    if (!quantityInput) return;
+    const owned = state.ownedMaterials.get(Number(quantityInput.dataset.ownedQuantity));
+    if (owned) owned.quantity = quantityInput.value;
+    quantityInput.setCustomValidity("");
+    markCalculationDirty("Owned materials changed. Calculate a new production route.");
+  });
+
+  elements.ownedList.addEventListener("click", (event) => {
+    const removeButton = event.target.closest("[data-remove-owned]");
+    if (!removeButton) return;
+    const typeId = Number(removeButton.dataset.removeOwned);
+    const keys = [...state.ownedMaterials.keys()];
+    const removedIndex = keys.indexOf(typeId);
+    const removedName = state.ownedMaterials.get(typeId)?.item.name || `Type ${typeId}`;
+    state.ownedMaterials.delete(typeId);
+    markCalculationDirty("Owned materials changed. Calculate a new production route.");
+    const remainingKeys = [...state.ownedMaterials.keys()];
+    const focusTypeId = remainingKeys[Math.min(removedIndex, remainingKeys.length - 1)] ?? null;
+    renderOwnedList({ focusTypeId });
+    elements.ownedSearchStatus.textContent = `${removedName} removed from owned materials.`;
+    if (focusTypeId === null) elements.ownedSearchInput.focus();
+  });
+
+  elements.clearOwned.addEventListener("click", () => {
+    state.ownedMaterials.clear();
+    markCalculationDirty("Owned materials cleared. Calculate a new production route.");
+    renderOwnedList();
+    elements.ownedSearchStatus.textContent = "Owned materials cleared.";
+    elements.ownedSearchInput.focus();
+  });
+
   app.querySelectorAll("[data-profile-skill], [data-profile-modifier], [data-rig-scope]")
     .forEach((input) => input.addEventListener("input", () => {
       input.setCustomValidity("");
@@ -1636,7 +1833,9 @@
     markCalculationDirty("Pricing settings changed. Calculate a new production route.");
   });
 
-  app.querySelectorAll("[data-pricing-integer], [data-pricing-percent]")
+  app.querySelectorAll(
+    "[data-pricing-integer], [data-pricing-percent], [data-config-integer], [data-config-percent]",
+  )
     .forEach((input) => input.addEventListener("input", () => {
       input.setCustomValidity("");
       markCalculationDirty("Pricing settings changed. Calculate a new production route.");
@@ -1673,7 +1872,7 @@
     if (shouldRecalculate) calculate();
   });
 
-  elements.planOutput.addEventListener("click", (event) => {
+  app.addEventListener("click", (event) => {
     const efficiencyButton = event.target.closest("[data-efficiency-action]");
     if (efficiencyButton) {
       const controls = efficiencyButton.closest("[data-blueprint-type-id]");
@@ -1713,6 +1912,8 @@
     if (!choiceButton) return;
     const typeId = Number(choiceButton.dataset.typeId);
     state.pendingChoiceFocusTypeId = typeId;
+    state.pendingChoiceOriginTab = choiceButton.closest("[data-industry-panel]")
+      ?.dataset.industryPanel || "build";
     if (choiceButton.dataset.choiceAction === "buy") {
       clearEfficienciesForProduct(typeId);
       state.choices.set(typeId, { decision: "buy" });
@@ -1775,7 +1976,7 @@
     } else if (action === "change") {
       elements.searchInput.focus();
     } else if (action === "pricing") {
-      elements.pricingDetails.open = true;
+      showConfigTab();
       app.querySelector('[data-pricing-integer="reaction_solar_system_id"]')
         ?.focus();
     } else {
@@ -1784,9 +1985,10 @@
   });
 
   elements.copyShopping.addEventListener("click", copyShoppingList);
-  elements.downloadShopping.addEventListener("click", downloadShoppingList);
 
   renderDemandList();
+  renderOwnedList();
+  resetShopping();
   updateProfileSummary();
   updatePricingState();
   updateExportActions();
