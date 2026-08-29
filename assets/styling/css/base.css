@@ -52,6 +52,8 @@
   --surface-control: color-mix(in oklch, var(--ink) 85%, transparent);
   --surface-hover: color-mix(in oklch, var(--space-500) 95%, transparent);
   --surface-overlay: rgba(0, 0, 0, 0.65);   /* cart/modal scrim */
+  --surface-inset: rgba(0, 0, 0, 0.32);
+  --surface-warm: rgba(34, 27, 12, 0.55);
 
   /* border */
   --border: linear-gradient(to bottom, var(--gold-200), var(--gold-300));
@@ -76,15 +78,48 @@
   --border-sm: 1px;
   --border-md: 2px;
   --transition-fast: 0.15s ease;
-  --font-small: 14px;
-  --font-medium: 22px;
-  --font-large: 30px;
+  --transition-medium: 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Shared type scale. Keep the legacy names as aliases for older components. */
+  --font-xs: 0.75rem;
+  --font-sm: 0.875rem;
+  --font-base: 1rem;
+  --font-lg: 1.375rem;
+  --font-xl: 1.875rem;
+  --font-small: var(--font-sm);
+  --font-medium: var(--font-lg);
+  --font-large: var(--font-xl);
   --font-card-title: 23px;   /* product card title */
   --font-card-meta: 20px;    /* product card price + stock */
+
+  /* Shared geometry for controls and page layouts. */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --radius-sm: 3px;
+  --radius-md: 4px;
+  --control-height-sm: 36px;
+  --control-height: 44px;
+  --control-padding: 9px 12px;
+  --panel-padding: clamp(18px, 2vw, 22px);
+  --content-gutter: clamp(12px, 2vw, 24px);
+  --focus-ring: 0 0 0 3px color-mix(in oklch, var(--gold-100) 28%, transparent);
 }
 
-*{
+html {
+  color-scheme: dark;
+  font-family: var(--font-text);
+  font-size: 16px;
+}
+
+*,
+*::before,
+*::after {
   margin: 0;
+  box-sizing: border-box;
 }
 
 body {
@@ -92,6 +127,23 @@ body {
   display: flex;
   flex-direction: column;
   cursor: default;
+  color: var(--text);
+  font-family: var(--font-text);
+  font-size: var(--font-base);
+  line-height: 1.5;
+}
+
+button,
+input,
+select,
+textarea {
+  color: inherit;
+  font: inherit;
+}
+
+img,
+svg {
+  max-width: 100%;
 }
 
 /* cursor: pointer for controls, text for inputs, default elsewhere */
@@ -120,6 +172,57 @@ textarea {
   cursor: text;
 }
 
+:where(
+  input[type="text"],
+  input[type="search"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="tel"],
+  input[type="url"],
+  select,
+  textarea
+) {
+  min-height: var(--control-height);
+  padding: var(--control-padding);
+  border: var(--border-sm) solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--surface-control);
+  color: var(--text-strong);
+  transition: border-color var(--transition-fast), background-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+
+:where(input, select, textarea)::placeholder {
+  color: var(--text-muted);
+  opacity: 0.76;
+}
+
+select option {
+  background: var(--space-900);
+  color: var(--text-strong);
+}
+
+:where(input, select, textarea):focus-visible {
+  border-color: var(--text-muted);
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+:where(button, a, summary, [role="button"]):focus-visible {
+  outline: var(--border-md) solid var(--text-strong);
+  outline-offset: 3px;
+}
+
+:where(button, input, select, textarea):disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 /* galaxy backdrop pinned to the viewport so cover sizing stays sharp per page */
 body::before {
   content: "";
@@ -138,7 +241,12 @@ body::before {
 :is(h1, h2, h3) {
   font-family: var(--font-title);
   align-self: center;
+  line-height: 1.15;
 }
+
+h1 { font-size: clamp(2rem, 4.4vw, 3.2rem); }
+h2 { font-size: clamp(1.35rem, 2.4vw, 1.75rem); }
+h3 { font-size: clamp(1.05rem, 1.7vw, 1.25rem); }
 
 .page-title {
   position: absolute;
@@ -152,10 +260,9 @@ body::before {
   border: 0;
 }
 
-:is(p,a,label) {
+:is(p, a, label) {
   color: var(--text);
   text-decoration: none;
-  font-family: var(--font-text);
 }
 
 a {
@@ -170,7 +277,7 @@ header {
   display: flex;
   justify-content: space-between;
   line-height: 1;
-  padding: 0 10px 0 0;
+  padding: 0 var(--space-3) 0 0;
   background: var(--header-bg);
 }
 
@@ -179,9 +286,9 @@ header a {
 }
 
 nav {
-    display: flex;
-    gap: 10px;
-    align-items: center;
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
 }
 
 /* top-left logo + title + subtitle */
@@ -194,10 +301,10 @@ nav {
 }
 
 .container-logo-name-motto {
-    display: flex;
-    flex-direction: column;
-    padding-left: 5px;
-    align-items: center;
+  display: flex;
+  flex-direction: column;
+  padding-left: var(--space-2);
+  align-items: center;
 }
 
 .container-logo h2 {
@@ -211,7 +318,7 @@ nav {
 footer {
   text-align: center;
   margin-top: auto;
-  padding-top: 20px;
+  padding: var(--space-5) var(--content-gutter) var(--space-3);
   font-size: var(--font-small);
 }
 
@@ -234,19 +341,26 @@ nav a[aria-current="page"] {
 }
 
 .buy-button {
+  min-height: var(--control-height-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background: transparent;
-  border-radius: 4px;
-  padding: 10px;
+  border-radius: var(--radius-md);
+  padding: 9px 12px;
   min-width: 70px;
 
   border: var(--border-sm) solid var(--text-strong);
   color: var(--text-muted);
+  font-size: var(--font-sm);
   font-weight: bold;
-  cursor: pointer;
+  line-height: 1.1;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
 }
 
 /* hover */
-.buy-button:hover {
+.buy-button:hover,
+.buy-button:focus-visible {
   background-color: var(--surface-hover);
 }
 
@@ -267,6 +381,19 @@ nav a[aria-current="page"] {
 .buy-button--secondary {
   border-color: var(--border-subtle);
   color: var(--text-muted);
+}
+
+.buy-button--danger {
+  border-color: var(--danger-line);
+  background: var(--danger-bg);
+  color: var(--danger-text);
+}
+
+.buy-button--danger:hover,
+.buy-button--danger:focus-visible {
+  border-color: var(--red);
+  background: var(--danger-bg-hover);
+  color: var(--danger-text-strong);
 }
 
 /* ── Shared layout utilities ─────────────────────────────────────────────── */
@@ -363,7 +490,7 @@ nav a[aria-current="page"] {
   color: var(--text);
   background: color-mix(in oklch, var(--cat) 14%, var(--surface));
   border: var(--border-sm) solid color-mix(in oklch, var(--cat) 40%, transparent);
-  border-radius: 4px;
+  border-radius: var(--radius-md);
   white-space: nowrap;
   text-shadow: 0 0 7px color-mix(in oklch, var(--cat) 75%, transparent);
   box-shadow: 0 0 12px color-mix(in oklch, var(--cat) 25%, transparent);
@@ -436,7 +563,7 @@ nav a[aria-current="page"] {
   justify-content: center;
   padding: 0;
   border: var(--border-sm) solid var(--gold-200);
-  border-radius: 4px;
+  border-radius: var(--radius-md);
   background: color-mix(in oklch, var(--gold-300) 18%, var(--surface));
   color: var(--text-muted);
   font-family: var(--font-text);
@@ -478,7 +605,7 @@ nav a[aria-current="page"] {
   padding: 5px 4px;
   text-align: center;
   border: var(--border-sm) solid var(--border-subtle);
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
   background: var(--surface-control);
   color: var(--text-muted);
   font-family: var(--font-text);
@@ -644,7 +771,7 @@ nav a[aria-current="page"] {
   max-width: 228px;
   padding: 5px 10px;
   border: var(--border-sm) solid var(--border-subtle);
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
   background: var(--surface-control);
   color: var(--text-muted);
   font-family: var(--font-text);

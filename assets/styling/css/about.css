@@ -6,7 +6,7 @@
 
 .about-title-panel,
 .about-card {
-  padding: 22px;
+  padding: var(--panel-padding);
 }
 
 .about-title-panel {

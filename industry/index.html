@@ -70,11 +70,11 @@
               <label for="config-name">Profile name</label>
               <div class="saved-config-save-row">
                 <input id="config-name" data-config-name type="text" maxlength="60" autocomplete="off" placeholder="Bork1">
-                <button class="config-button config-button--primary" data-config-save type="button">Save profile</button>
+                <button class="buy-button buy-button--primary config-button config-button--primary" data-config-save type="button">Save profile</button>
               </div>
               <div class="saved-config-actions">
-                <button class="config-button" data-config-new type="button">New profile</button>
-                <button class="config-button config-button--danger" data-config-delete type="button" disabled>Delete</button>
+                <button class="buy-button buy-button--secondary config-button" data-config-new type="button">New profile</button>
+                <button class="buy-button buy-button--danger config-button config-button--danger" data-config-delete type="button" disabled>Delete</button>
               </div>
               <p class="field-status saved-config-status" data-config-status role="status" aria-live="polite"></p>
             </section>
@@ -413,7 +413,7 @@
             </div>
             <div class="shopping-actions">
               <span data-shopping-count>0 items</span>
-              <button class="purchase-action" data-copy-shopping type="button" disabled>Copy multibuy</button>
+              <button class="buy-button buy-button--secondary purchase-action" data-copy-shopping type="button" disabled>Copy multibuy</button>
             </div>
             <p class="export-status" data-export-status role="status" aria-live="polite"></p>
           </header>

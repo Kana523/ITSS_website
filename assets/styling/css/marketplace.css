@@ -1,0 +1,110 @@
+/* Shared catalogue and filter controls used by the Shop and Trade pages. */
+.display {
+  grid-area: display;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-content: flex-start;
+  gap: 0 30px;
+  margin: 0 15px -30px;
+}
+
+.display .item-card {
+  margin-bottom: 30px;
+}
+
+.display:not(.is-ready) .item-card {
+  visibility: hidden;
+}
+
+.row-break {
+  flex-basis: 100%;
+  height: 0;
+}
+
+.display-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: var(--space-1);
+  gap: var(--space-1);
+}
+
+#results-count strong {
+  color: var(--text-muted);
+}
+
+.filter {
+  display: flex;
+  flex-direction: column;
+  grid-area: filter;
+  margin-left: 10px;
+}
+
+.filter-form {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(2px, 0.6vw, 6px);
+  font-size: clamp(var(--font-sm), 1.15vw, 1.25rem);
+}
+
+.filter-search {
+  display: flex;
+  flex-direction: column;
+}
+
+#filter-search,
+.filter-select {
+  width: 100%;
+  min-height: var(--control-height);
+  border: var(--border-sm) solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--surface-control);
+  color: var(--text-muted);
+  font-size: inherit;
+}
+
+#filter-search,
+.filter-select {
+  padding: var(--control-padding);
+}
+
+#filter-search::placeholder {
+  color: var(--text-muted);
+  opacity: 0.8;
+}
+
+#filter-search::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M3 3 L13 13 M13 3 L3 13' stroke='%23d8b065' stroke-width='2' stroke-linecap='round' fill='none'/></svg>") center / contain no-repeat;
+  cursor: pointer;
+}
+
+#filter-search::-webkit-search-cancel-button:hover {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M3 3 L13 13 M13 3 L3 13' stroke='%23ffdd9c' stroke-width='2' stroke-linecap='round' fill='none'/></svg>");
+}
+
+#filter-clear {
+  min-width: 0;
+  min-height: var(--control-height-sm);
+  padding: 4px 12px;
+  font-size: clamp(var(--font-sm), 1.2vw, 1.3125rem);
+}
+
+.filter label {
+  display: flex;
+  align-items: center;
+  gap: clamp(6px, 0.55vw, 12px);
+  font-size: clamp(var(--font-sm), 1.2vw, 1.3125rem);
+  user-select: none;
+}
+
+.filter input[type="checkbox"] {
+  width: clamp(14px, 1.2vw, 22px);
+  height: clamp(14px, 1.2vw, 22px);
+  flex-shrink: 0;
+  accent-color: var(--gold-200);
+}

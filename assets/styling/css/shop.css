@@ -155,29 +155,6 @@
   text-align: center;
 }
 
-.display {
-  grid-area: display;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-content: flex-start;
-  gap: 0 30px;
-  margin: 0 15px -30px 15px;
-}
-
-.display .item-card {
-  margin-bottom: 30px;
-}
-
-/* hidden until shop-filter's first applyFilters pass (avoids OOS flash) */
-.display:not(.is-ready) .item-card {
-  visibility: hidden;
-}
-
-.row-break {
-  flex-basis: 100%;
-  height: 0;
-}
 
 /* OOS muting, category glow, corner badge → shared in base.css */
 
@@ -186,17 +163,6 @@
   margin: 5px 0 10px 0;
 }
 
-.display-meta {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-top: 5px;
-  gap: 5px;
-}
-
-#results-count strong {
-  color: var(--text-muted);
-}
 
 .product-data-status[data-state="warning"] {
   color: var(--text-muted);
@@ -206,85 +172,8 @@
   color: var(--text-strong);
 }
 
-/* Filtering */
-.filter {
-  display: flex;
-  flex-direction: column;
-  grid-area: filter;
-  margin-left: 10px;
-}
-
-/* Filter dropdown */
-.filter-form {
-  display: flex;
-  flex-direction: column;
-  gap: clamp(2px, 0.6vw, 6px);
-  font-size: clamp(14px, 1.15vw, 20px);
-}
-
-.filter-search {
-  display: flex;
-  flex-direction: column;
-}
-
-#filter-search,
-.filter-select {
-  border: var(--border-sm) solid var(--border-subtle);
-  background: var(--surface-control);
-  color: var(--text-muted);
-}
-
-#filter-search {
-  padding: clamp(5px, 0.5vw, 10px) clamp(8px, 0.8vw, 14px);
-  font-size: clamp(14px, 1.15vw, 20px);
-}
-
-.filter-select {
-  padding: clamp(8px, 0.85vw, 14px) clamp(10px, 1vw, 16px);
-  font: inherit;
-  font-size: clamp(14px, 1.15vw, 20px);
-}
-
-#filter-search::placeholder {
-  color: var(--text-muted);
-  opacity: 0.8;
-}
-
-/* gold clear-X (override native blue) */
-#filter-search::-webkit-search-cancel-button {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 14px;
-  height: 14px;
-  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M3 3 L13 13 M13 3 L3 13' stroke='%23d8b065' stroke-width='2' stroke-linecap='round' fill='none'/></svg>") center / contain no-repeat;
-  cursor: pointer;
-}
-
-#filter-search::-webkit-search-cancel-button:hover {
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M3 3 L13 13 M13 3 L3 13' stroke='%23ffdd9c' stroke-width='2' stroke-linecap='round' fill='none'/></svg>");
-}
-
-#filter-clear {
-  font-size: clamp(14px, 1.2vw, 21px);
-  padding: 4px 12px;
-  min-width: 0;
-}
-
 /* cart UI → cart.css (shared component) */
 
-.filter label {
-  user-select: none;
-  font-size: clamp(14px, 1.2vw, 21px);
-  display: flex;
-  align-items: center;
-  gap: clamp(6px, 0.55vw, 12px);
-}
-
-.filter input[type="checkbox"] {
-  width: clamp(14px, 1.2vw, 22px);
-  height: clamp(14px, 1.2vw, 22px);
-  flex-shrink: 0;
-}
 
 .filter-group{
   display: flex;
@@ -302,7 +191,7 @@
   margin-left: auto;
   width: clamp(22px, 1.8vw, 34px);
   height: clamp(22px, 1.8vw, 34px);
-  border-radius: 4px;
+  border-radius: var(--radius-md);
   border: var(--border-sm) solid var(--border-subtle);
   background: var(--surface-control);
   position: relative;

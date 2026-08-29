@@ -8,7 +8,7 @@ main.legal-layout {
 
 /* border + fill from shared .panel */
 main.legal-layout section {
-  padding: 15px;
+  padding: var(--panel-padding);
 }
 
 main.legal-layout section h1,

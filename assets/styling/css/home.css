@@ -44,7 +44,7 @@ main section + section {
   border-image: var(--border) 1;
   background:
     radial-gradient(circle at 50% 0%, color-mix(in oklch, var(--text-muted) 18%, transparent), transparent 65%),
-    linear-gradient(180deg, rgba(34, 27, 12, 0.55), color-mix(in oklch, var(--space-900) 90%, transparent));
+    linear-gradient(180deg, var(--surface-warm), color-mix(in oklch, var(--space-900) 90%, transparent));
 }
 
 /* gold inset glow, matching the highlight cards' .item-card--cat::after (no scale) */
@@ -110,7 +110,7 @@ main section + section {
   justify-content: center;
   padding: 10px 22px;
   border: var(--border-sm) solid var(--text-strong);
-  border-radius: 4px;
+  border-radius: var(--radius-md);
   background: var(--surface-control);
   color: var(--text-strong);
   font-family: var(--font-text);

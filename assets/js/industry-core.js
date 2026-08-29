@@ -1077,11 +1077,11 @@
     );
 
     const actions = createElement("div", "efficiency-actions");
-    const apply = createElement("button", "efficiency-apply", "Apply");
+    const apply = createElement("button", "buy-button buy-button--secondary efficiency-apply", "Apply");
     apply.type = "button";
     apply.dataset.efficiencyAction = "apply";
     apply.setAttribute("aria-label", `Apply blueprint efficiency for ${step.product.name}`);
-    const reset = createElement("button", "efficiency-reset", "Reset");
+    const reset = createElement("button", "buy-button buy-button--secondary efficiency-reset", "Reset");
     reset.type = "button";
     reset.dataset.efficiencyAction = "reset";
     reset.setAttribute("aria-label", `Reset blueprint efficiency for ${step.product.name}`);
@@ -1152,7 +1152,7 @@
     );
     title.append(badge, createElement("h3", "", step.product.name));
 
-    const buyButton = createElement("button", "route-action", "Buy instead");
+    const buyButton = createElement("button", "buy-button buy-button--secondary route-action", "Buy instead");
     buyButton.type = "button";
     buyButton.dataset.choiceAction = "buy";
     buyButton.dataset.typeId = String(step.product.type_id);
@@ -1230,7 +1230,7 @@
     }
 
     if (purchase.reason === "buy_override") {
-      const action = createElement("button", "purchase-action", "Build instead");
+      const action = createElement("button", "buy-button buy-button--secondary purchase-action", "Build instead");
       action.type = "button";
       action.dataset.choiceAction = "auto";
       action.dataset.typeId = String(purchase.item.type_id);
@@ -1503,7 +1503,7 @@
   }
 
   function addErrorAction(label, action, data = {}) {
-    const button = createElement("button", "error-action", label);
+    const button = createElement("button", "buy-button buy-button--secondary error-action", label);
     button.type = "button";
     button.dataset.errorAction = action;
     Object.entries(data).forEach(([key, value]) => {

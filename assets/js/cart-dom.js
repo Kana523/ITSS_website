@@ -94,7 +94,7 @@
           <p class="cart-orderid-generate-error" id="cart-name-error" hidden></p>
           <div class="cart-footer-actions">
             <button type="button" class="buy-button cart-checkout" id="cart-checkout-name">Place Order</button>
-            <button type="button" class="cart-clear" id="cart-clear-name" disabled>Clear All</button>
+            <button type="button" class="buy-button buy-button--danger cart-clear" id="cart-clear-name" disabled>Clear All</button>
           </div>
         </div>
 
@@ -127,7 +127,7 @@
           <p class="cart-orderid-generate-error" id="cart-orderid-error" hidden></p>
           <div class="cart-footer-actions">
             <button type="button" class="buy-button cart-checkout" id="cart-checkout">Place Order</button>
-            <button type="button" class="cart-clear" id="cart-clear" disabled>Clear All</button>
+            <button type="button" class="buy-button buy-button--danger cart-clear" id="cart-clear" disabled>Clear All</button>
           </div>
           <div id="cart-turnstile" data-sitekey="${TURNSTILE_SITEKEY}"></div>
         </div>

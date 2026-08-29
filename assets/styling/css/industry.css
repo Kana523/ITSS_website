@@ -272,7 +272,7 @@
 .production-panel,
 .purchases-panel,
 .config-card {
-  padding: 22px;
+  padding: var(--panel-padding);
 }
 
 .planner-panel {
@@ -352,7 +352,7 @@
 .saved-configs input,
 .saved-configs select {
   width: 100%;
-  min-height: 44px;
+  min-height: var(--control-height);
 }
 
 .saved-config-actions {
@@ -362,21 +362,8 @@
 }
 
 .config-button {
-  min-height: 40px;
-  padding: 7px 9px;
-  border: var(--border-sm) solid var(--border-subtle);
-  border-radius: 3px;
-  background: transparent;
-  color: var(--text-muted);
-  font: inherit;
+  min-height: var(--control-height);
   font-size: 0.76rem;
-}
-
-.config-button:hover,
-.config-button:focus-visible {
-  border-color: var(--text-muted);
-  background: var(--surface-hover);
-  color: var(--text-strong);
 }
 
 .config-button--primary {
@@ -384,17 +371,6 @@
   color: var(--text-strong);
 }
 
-.config-button--danger {
-  border-color: var(--danger-line);
-  color: var(--danger-text);
-}
-
-.config-button--danger:hover,
-.config-button--danger:focus-visible {
-  border-color: var(--red);
-  background: var(--danger-bg-hover);
-  color: var(--danger-text-strong);
-}
 
 .saved-config-status {
   min-height: 0;
@@ -426,7 +402,7 @@
   width: 100%;
   box-sizing: border-box;
   border: var(--border-sm) solid var(--border-subtle);
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
   background: var(--surface-control);
   color: var(--text-strong);
   font: inherit;
@@ -444,7 +420,7 @@
 
 .industry-page input[type="text"],
 .industry-page select {
-  min-height: 44px;
+  min-height: var(--control-height);
   padding: 9px 10px;
 }
 
@@ -569,7 +545,7 @@
 }
 
 .demand-heading .text-button {
-  min-height: 44px;
+  min-height: var(--control-height);
 }
 
 .demand-list {
@@ -614,15 +590,15 @@
 
 .demand-quantity input {
   width: 100%;
-  min-height: 44px;
+  min-height: var(--control-height);
   padding: 7px 8px !important;
 }
 
 .demand-remove {
-  min-height: 44px;
+  min-height: var(--control-height);
   padding: 7px 8px;
   border: var(--border-sm) solid var(--danger-line);
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
   background: var(--danger-bg);
   color: var(--danger-text);
   font: inherit;
@@ -766,7 +742,7 @@
 
 .skill-select-grid select {
   min-width: 0;
-  min-height: 40px;
+  min-height: var(--control-height);
   padding: 7px 8px;
 }
 
@@ -844,7 +820,7 @@
 .pricing-grid input {
   width: 100%;
   max-width: none !important;
-  min-height: 44px;
+  min-height: var(--control-height);
   padding-right: 25px !important;
 }
 
@@ -863,7 +839,7 @@
 }
 
 .pricing-toggle {
-  min-height: 44px;
+  min-height: var(--control-height);
   display: flex;
   align-items: center;
   gap: 9px;
@@ -1392,11 +1368,11 @@
 }
 
 .efficiency-field select {
-  min-height: 44px;
+  min-height: var(--control-height);
   box-sizing: border-box;
   padding: 5px 8px;
   border: var(--border-sm) solid var(--border-subtle);
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
   background: var(--space-900);
   color: var(--text-strong);
   font: inherit;
@@ -1408,22 +1384,8 @@
 
 .efficiency-apply,
 .efficiency-reset {
-  min-height: 44px;
-  padding: 5px 9px;
-  border: var(--border-sm) solid var(--border-subtle);
-  border-radius: 3px;
-  background: transparent;
-  color: var(--text-muted);
-  font: inherit;
+  min-height: var(--control-height);
   font-size: 0.76rem;
-}
-
-.efficiency-apply:hover,
-.efficiency-reset:hover,
-.efficiency-apply:focus-visible,
-.efficiency-reset:focus-visible {
-  border-color: var(--industry-blue);
-  color: var(--text-strong);
 }
 
 .route-cost-comparison {
@@ -1503,24 +1465,7 @@
 .purchase-action,
 .error-action {
   flex: 0 0 auto;
-  padding: 7px 9px;
-  border: var(--border-sm) solid var(--border-subtle);
-  border-radius: 3px;
-  background: transparent;
-  color: var(--text-muted);
-  font: inherit;
   font-size: 0.78rem;
-}
-
-.route-action:hover,
-.purchase-action:hover,
-.error-action:hover,
-.route-action:focus-visible,
-.purchase-action:focus-visible,
-.error-action:focus-visible {
-  border-color: var(--text-strong);
-  background: var(--surface-hover);
-  color: var(--text-strong);
 }
 
 .route-metrics {
@@ -1677,7 +1622,7 @@
 }
 
 .shopping-actions .purchase-action {
-  min-height: 44px;
+  min-height: var(--control-height);
 }
 
 .export-status {
