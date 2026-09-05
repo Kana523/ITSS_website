@@ -23,6 +23,7 @@ from app.industry.models import (
     CharacterIndustrySkills,
     FacilityModifier,
     IndustryRecipe,
+    IndustrySetupOverride,
     IndustryType,
     ItemQuantity,
     MAX_SAFE_INTEGER,
@@ -32,6 +33,12 @@ from app.industry.models import (
     RigModifier,
 )
 from app.industry.planner import plan_production
+from app.industry.setup_categories import (
+    INDUSTRY_SETUP_CATEGORY_IDS,
+    INDUSTRY_SETUP_GROUP_IDS,
+    IndustrySetupCategory,
+    industry_setup_category_for,
+)
 
 
 def _recipe(
@@ -72,6 +79,97 @@ def _industry_type(
         category_id=category_id,
         category_name=f"Category {category_id}",
     )
+
+
+def test_industry_setup_category_mapping_is_exact_and_disjoint() -> None:
+    assert set(IndustrySetupCategory) == set(INDUSTRY_SETUP_GROUP_IDS)
+    assert set(IndustrySetupCategory) == set(INDUSTRY_SETUP_CATEGORY_IDS)
+    assert dict(INDUSTRY_SETUP_GROUP_IDS) == {
+        IndustrySetupCategory.ADVANCED_COMPONENTS: frozenset(
+            {332, 334, 716, 913, 964}
+        ),
+        IndustrySetupCategory.T1_SMALL_SHIPS: frozenset({25, 31, 420}),
+        IndustrySetupCategory.T1_MEDIUM_SHIPS: frozenset(
+            {26, 28, 419, 463, 1201, 4902, 5087}
+        ),
+        IndustrySetupCategory.T1_LARGE_SHIPS: frozenset({27, 513, 941}),
+        IndustrySetupCategory.T2_SMALL_SHIPS: frozenset(
+            {324, 541, 830, 831, 834, 893, 1283, 1305, 1527, 1534}
+        ),
+        IndustrySetupCategory.T2_MEDIUM_SHIPS: frozenset(
+            {358, 380, 540, 543, 832, 833, 894, 906, 963, 1202, 1972}
+        ),
+        IndustrySetupCategory.T2_LARGE_SHIPS: frozenset({898, 900, 902}),
+        IndustrySetupCategory.STRUCTURES: frozenset({536, 1136, 4736}),
+        IndustrySetupCategory.FIGHTERS_DRONES: frozenset(),
+        IndustrySetupCategory.EQUIPMENT: frozenset({12, 340, 448, 649}),
+        IndustrySetupCategory.AMMUNITION: frozenset(),
+        IndustrySetupCategory.CAPITAL_COMPONENTS: frozenset({873}),
+        IndustrySetupCategory.CAPITAL_SHIPS: frozenset(
+            {485, 547, 883, 1538, 4594, 5120}
+        ),
+        IndustrySetupCategory.SUPERCAPITAL_SHIPS: frozenset({30, 659}),
+    }
+    assert dict(INDUSTRY_SETUP_CATEGORY_IDS) == {
+        IndustrySetupCategory.ADVANCED_COMPONENTS: frozenset(),
+        IndustrySetupCategory.T1_SMALL_SHIPS: frozenset(),
+        IndustrySetupCategory.T1_MEDIUM_SHIPS: frozenset(),
+        IndustrySetupCategory.T1_LARGE_SHIPS: frozenset(),
+        IndustrySetupCategory.T2_SMALL_SHIPS: frozenset(),
+        IndustrySetupCategory.T2_MEDIUM_SHIPS: frozenset({32}),
+        IndustrySetupCategory.T2_LARGE_SHIPS: frozenset(),
+        IndustrySetupCategory.STRUCTURES: frozenset({23, 39, 40, 65, 66}),
+        IndustrySetupCategory.FIGHTERS_DRONES: frozenset({18, 87}),
+        IndustrySetupCategory.EQUIPMENT: frozenset({7, 20, 22}),
+        IndustrySetupCategory.AMMUNITION: frozenset({8}),
+        IndustrySetupCategory.CAPITAL_COMPONENTS: frozenset(),
+        IndustrySetupCategory.CAPITAL_SHIPS: frozenset(),
+        IndustrySetupCategory.SUPERCAPITAL_SHIPS: frozenset(),
+    }
+
+    group_ids = [
+        group_id
+        for group_ids in INDUSTRY_SETUP_GROUP_IDS.values()
+        for group_id in group_ids
+    ]
+    category_ids = [
+        category_id
+        for category_ids in INDUSTRY_SETUP_CATEGORY_IDS.values()
+        for category_id in category_ids
+    ]
+    assert len(group_ids) == len(set(group_ids))
+    assert len(category_ids) == len(set(category_ids))
+
+
+@pytest.mark.parametrize(
+    ("category_id", "group_id", "expected"),
+    [
+        (6, 334, IndustrySetupCategory.ADVANCED_COMPONENTS),
+        (6, 25, IndustrySetupCategory.T1_SMALL_SHIPS),
+        (32, 4902, IndustrySetupCategory.T1_MEDIUM_SHIPS),
+        (6, 513, IndustrySetupCategory.T1_LARGE_SHIPS),
+        (6, 324, IndustrySetupCategory.T2_SMALL_SHIPS),
+        (32, 999_001, IndustrySetupCategory.T2_MEDIUM_SHIPS),
+        (6, 902, IndustrySetupCategory.T2_LARGE_SHIPS),
+        (23, 999_002, IndustrySetupCategory.STRUCTURES),
+        (18, 999_003, IndustrySetupCategory.FIGHTERS_DRONES),
+        (7, 999_004, IndustrySetupCategory.EQUIPMENT),
+        (8, 999_005, IndustrySetupCategory.AMMUNITION),
+        (6, 873, IndustrySetupCategory.CAPITAL_COMPONENTS),
+        (6, 485, IndustrySetupCategory.CAPITAL_SHIPS),
+        (6, 30, IndustrySetupCategory.SUPERCAPITAL_SHIPS),
+        (1, 999_006, None),
+    ],
+)
+def test_industry_setup_category_representatives(
+    category_id: int,
+    group_id: int,
+    expected: IndustrySetupCategory | None,
+) -> None:
+    assert industry_setup_category_for(
+        category_id=category_id,
+        group_id=group_id,
+    ) == expected
 
 
 def test_planner_builds_manufacturing_reaction_chain() -> None:
@@ -480,6 +578,218 @@ def test_scoped_rig_modifier_requires_product_metadata() -> None:
                 )
             ),
         )
+
+
+def test_matching_setup_override_replaces_all_legacy_facility_and_rig_rules(
+) -> None:
+    recipe = _recipe(
+        2001,
+        1001,
+        1,
+        ((3001, 100),),
+        time_seconds=100,
+    )
+    profile = ProductionProfile(
+        facility_modifiers=(
+            FacilityModifier(
+                ActivityKind.MANUFACTURING,
+                material_reduction_basis_points=100,
+                time_reduction_basis_points=1_500,
+            ),
+        ),
+        rig_modifiers=(
+            RigModifier(
+                ActivityKind.MANUFACTURING,
+                material_reduction_basis_points=200,
+                time_reduction_basis_points=2_000,
+            ),
+            RigModifier(
+                ActivityKind.MANUFACTURING,
+                material_reduction_basis_points=300,
+                time_reduction_basis_points=3_000,
+                group_ids=(25,),
+            ),
+        ),
+        setup_overrides=(
+            IndustrySetupOverride(
+                category=IndustrySetupCategory.T1_SMALL_SHIPS,
+                solar_system_id=30_002_665,
+                facility_material_reduction_basis_points=1_000,
+                facility_time_reduction_basis_points=3_000,
+                rig_material_reduction_basis_points=500,
+                rig_time_reduction_basis_points=1_000,
+                job_cost_reduction_basis_points=400,
+            ),
+        ),
+    )
+
+    plan = plan_production(
+        (ItemQuantity(1001, 1),),
+        (recipe,),
+        sde_build_number=1,
+        production_profile=profile,
+        product_types={1001: _industry_type(1001, group_id=25)},
+    )
+
+    step = plan.build_steps[0]
+    assert step.inputs == (ItemQuantity(3001, 86),)
+    assert step.exact_job_time_seconds == 63
+    assert step.production_modifiers.facility_material_reduction_basis_points == 1_000
+    assert step.production_modifiers.facility_time_reduction_basis_points == 3_000
+    assert step.production_modifiers.rig_material_reduction_basis_points == 500
+    assert step.production_modifiers.rig_time_reduction_basis_points == 1_000
+    assert step.industry_setup_override is not None
+    assert (
+        step.industry_setup_override.category
+        == IndustrySetupCategory.T1_SMALL_SHIPS
+    )
+    assert step.industry_setup_override.solar_system_id == 30_002_665
+    assert step.industry_setup_override.job_cost_reduction_basis_points == 400
+
+
+def test_unmatched_setup_override_uses_legacy_facility_and_scoped_rig() -> None:
+    recipe = _recipe(2001, 1001, 1, ((3001, 100),), time_seconds=100)
+    profile = ProductionProfile(
+        facility_modifiers=(
+            FacilityModifier(
+                ActivityKind.MANUFACTURING,
+                material_reduction_basis_points=100,
+                time_reduction_basis_points=1_500,
+            ),
+        ),
+        rig_modifiers=(
+            RigModifier(
+                ActivityKind.MANUFACTURING,
+                material_reduction_basis_points=200,
+                time_reduction_basis_points=2_000,
+                group_ids=(12,),
+            ),
+        ),
+        setup_overrides=(
+            IndustrySetupOverride(
+                category=IndustrySetupCategory.T1_SMALL_SHIPS,
+                solar_system_id=30_002_665,
+                facility_material_reduction_basis_points=1_000,
+                facility_time_reduction_basis_points=3_000,
+                rig_material_reduction_basis_points=500,
+                rig_time_reduction_basis_points=1_000,
+                job_cost_reduction_basis_points=400,
+            ),
+        ),
+    )
+
+    plan = plan_production(
+        (ItemQuantity(1001, 1),),
+        (recipe,),
+        sde_build_number=1,
+        production_profile=profile,
+        product_types={1001: _industry_type(1001, group_id=12)},
+    )
+
+    step = plan.build_steps[0]
+    assert step.inputs == (ItemQuantity(3001, 98),)
+    assert step.exact_job_time_seconds == 68
+    assert step.production_modifiers.facility_material_reduction_basis_points == 100
+    assert step.production_modifiers.facility_time_reduction_basis_points == 1_500
+    assert step.production_modifiers.rig_material_reduction_basis_points == 200
+    assert step.production_modifiers.rig_time_reduction_basis_points == 2_000
+    assert step.industry_setup_override is None
+
+
+def test_reactions_ignore_matching_manufacturing_setup_override() -> None:
+    recipe = _recipe(
+        2001,
+        1001,
+        1,
+        ((3001, 100),),
+        activity_id=9,
+        activity=ActivityKind.REACTION,
+        time_seconds=100,
+    )
+    profile = ProductionProfile(
+        facility_modifiers=(
+            FacilityModifier(
+                ActivityKind.REACTION,
+                material_reduction_basis_points=100,
+                time_reduction_basis_points=2_500,
+            ),
+        ),
+        rig_modifiers=(
+            RigModifier(
+                ActivityKind.REACTION,
+                material_reduction_basis_points=200,
+                time_reduction_basis_points=2_000,
+            ),
+        ),
+        setup_overrides=(
+            IndustrySetupOverride(
+                category=IndustrySetupCategory.T1_SMALL_SHIPS,
+                solar_system_id=30_002_665,
+                facility_material_reduction_basis_points=1_000,
+                facility_time_reduction_basis_points=3_000,
+                rig_material_reduction_basis_points=500,
+                rig_time_reduction_basis_points=1_000,
+                job_cost_reduction_basis_points=400,
+            ),
+        ),
+    )
+
+    plan = plan_production(
+        (ItemQuantity(1001, 1),),
+        (recipe,),
+        sde_build_number=1,
+        production_profile=profile,
+    )
+
+    step = plan.build_steps[0]
+    assert step.inputs == (ItemQuantity(3001, 98),)
+    assert step.exact_job_time_seconds == 60
+    assert step.industry_setup_override is None
+
+
+def test_setup_override_requires_manufacturing_product_metadata() -> None:
+    recipe = _recipe(2001, 1001, 1, ())
+    profile = ProductionProfile(
+        setup_overrides=(
+            IndustrySetupOverride(
+                category=IndustrySetupCategory.T1_SMALL_SHIPS,
+                solar_system_id=30_002_665,
+            ),
+        )
+    )
+
+    with pytest.raises(
+        InvalidIndustryDataError,
+        match="Product metadata is required to resolve industry setup overrides",
+    ):
+        plan_production(
+            (ItemQuantity(1001, 1),),
+            (recipe,),
+            sde_build_number=1,
+            production_profile=profile,
+        )
+
+
+def test_production_profile_sorts_and_rejects_duplicate_setup_categories() -> None:
+    t2_large = IndustrySetupOverride(
+        IndustrySetupCategory.T2_LARGE_SHIPS,
+        30_000_142,
+    )
+    advanced_components = IndustrySetupOverride(
+        IndustrySetupCategory.ADVANCED_COMPONENTS,
+        30_002_665,
+    )
+    profile = ProductionProfile(
+        setup_overrides=(t2_large, advanced_components)
+    )
+
+    assert profile.setup_overrides == (advanced_components, t2_large)
+    assert profile.override_for(
+        _industry_type(1001, group_id=902)
+    ) == t2_large
+
+    with pytest.raises(InvalidIndustryDataError, match="one setup override"):
+        ProductionProfile(setup_overrides=(t2_large, t2_large))
 
 
 @pytest.mark.parametrize(

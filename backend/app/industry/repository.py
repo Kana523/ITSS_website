@@ -1,7 +1,7 @@
 from collections.abc import Collection, Mapping
 from typing import Protocol
 
-from app.industry.models import IndustryRecipe, IndustryType, RecipeKey
+from app.industry.models import IndustryRecipe, IndustryType, RecipeKey, SolarSystem
 from app.industry.specialist_skills import SpecialistSkillRequirement
 
 
@@ -16,6 +16,13 @@ class IndustryCatalogRepository(Protocol):
         producible_only: bool = False,
         limit: int = 20,
     ) -> tuple[IndustryType, ...]: ...
+
+    def search_solar_systems(
+        self,
+        query: str,
+        *,
+        limit: int = 20,
+    ) -> tuple[SolarSystem, ...]: ...
 
 
 class IndustryRepository(Protocol):

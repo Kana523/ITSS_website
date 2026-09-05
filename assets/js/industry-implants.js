@@ -5,10 +5,14 @@
   if (!app) return;
 
   const profileDetails = app.querySelector("[data-profile-details]");
-  const profileSummary = app.querySelector("[data-profile-summary]");
   const reactionsSelect = app.querySelector('[data-production-profile-field="reactions_level"]');
-  const skillGrid = app.querySelector("[data-production-skill-extras]");
-  if (!profileDetails || !profileSummary || !reactionsSelect || !skillGrid) return;
+  const manufacturingSlot = app.querySelector(
+    '[data-profile-implant-slot="manufacturing_time_implant"]',
+  );
+  const reprocessingSlot = app.querySelector(
+    '[data-profile-implant-slot="reprocessing_yield_implant"]',
+  );
+  if (!profileDetails || !reactionsSelect || !manufacturingSlot || !reprocessingSlot) return;
 
   const label = document.createElement("label");
   const caption = document.createElement("span");
@@ -29,31 +33,35 @@
     select.append(option);
   });
   label.append(caption, select);
-  skillGrid.append(label);
-
-  function profileHasCustomValue() {
-    const hasSkill = [...app.querySelectorAll("[data-profile-skill]")]
-      .some((input) => Number(input.value) > 0);
-    const hasImplant = select.value !== "";
-    const hasModifier = [...app.querySelectorAll("[data-profile-modifier]")]
-      .some((input) => Number(input.value) > 0);
-    const hasScope = [...app.querySelectorAll("[data-rig-scope]")]
-      .some((input) => input.value.trim().length > 0);
-    return hasSkill || hasImplant || hasModifier || hasScope;
-  }
-
-  function updateSummary() {
-    profileSummary.textContent = profileHasCustomValue() ? "Custom" : "Unbonused";
-  }
+  manufacturingSlot.append(label);
 
   select.addEventListener("change", () => {
     // Reuse the core profile-change handler to invalidate any displayed result.
     reactionsSelect.dispatchEvent(new Event("input", { bubbles: true }));
-    updateSummary();
   });
 
-  app.querySelectorAll("[data-profile-skill], [data-profile-modifier], [data-rig-scope]")
-    .forEach((input) => input.addEventListener("input", updateSummary));
+  const reprocessingLabel = document.createElement("label");
+  const reprocessingCaption = document.createElement("span");
+  reprocessingCaption.textContent = "Reprocessing implant";
+  const reprocessingSelect = document.createElement("select");
+  reprocessingSelect.dataset.profileImplant = "reprocessing_yield_implant";
+  reprocessingSelect.setAttribute("aria-label", "Reprocessing yield implant");
+  [
+    ["", "None"],
+    ["27175", "RX-801 · 1%"],
+    ["27169", "RX-802 · 2%"],
+    ["27174", "RX-804 · 4%"],
+  ].forEach(([value, text]) => {
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = text;
+    reprocessingSelect.append(option);
+  });
+  reprocessingLabel.append(reprocessingCaption, reprocessingSelect);
+  reprocessingSlot.append(reprocessingLabel);
+  reprocessingSelect.addEventListener("change", () => {
+    reactionsSelect.dispatchEvent(new Event("input", { bubbles: true }));
+  });
 
   const originalFetch = window.fetch.bind(window);
   window.fetch = (input, init = {}) => {
@@ -79,6 +87,4 @@
     }
     return originalFetch(input, init);
   };
-
-  updateSummary();
 })();

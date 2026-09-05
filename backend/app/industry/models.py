@@ -3,6 +3,10 @@ from enum import StrEnum
 from fractions import Fraction
 
 from app.industry.errors import InvalidIndustryDataError
+from app.industry.setup_categories import (
+    IndustrySetupCategory,
+    industry_setup_category_for,
+)
 
 
 MAX_SAFE_INTEGER = 9_007_199_254_740_991
@@ -44,6 +48,17 @@ def _require_reduction_basis_points(value: int, field_name: str) -> None:
     ):
         raise InvalidIndustryDataError(
             f"{field_name} must be an integer from 0 to 9999 basis points"
+        )
+
+
+def _require_rate_basis_points(value: int, field_name: str) -> None:
+    if (
+        isinstance(value, bool)
+        or not isinstance(value, int)
+        or not 0 <= value <= BASIS_POINTS_PER_UNIT
+    ):
+        raise InvalidIndustryDataError(
+            f"{field_name} must be an integer from 0 to 10000 basis points"
         )
 
 
@@ -116,6 +131,17 @@ class IndustryType:
         ):
             if not value:
                 raise InvalidIndustryDataError(f"{field_name} must not be empty")
+
+
+@dataclass(frozen=True, slots=True)
+class SolarSystem:
+    solar_system_id: int
+    name: str
+
+    def __post_init__(self) -> None:
+        _require_positive_int(self.solar_system_id, "solar_system_id")
+        if not self.name:
+            raise InvalidIndustryDataError("solar system name must not be empty")
 
 
 @dataclass(frozen=True, slots=True)
@@ -324,6 +350,41 @@ class RigModifier:
 
 
 @dataclass(frozen=True, slots=True)
+class IndustrySetupOverride:
+    """A complete manufacturing setup for one recognized product bucket."""
+
+    category: IndustrySetupCategory
+    solar_system_id: int
+    facility_material_reduction_basis_points: int = 0
+    facility_time_reduction_basis_points: int = 0
+    rig_material_reduction_basis_points: int = 0
+    rig_time_reduction_basis_points: int = 0
+    job_cost_reduction_basis_points: int = 0
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.category, IndustrySetupCategory):
+            raise InvalidIndustryDataError(
+                "industry setup override category must be an "
+                "IndustrySetupCategory"
+            )
+        _require_positive_int(self.solar_system_id, "solar_system_id")
+        for field_name in (
+            "facility_material_reduction_basis_points",
+            "facility_time_reduction_basis_points",
+            "rig_material_reduction_basis_points",
+            "rig_time_reduction_basis_points",
+        ):
+            _require_reduction_basis_points(
+                getattr(self, field_name),
+                f"industry setup override {field_name}",
+            )
+        _require_rate_basis_points(
+            self.job_cost_reduction_basis_points,
+            "industry setup override job_cost_reduction_basis_points",
+        )
+
+
+@dataclass(frozen=True, slots=True)
 class ProductionProfile:
     """Immutable request-scoped production settings used by the pure planner."""
 
@@ -332,6 +393,7 @@ class ProductionProfile:
     )
     facility_modifiers: tuple[FacilityModifier, ...] = ()
     rig_modifiers: tuple[RigModifier, ...] = ()
+    setup_overrides: tuple[IndustrySetupOverride, ...] = ()
 
     def __post_init__(self) -> None:
         if not isinstance(self.skills, CharacterIndustrySkills):
@@ -344,6 +406,8 @@ class ProductionProfile:
             )
         if not isinstance(self.rig_modifiers, tuple):
             raise InvalidIndustryDataError("rig_modifiers must be a tuple")
+        if not isinstance(self.setup_overrides, tuple):
+            raise InvalidIndustryDataError("setup_overrides must be a tuple")
         if not all(
             isinstance(modifier, FacilityModifier)
             for modifier in self.facility_modifiers
@@ -358,6 +422,13 @@ class ProductionProfile:
             raise InvalidIndustryDataError(
                 "rig_modifiers must contain RigModifier values"
             )
+        if not all(
+            isinstance(override, IndustrySetupOverride)
+            for override in self.setup_overrides
+        ):
+            raise InvalidIndustryDataError(
+                "setup_overrides must contain IndustrySetupOverride values"
+            )
 
         facility_activities = [
             modifier.activity for modifier in self.facility_modifiers
@@ -366,6 +437,14 @@ class ProductionProfile:
             raise InvalidIndustryDataError(
                 "production profile may contain only one facility modifier "
                 "per activity"
+            )
+        setup_categories = [
+            override.category for override in self.setup_overrides
+        ]
+        if len(setup_categories) != len(set(setup_categories)):
+            raise InvalidIndustryDataError(
+                "production profile may contain only one setup override "
+                "per category"
             )
         object.__setattr__(
             self,
@@ -393,6 +472,16 @@ class ProductionProfile:
                 )
             ),
         )
+        object.__setattr__(
+            self,
+            "setup_overrides",
+            tuple(
+                sorted(
+                    self.setup_overrides,
+                    key=lambda override: override.category.value,
+                )
+            ),
+        )
 
     def facility_for(self, activity: ActivityKind) -> FacilityModifier | None:
         return next(
@@ -402,6 +491,50 @@ class ProductionProfile:
                 if modifier.activity == activity
             ),
             None,
+        )
+
+    def override_for(
+        self,
+        item_type: IndustryType,
+    ) -> IndustrySetupOverride | None:
+        if not isinstance(item_type, IndustryType):
+            raise InvalidIndustryDataError(
+                "setup override product metadata must be an IndustryType"
+            )
+        category = industry_setup_category_for(
+            category_id=item_type.category_id,
+            group_id=item_type.group_id,
+        )
+        if category is None:
+            return None
+        return next(
+            (
+                override
+                for override in self.setup_overrides
+                if override.category == category
+            ),
+            None,
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class AppliedIndustrySetupOverride:
+    """Pricing identity retained after a setup override is resolved."""
+
+    category: IndustrySetupCategory
+    solar_system_id: int
+    job_cost_reduction_basis_points: int = 0
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.category, IndustrySetupCategory):
+            raise InvalidIndustryDataError(
+                "applied industry setup category must be an "
+                "IndustrySetupCategory"
+            )
+        _require_positive_int(self.solar_system_id, "solar_system_id")
+        _require_rate_basis_points(
+            self.job_cost_reduction_basis_points,
+            "applied industry setup job_cost_reduction_basis_points",
         )
 
 
@@ -490,6 +623,7 @@ class ProductionStep:
     base_total_job_time_seconds: int
     exact_job_time_seconds: Fraction
     inputs: tuple[ItemQuantity, ...]
+    industry_setup_override: AppliedIndustrySetupOverride | None = None
 
     @property
     def total_job_time_centiseconds(self) -> int | None:

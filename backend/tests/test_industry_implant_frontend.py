@@ -13,9 +13,16 @@ def test_industry_frontend_loads_implant_extension() -> None:
     assert "industry-implants.js" in loader
     assert 'productionSkillLevel("industry_level")' in core
     assert 'data-production-profile-field="reactions_level"' in implants
-    assert 'data-production-skill-extras' in implants
+    assert 'data-profile-implant-slot="manufacturing_time_implant"' in implants
+    assert 'data-profile-implant-slot="reprocessing_yield_implant"' in implants
+    assert "manufacturingSlot.append(label)" in implants
+    assert "reprocessingSlot.append(reprocessingLabel)" in implants
     assert 'select.dataset.profileImplant = "manufacturing_time_implant"' in implants
     assert '["27170", "BX-801 · 1%"]' in implants
     assert '["27167", "BX-802 · 2%"]' in implants
     assert '["27171", "BX-804 · 4%"]' in implants
+    assert 'reprocessingSelect.dataset.profileImplant = "reprocessing_yield_implant"' in implants
+    assert '["27175", "RX-801 · 1%"]' in implants
+    assert '["27169", "RX-802 · 2%"]' in implants
+    assert '["27174", "RX-804 · 4%"]' in implants
     assert "body.production_profile.manufacturing_time_implant" in implants

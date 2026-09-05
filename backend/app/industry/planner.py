@@ -18,6 +18,7 @@ from app.industry.errors import (
 )
 from app.industry.models import (
     ActivityKind,
+    AppliedIndustrySetupOverride,
     AppliedProductionModifiers,
     BlueprintEfficiency,
     BuildChoice,
@@ -105,7 +106,10 @@ def _resolve_production_modifiers(
     product_type_id: int,
     production_profile: ProductionProfile,
     product_types: Mapping[int, IndustryType],
-) -> AppliedProductionModifiers:
+) -> tuple[
+    AppliedProductionModifiers,
+    AppliedIndustrySetupOverride | None,
+]:
     facility = production_profile.facility_for(recipe.activity)
     relevant_rig_rules = tuple(
         modifier
@@ -125,10 +129,51 @@ def _resolve_production_modifiers(
         raise InvalidIndustryDataError(
             f"Product metadata for type {product_type_id} is invalid"
         )
+    setup_override_requires_metadata = (
+        recipe.activity == ActivityKind.MANUFACTURING
+        and bool(production_profile.setup_overrides)
+    )
+    if setup_override_requires_metadata and product_type is None:
+        raise InvalidIndustryDataError(
+            "Product metadata is required to resolve industry setup overrides "
+            f"for type {product_type_id}"
+        )
     if scoped_rig_rules and product_type is None:
         raise InvalidIndustryDataError(
             "Product metadata is required to resolve rig modifiers for type "
             f"{product_type_id}"
+        )
+
+    setup_override = (
+        production_profile.override_for(product_type)
+        if setup_override_requires_metadata and product_type is not None
+        else None
+    )
+    if setup_override is not None:
+        return (
+            AppliedProductionModifiers(
+                activity=recipe.activity,
+                skills=production_profile.skills,
+                facility_material_reduction_basis_points=(
+                    setup_override.facility_material_reduction_basis_points
+                ),
+                facility_time_reduction_basis_points=(
+                    setup_override.facility_time_reduction_basis_points
+                ),
+                rig_material_reduction_basis_points=(
+                    setup_override.rig_material_reduction_basis_points
+                ),
+                rig_time_reduction_basis_points=(
+                    setup_override.rig_time_reduction_basis_points
+                ),
+            ),
+            AppliedIndustrySetupOverride(
+                category=setup_override.category,
+                solar_system_id=setup_override.solar_system_id,
+                job_cost_reduction_basis_points=(
+                    setup_override.job_cost_reduction_basis_points
+                ),
+            ),
         )
 
     matching_rig_rules = tuple(
@@ -157,25 +202,32 @@ def _resolve_production_modifiers(
     if len(time_rig_rules) > 1:
         raise ConflictingRigModifiersError(recipe.key, "job time")
 
-    return AppliedProductionModifiers(
-        activity=recipe.activity,
-        skills=production_profile.skills,
-        facility_material_reduction_basis_points=(
-            facility.material_reduction_basis_points if facility is not None else 0
+    return (
+        AppliedProductionModifiers(
+            activity=recipe.activity,
+            skills=production_profile.skills,
+            facility_material_reduction_basis_points=(
+                facility.material_reduction_basis_points
+                if facility is not None
+                else 0
+            ),
+            facility_time_reduction_basis_points=(
+                facility.time_reduction_basis_points
+                if facility is not None
+                else 0
+            ),
+            rig_material_reduction_basis_points=(
+                material_rig_rules[0].material_reduction_basis_points
+                if material_rig_rules
+                else 0
+            ),
+            rig_time_reduction_basis_points=(
+                time_rig_rules[0].time_reduction_basis_points
+                if time_rig_rules
+                else 0
+            ),
         ),
-        facility_time_reduction_basis_points=(
-            facility.time_reduction_basis_points if facility is not None else 0
-        ),
-        rig_material_reduction_basis_points=(
-            material_rig_rules[0].material_reduction_basis_points
-            if material_rig_rules
-            else 0
-        ),
-        rig_time_reduction_basis_points=(
-            time_rig_rules[0].time_reduction_basis_points
-            if time_rig_rules
-            else 0
-        ),
+        None,
     )
 
 
@@ -519,11 +571,13 @@ def plan_production(
             if recipe.activity == ActivityKind.MANUFACTURING
             else None
         )
-        production_modifiers = _resolve_production_modifiers(
-            recipe,
-            product_type_id,
-            production_profile,
-            product_type_by_id,
+        production_modifiers, industry_setup_override = (
+            _resolve_production_modifiers(
+                recipe,
+                product_type_id,
+                production_profile,
+                product_type_by_id,
+            )
         )
         blueprint_material_multiplier = (
             Fraction(100 - efficiency.material_efficiency, 100)
@@ -595,6 +649,7 @@ def plan_production(
             base_total_job_time_seconds=base_total_job_time_seconds,
             exact_job_time_seconds=exact_job_time_seconds,
             inputs=inputs,
+            industry_setup_override=industry_setup_override,
         )
 
     purchases_list: list[PurchaseRequirement] = []

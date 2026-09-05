@@ -63,6 +63,11 @@ def test_repository_loads_types_and_recipes(
         with pytest.raises(ValueError, match="limit"):
             repository.search_types("Final", limit=True)
 
+        system_results = repository.search_solar_systems("Jita")
+        assert system_results[0].solar_system_id == 30_000_142
+        assert repository.search_solar_systems("30002665")[0].name == "New Caldari"
+        assert repository.search_solar_systems("%") == ()
+
         recipes = repository.load_recipes_for_products({1001, 1002, 1003})
         assert recipes[1001] == ()
         assert recipes[1002][0].key.blueprint_type_id == 2001

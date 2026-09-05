@@ -27,16 +27,23 @@ def _workspace_sources() -> tuple[str, str, str, str]:
     )
 
 
+def _override_source() -> str:
+    root = Path(__file__).resolve().parents[2]
+    return (root / "assets" / "js" / "industry-overrides.js").read_text(
+        encoding="utf-8"
+    )
+
+
 def test_industry_frontend_loads_saved_configs_after_implants() -> None:
     html, loader, configs = _frontend_sources()
 
     assert 'skills.src = new URL("industry-skills.js", baseUrl).href' in loader
     assert 'skills.addEventListener("load", loadCore' in loader
     assert loader.index("industry-core.js") < loader.index("industry-implants.js")
-    assert loader.index("industry-implants.js") < loader.index("industry-tabs.js")
-    assert loader.index("industry-tabs.js") < loader.index(
-        "industry-configs.js"
-    )
+    assert loader.index("industry-implants.js") < loader.index("industry-reprocessing.js")
+    assert loader.index("industry-reprocessing.js") < loader.index("industry-tabs.js")
+    assert loader.index("industry-tabs.js") < loader.index("industry-overrides.js")
+    assert loader.index("industry-overrides.js") < loader.index("industry-configs.js")
     assert loader.index("industry-configs.js") < loader.index("industry-market.js")
     assert "data-config-name" in html
     assert "data-config-select" in html
@@ -49,6 +56,29 @@ def test_industry_frontend_loads_saved_configs_after_implants() -> None:
     assert "schema_version: SCHEMA_VERSION" in configs
     assert "window.localStorage.getItem" in configs
     assert "window.localStorage.setItem" in configs
+
+
+def test_profiles_live_below_tabs_and_config_cards_follow_requested_order() -> None:
+    html, _, _ = _frontend_sources()
+
+    sidebar = html.index('class="industry-sidebar"')
+    tabs = html.index('class="industry-tabs panel"')
+    profiles = html.index('class="profile-panel profile-save panel"')
+    stage = html.index('class="industry-tab-stage"')
+    skills = html.index('class="config-card config-card--skills"')
+    production = html.index('data-profile-details')
+    pricing = html.index('data-pricing-details')
+    overrides = html.index('data-category-overrides-card')
+
+    assert sidebar < tabs < profiles < stage
+    assert skills < production < pricing < overrides
+    assert html.count('class="profile-panel profile-save panel"') == 1
+    assert "profile-selector" not in html
+    assert html.index("data-config-select") < stage
+    assert html.index("data-config-name") < stage
+    assert html.index("data-config-save") < stage
+    assert html.index("data-config-select") < html.index("data-config-name")
+    assert "Delete profile" in html
 
 
 def test_workspace_has_three_persistent_tabs_with_build_as_default() -> None:
@@ -84,17 +114,51 @@ def test_workspace_has_three_persistent_tabs_with_build_as_default() -> None:
     assert "activate(storedTab(), { persist: false })" in tabs
 
 
-def test_calculator_status_lives_only_in_build_tab() -> None:
+def test_calculator_and_price_status_live_below_profiles() -> None:
     html, _, _, _ = _workspace_sources()
 
-    build_panel_start = html.index('data-industry-panel="build"')
-    shopping_panel_start = html.index('data-industry-panel="shopping"')
-    build_panel = html[build_panel_start:shopping_panel_start]
+    profiles = html.index('class="profile-panel profile-save panel"')
+    status_panel = html.index('class="status-panel panel"')
+    sidebar_end = html.index("</aside>")
 
     assert "industry-hero" not in html
     assert "Industry calculator" not in html
     assert html.count("data-api-state") == 1
-    assert "data-api-state" in build_panel
+    assert profiles < status_panel < sidebar_end
+    assert html.index("data-api-state") > status_panel
+    assert html.index("data-price-state") > status_panel
+    assert "System status" in html
+
+
+def test_status_copy_and_market_cost_grid_are_compact() -> None:
+    html, _, _, core = _workspace_sources()
+    root = Path(__file__).resolve().parents[2]
+    css = (root / "assets" / "styling" / "css" / "industry.css").read_text(
+        encoding="utf-8"
+    )
+
+    pricing_rule = css[css.index(".pricing-fields {") : css.index(".pricing-section .pricing-grid")]
+
+    assert "Jita 4-4" not in html
+    assert "Industry data connected" not in core
+    assert "data-api-detail" not in html
+    assert "apiDetail" not in core
+    assert "function setApiState(status, label)" in core
+    assert 'elements.marketLocation.textContent = "Jita";' in core
+    assert "grid-template-columns: repeat(3, minmax(0, 1fr));" in pricing_rule
+
+
+def test_sidebar_matches_store_filter_width() -> None:
+    root = Path(__file__).resolve().parents[2]
+    industry_css = (root / "assets" / "styling" / "css" / "industry.css").read_text(
+        encoding="utf-8"
+    )
+    shop_css = (root / "assets" / "styling" / "css" / "shop.css").read_text(
+        encoding="utf-8"
+    )
+
+    assert "grid-template-columns: 290px minmax(0, 1fr);" in industry_css
+    assert "grid-template-columns: 290px minmax(0, 1fr);" in shop_css
 
 
 def test_profile_selection_loads_immediately_and_default_is_unbonused() -> None:
@@ -162,6 +226,7 @@ def test_profiles_capture_settings_only() -> None:
     _, _, configs = _frontend_sources()
 
     assert "manufacturing_time_implant" in configs
+    assert "reprocessing_yield_implant" in configs
     assert "activities" in configs
     assert "pricing:" in configs
     assert "latestPlan" not in configs
@@ -171,10 +236,11 @@ def test_profiles_capture_settings_only() -> None:
 
 def test_structure_controls_replace_raw_modifier_inputs() -> None:
     html, _, configs = _frontend_sources()
+    overrides = _override_source()
 
-    assert html.count("data-structure-select") == 2
-    assert html.count("data-security-select") == 2
-    assert html.count("data-rig-tier-select") == 2
+    assert html.count("data-structure-select") == 3
+    assert html.count("data-security-select") == 3
+    assert html.count("data-rig-tier-select") == 3
     assert 'value="raitaru"' in html
     assert 'value="azbel"' in html
     assert 'value="sotiyo"' in html
@@ -184,28 +250,73 @@ def test_structure_controls_replace_raw_modifier_inputs() -> None:
     assert 'data-derived-job-cost="reaction"' in html
     assert 'type="number" value="0" min="0" max="99.99"' not in html
 
-    assert "raitaru: Object.freeze({ material: 100, time: 1500, cost: 300 })" in configs
-    assert "azbel: Object.freeze({ material: 100, time: 2000, cost: 400 })" in configs
-    assert "sotiyo: Object.freeze({ material: 100, time: 3000, cost: 500 })" in configs
-    assert "tatara: Object.freeze({ material: 0, time: 2500, cost: 0 })" in configs
+    assert "raitaru: Object.freeze({ material: 100, time: 1500, cost: 300 })" in overrides
+    assert "azbel: Object.freeze({ material: 100, time: 2000, cost: 400 })" in overrides
+    assert "sotiyo: Object.freeze({ material: 100, time: 3000, cost: 500 })" in overrides
+    assert "tatara: Object.freeze({ material: 0, time: 2500, cost: 0 })" in overrides
+    assert "setupOverrides.structureProfile" in configs
+
+
+def test_facility_boxes_and_implants_follow_requested_order() -> None:
+    html, _, configs = _frontend_sources()
+
+    manufacturing = html.index('data-facility-config="manufacturing"')
+    reaction = html.index('data-facility-config="reaction"')
+    reprocessing = html.index('data-facility-config="reprocessing"')
+
+    assert manufacturing < reaction < reprocessing
+    assert html.index(
+        'data-profile-implant-slot="manufacturing_time_implant"', manufacturing
+    ) < html.index('data-structure-select', manufacturing)
+    assert html.index(
+        'data-profile-implant-slot="reprocessing_yield_implant"', reprocessing
+    ) < html.index('data-structure-select', reprocessing)
+    assert 'const facilityPanels = [...app.querySelectorAll("[data-facility-config]")];' in configs
+    assert 'activity === "reprocessing" ? {} : null' in configs
+
+
+def test_reprocessing_efficiency_uses_facility_implant_and_material_skill() -> None:
+    root = Path(__file__).resolve().parents[2]
+    html, loader, configs = _frontend_sources()
+    calculation = (root / "assets" / "js" / "industry-reprocessing.js").read_text(
+        encoding="utf-8"
+    )
+
+    assert "industry-reprocessing.js" in loader
+    assert "data-reprocessing-material-skill" in html
+    assert "data-reprocessing-efficiency" in html
+    assert 'value="60377" selected>Simple ore' in html
+    assert "material_skill_type_id" in configs
+    assert "athanor: 0.02" in calculation
+    assert "tatara: 0.055" in calculation
+    assert "RIG_BASE_PERCENTAGE_POINTS" in calculation
+    assert "lowsec: 1.06" in calculation
+    assert "nullsec: 1.12" in calculation
+    assert "reprocessingLevel * 0.03" in calculation
+    assert "efficiencyLevel * 0.02" in calculation
+    assert "materialLevel * 0.02" in calculation
+    assert "1 + implantBonus" in calculation
 
 
 def test_manufacturing_and_reaction_rigs_use_distinct_security_tables() -> None:
     _, _, configs = _frontend_sources()
+    overrides = _override_source()
 
-    assert "lowsec: Object.freeze({ material: 380, time: 3800 })" in configs
-    assert "nullsec: Object.freeze({ material: 504, time: 5040 })" in configs
-    assert "lowsec: Object.freeze({ material: 200, time: 2000 })" in configs
-    assert "nullsec: Object.freeze({ material: 264, time: 2640 })" in configs
-    assert "wormhole: Object.freeze({ material: 264, time: 2640 })" in configs
+    assert "lowsec: Object.freeze({ material: 380, time: 3800 })" in overrides
+    assert "nullsec: Object.freeze({ material: 504, time: 5040 })" in overrides
+    assert "lowsec: Object.freeze({ material: 200, time: 2000 })" in overrides
+    assert "nullsec: Object.freeze({ material: 264, time: 2640 })" in overrides
+    assert "wormhole: Object.freeze({ material: 264, time: 2640 })" in overrides
     assert "formatCombinedReduction(structure.material, rig.material)" in configs
     assert "formatCombinedReduction(structure.time, rig.time)" in configs
+    assert "setupOverrides.rigProfile" in configs
 
 
 def test_saved_configuration_captures_source_settings_not_derived_values() -> None:
     _, _, configs = _frontend_sources()
 
     assert "manufacturing_time_implant" in configs
+    assert "reprocessing_yield_implant" in configs
     assert "activities" in configs
     assert "structure:" in configs
     assert "security:" in configs
@@ -225,15 +336,38 @@ def test_market_costs_are_grouped_with_general_scc_and_future_settings() -> None
     assert 'data-pricing-percent="reaction_scc_surcharge_basis_points"' not in html
     assert 'data-config-percent="science_scc_surcharge_basis_points"' in html
     assert "pricing.reaction_scc_surcharge_basis_points = pricing.scc_surcharge_basis_points" in core
-    assert '<p class="pricing-subheading">Industry</p>' in html
-    assert '<p class="pricing-subheading">Reactions</p>' in html
-    assert '<p class="pricing-subheading">Science</p>' in html
-    assert '<p class="pricing-subheading">Taxes</p>' in html
+    for title in ("SCC surcharges", "Industry", "Reactions", "Science", "Taxes"):
+        assert f"<legend>{title}</legend>" in html
+    assert (
+        html.index("<legend>Industry</legend>")
+        < html.index("<legend>Reactions</legend>")
+        < html.index("<legend>Science</legend>")
+        < html.index("<legend>SCC surcharges</legend>")
+        < html.index("<legend>Taxes</legend>")
+    )
+    assert "Cost assumptions" not in html
+    assert html.index("data-trade-skill-groups") < html.index("data-profile-details")
     assert "Immediate sale" not in html
     assert 'data-pricing-percent="broker_fee_basis_points"' in html
     assert 'data-config-percent="pi_tax_basis_points"' in html
     assert 'data-config-integer="science_solar_system_id"' in html
     assert 'data-config-percent="science_facility_tax_basis_points"' in html
+    assert 'class="profile-fieldset pricing-section pricing-section--taxes"' in html
+
+
+def test_market_pricing_is_always_enabled() -> None:
+    html, _, configs = _frontend_sources()
+    _, _, _, core = _workspace_sources()
+
+    assert "data-pricing-enabled" not in html
+    assert "Include cached Jita prices" not in html
+    assert "pricing-toggle" not in html
+    assert "pricingEnabled" not in core
+    assert "pricingFields" not in core
+    assert "updatePricingState" not in core
+    assert "body.pricing = pricing.value;" in core
+    assert "pricingEnabled" not in configs
+    assert "raw.pricing.enabled" not in configs
 
 
 def test_specialist_skill_payload_is_opt_in_and_excludes_trade_skills() -> None:
@@ -245,16 +379,17 @@ def test_specialist_skill_payload_is_opt_in_and_excludes_trade_skills() -> None:
     assert "if (specialistSkills) body.specialist_skills = specialistSkills;" in core
 
 
-def test_inner_tab_headings_scroll_with_the_page() -> None:
-    root = Path(__file__).resolve().parents[2]
-    css = (root / "assets" / "styling" / "css" / "industry.css").read_text(
-        encoding="utf-8"
-    )
-    heading_rule = css[css.index(".tab-heading {") : css.index(".tab-heading >")]
+def test_tab_banners_are_removed_without_losing_tab_controls() -> None:
+    html, css, _, _ = _workspace_sources()
 
-    assert "position: static;" in heading_rule
-    assert "top: auto;" in heading_rule
-    assert "z-index: auto;" in heading_rule
+    assert 'class="tab-heading' not in html
+    assert ".tab-heading" not in css
+    assert "Production setup" not in html
+    assert "Purchase manifest" not in html
+    assert 'data-api-state' in html
+    assert 'data-active-profile-name' in html
+    assert 'data-copy-shopping' in html
+    assert 'data-export-status' in html
 
 
 def test_shopping_tab_offers_only_eve_multibuy_copy() -> None:

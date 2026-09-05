@@ -14,6 +14,7 @@ from app.sde.models import (
     Blueprint,
     EveCategory,
     EveGroup,
+    EveSolarSystem,
     EveType,
     IndustryActivity,
     IndustryActivityMaterial,
@@ -24,7 +25,7 @@ from app.sde.models import (
 )
 from app.sde.parser import ParsedSde, parse_sde
 from app.sde.skill_parser import SkillRow, parse_blueprint_skill_rows
-from app.sde.source import SdeSource
+from app.sde.source import DATASET_FILENAMES, SdeSource
 
 
 MAX_AUTOMATIC_ROW_DROP_PERCENT = 5
@@ -32,6 +33,7 @@ PROTECTED_DATASETS = (
     ("categories", EveCategory, ("category_id",)),
     ("groups", EveGroup, ("group_id",)),
     ("types", EveType, ("type_id",)),
+    ("solar_systems", EveSolarSystem, ("solar_system_id",)),
     ("activity_types", IndustryActivityType, ("activity_id",)),
     ("blueprints", Blueprint, ("blueprint_type_id",)),
     ("activities", IndustryActivity, ("blueprint_type_id", "activity_id")),
@@ -122,6 +124,29 @@ def _synchronize_skill_rows(
     )
 
 
+def _synchronize_solar_system_rows(
+    connection: Connection,
+    dataset: ParsedSde,
+    *,
+    batch_size: int,
+    import_id: int,
+) -> None:
+    _upsert_rows(
+        connection,
+        EveSolarSystem,
+        dataset.solar_systems,
+        conflict_columns=("solar_system_id",),
+        update_columns=("name", "last_seen_import_id"),
+        batch_size=batch_size,
+        import_id=import_id,
+    )
+    connection.execute(
+        delete(EveSolarSystem).where(
+            EveSolarSystem.last_seen_import_id != import_id
+        )
+    )
+
+
 def _find_large_deletions(
     connection: Connection,
     dataset: ParsedSde,
@@ -156,6 +181,7 @@ def _synchronize_sde(
     dataset: ParsedSde,
     skill_rows: list[SkillRow],
     source_checksum: str,
+    legacy_source_checksum: str,
     batch_size: int,
     allow_large_deletions: bool,
 ) -> SdeImportResult:
@@ -185,7 +211,14 @@ def _synchronize_sde(
     ).mappings().one_or_none()
 
     if existing_import is not None:
-        if existing_import["source_checksum"] != source_checksum:
+        existing_row_counts = dict(existing_import["row_counts"])
+        needs_solar_system_backfill = "solar_systems" not in existing_row_counts
+        checksum_matches = existing_import["source_checksum"] == source_checksum
+        legacy_checksum_matches = (
+            needs_solar_system_backfill
+            and existing_import["source_checksum"] == legacy_source_checksum
+        )
+        if not checksum_matches and not legacy_checksum_matches:
             raise SdeImportConflictError(
                 f"SDE build {dataset.manifest.build_number} was already imported "
                 "from different source content"
@@ -196,7 +229,7 @@ def _synchronize_sde(
                 "cannot replace the current build"
             )
 
-        existing_row_counts = dict(existing_import["row_counts"])
+        import_metadata_changed = False
         if "skills" not in existing_row_counts:
             _synchronize_skill_rows(
                 connection,
@@ -205,16 +238,36 @@ def _synchronize_sde(
                 import_id=existing_import["id"],
             )
             existing_row_counts["skills"] = len(skill_rows)
+            import_metadata_changed = True
+
+        if needs_solar_system_backfill:
+            _synchronize_solar_system_rows(
+                connection,
+                dataset,
+                batch_size=batch_size,
+                import_id=existing_import["id"],
+            )
+            existing_row_counts["solar_systems"] = len(dataset.solar_systems)
+            import_metadata_changed = True
+
+        if import_metadata_changed:
             connection.execute(
                 update(SdeImport)
                 .where(SdeImport.id == existing_import["id"])
-                .values(row_counts=existing_row_counts)
+                .values(
+                    row_counts=existing_row_counts,
+                    source_checksum=source_checksum,
+                )
             )
 
         return SdeImportResult(
             import_id=existing_import["id"],
             build_number=existing_import["build_number"],
-            source_checksum=existing_import["source_checksum"],
+            source_checksum=(
+                source_checksum
+                if import_metadata_changed
+                else existing_import["source_checksum"]
+            ),
             row_counts=existing_row_counts,
             already_imported=True,
         )
@@ -247,6 +300,7 @@ def _synchronize_sde(
     _upsert_rows(connection, EveCategory, dataset.categories, conflict_columns=("category_id",), update_columns=("name", "published", "last_seen_import_id"), batch_size=batch_size, import_id=import_id)
     _upsert_rows(connection, EveGroup, dataset.groups, conflict_columns=("group_id",), update_columns=("category_id", "name", "published", "last_seen_import_id"), batch_size=batch_size, import_id=import_id)
     _upsert_rows(connection, EveType, dataset.types, conflict_columns=("type_id",), update_columns=("group_id", "name", "published", "last_seen_import_id"), batch_size=batch_size, import_id=import_id)
+    _synchronize_solar_system_rows(connection, dataset, batch_size=batch_size, import_id=import_id)
     _upsert_rows(connection, IndustryActivityType, dataset.activity_types, conflict_columns=("activity_id",), update_columns=("code", "name", "description", "last_seen_import_id"), batch_size=batch_size, import_id=import_id)
     _upsert_rows(connection, Blueprint, dataset.blueprints, conflict_columns=("blueprint_type_id",), update_columns=("max_production_limit", "last_seen_import_id"), batch_size=batch_size, import_id=import_id)
     _upsert_rows(connection, IndustryActivity, dataset.activities, conflict_columns=("blueprint_type_id", "activity_id"), update_columns=("time_seconds", "last_seen_import_id"), batch_size=batch_size, import_id=import_id)
@@ -265,6 +319,7 @@ def _synchronize_sde(
         IndustryActivity,
         Blueprint,
         IndustryActivityType,
+        EveSolarSystem,
         EveType,
         EveGroup,
         EveCategory,
@@ -293,6 +348,13 @@ def import_sde(
 
     source = SdeSource(source_path)
     source_checksum = source.calculate_checksum()
+    legacy_source_checksum = source.calculate_checksum(
+        tuple(
+            dataset
+            for dataset in DATASET_FILENAMES
+            if dataset != "solar_systems"
+        )
+    )
     dataset = parse_sde(source)
     skill_rows = parse_blueprint_skill_rows(
         source,
@@ -308,7 +370,23 @@ def import_sde(
     if connection is not None:
         if not connection.in_transaction():
             raise RuntimeError("A supplied connection must have an active transaction")
-        return _synchronize_sde(connection, dataset, skill_rows, source_checksum, batch_size, allow_large_deletions)
+        return _synchronize_sde(
+            connection,
+            dataset,
+            skill_rows,
+            source_checksum,
+            legacy_source_checksum,
+            batch_size,
+            allow_large_deletions,
+        )
 
     with engine.begin() as managed_connection:
-        return _synchronize_sde(managed_connection, dataset, skill_rows, source_checksum, batch_size, allow_large_deletions)
+        return _synchronize_sde(
+            managed_connection,
+            dataset,
+            skill_rows,
+            source_checksum,
+            legacy_source_checksum,
+            batch_size,
+            allow_large_deletions,
+        )

@@ -4,6 +4,7 @@ from app.industry.models import (
     IndustryRecipe,
     IndustryType,
     ProductionPlan,
+    SolarSystem,
 )
 from app.industry.economics_service import ValuedProductionPlan
 
@@ -12,6 +13,12 @@ from app.industry.economics_service import ValuedProductionPlan
 class TypeSearchResult:
     sde_build_number: int
     items: tuple[IndustryType, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class SolarSystemSearchResult:
+    sde_build_number: int
+    systems: tuple[SolarSystem, ...]
 
 
 @dataclass(frozen=True, slots=True)

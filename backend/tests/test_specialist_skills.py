@@ -30,6 +30,7 @@ from app.sde.importer import import_sde
 FIXTURE_DIR = Path(__file__).parent / "fixtures" / "sde"
 RECIPE_KEY = RecipeKey(2001, 1)
 SKILL_TYPE_ID = 3001
+ZERO_LEVEL_SKILL_TYPE_ID = 3002
 REQUIRED_LEVEL = 4
 
 
@@ -292,6 +293,14 @@ def test_sde_skill_requirement_survives_import_repository_and_planner(
             "published": True,
         }
     )
+    types.append(
+        {
+            "_key": ZERO_LEVEL_SKILL_TYPE_ID,
+            "groupID": 10,
+            "name": {"en": "Zero-level Test Skill"},
+            "published": True,
+        }
+    )
     _write_jsonl(types_path, types)
 
     blueprints_path = source / "blueprints.jsonl"
@@ -300,6 +309,7 @@ def test_sde_skill_requirement_survives_import_repository_and_planner(
         record for record in blueprints if record["_key"] == 2002
     )["activities"]["manufacturing"]
     manufacturing["skills"] = [
+        {"typeID": ZERO_LEVEL_SKILL_TYPE_ID, "level": 0},
         {"typeID": SKILL_TYPE_ID, "level": REQUIRED_LEVEL}
     ]
     _write_jsonl(blueprints_path, blueprints)

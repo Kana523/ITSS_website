@@ -36,63 +36,79 @@
 
   <main class="industry-page" data-industry-app>
     <div class="industry-console">
-      <nav class="industry-tabs panel" role="tablist" aria-label="Industry workspace" aria-orientation="vertical">
-        <button id="industry-tab-config" data-industry-tab="config" type="button" role="tab" aria-selected="false" aria-controls="industry-panel-config" tabindex="-1">
-          <span>Config</span>
-        </button>
-        <button id="industry-tab-build" data-industry-tab="build" type="button" role="tab" aria-selected="true" aria-controls="industry-panel-build">
-          <span>Build</span>
-        </button>
-        <button id="industry-tab-shopping" data-industry-tab="shopping" type="button" role="tab" aria-selected="false" aria-controls="industry-panel-shopping" tabindex="-1">
-          <span>Shopping</span>
-        </button>
-      </nav>
+      <aside class="industry-sidebar">
+        <nav class="industry-tabs panel" role="tablist" aria-label="Industry workspace" aria-orientation="vertical">
+          <button id="industry-tab-config" data-industry-tab="config" type="button" role="tab" aria-selected="false" aria-controls="industry-panel-config" tabindex="-1">
+            <span>Config</span>
+          </button>
+          <button id="industry-tab-build" data-industry-tab="build" type="button" role="tab" aria-selected="true" aria-controls="industry-panel-build">
+            <span>Build</span>
+          </button>
+          <button id="industry-tab-shopping" data-industry-tab="shopping" type="button" role="tab" aria-selected="false" aria-controls="industry-panel-shopping" tabindex="-1">
+            <span>Shopping</span>
+          </button>
+        </nav>
+
+        <section class="profile-panel profile-save panel" aria-labelledby="saved-configs-title">
+          <div class="saved-configs-heading">
+            <h3 id="saved-configs-title">Profiles</h3>
+            <small data-config-count>0 saved</small>
+          </div>
+          <div class="profile-select-field">
+            <label id="active-profile-label">Active profile</label>
+            <select data-config-select aria-labelledby="active-profile-label">
+              <option value="">Default</option>
+            </select>
+            <input data-config-name type="text" maxlength="60" autocomplete="off" placeholder="Profile name" aria-labelledby="active-profile-label" hidden>
+            <p class="field-status saved-config-status" data-config-status role="status" aria-live="polite"></p>
+          </div>
+          <div class="saved-config-actions">
+            <button class="buy-button buy-button--secondary config-button" data-config-new type="button">New profile</button>
+            <button class="buy-button buy-button--primary config-button config-button--primary" data-config-save type="button">Save profile</button>
+            <button class="buy-button buy-button--danger config-button config-button--danger" data-config-delete type="button" disabled>Delete profile</button>
+          </div>
+        </section>
+
+        <section class="status-panel panel" aria-labelledby="system-status-title">
+          <h3 id="system-status-title">System status</h3>
+          <div class="api-state" data-api-state data-state="checking" role="status" aria-live="polite">
+            <span class="api-state-light" aria-hidden="true"></span>
+            <span class="api-state-copy">
+              <strong data-api-label>Checking calculator</strong>
+            </span>
+          </div>
+          <div class="api-state" data-price-state data-state="checking" role="status" aria-live="polite">
+            <span class="api-state-light" aria-hidden="true"></span>
+            <span class="api-state-copy">
+              <strong data-price-label>Checking prices</strong>
+              <small data-market-age>Reading the Jita cache</small>
+            </span>
+          </div>
+        </section>
+      </aside>
 
       <div class="industry-tab-stage">
         <section id="industry-panel-config" class="industry-tab-panel" data-industry-panel="config" role="tabpanel" aria-labelledby="industry-tab-config" tabindex="0" hidden>
-          <header class="tab-heading panel">
-            <div>
-              <p class="kicker">Production setup</p>
-              <h2>Config</h2>
-            </div>
-          </header>
-
           <div class="config-workspace">
-            <section class="saved-configs panel" aria-labelledby="saved-configs-title">
-              <div class="saved-configs-heading">
-                <h3 id="saved-configs-title">Profiles</h3>
-                <small data-config-count>0 saved</small>
-              </div>
-              <label for="saved-config-select">Active profile</label>
-              <select id="saved-config-select" data-config-select>
-                <option value="">Default</option>
-              </select>
-              <label for="config-name">Profile name</label>
-              <div class="saved-config-save-row">
-                <input id="config-name" data-config-name type="text" maxlength="60" autocomplete="off" placeholder="Bork1">
-                <button class="buy-button buy-button--primary config-button config-button--primary" data-config-save type="button">Save profile</button>
-              </div>
-              <div class="saved-config-actions">
-                <button class="buy-button buy-button--secondary config-button" data-config-new type="button">New profile</button>
-                <button class="buy-button buy-button--danger config-button config-button--danger" data-config-delete type="button" disabled>Delete</button>
-              </div>
-              <p class="field-status saved-config-status" data-config-status role="status" aria-live="polite"></p>
-            </section>
-
-            <section class="config-card panel" data-profile-details aria-labelledby="profile-title">
+            <section class="config-card config-card--skills" aria-labelledby="skills-title">
               <div class="config-card-heading">
-                <h3 id="profile-title">Production profile</h3>
-                <small data-profile-summary>Unbonused</small>
+                <h3 id="skills-title">Character skills</h3>
               </div>
               <div class="planner-details-body">
-                <fieldset class="profile-fieldset">
-                  <legend>Character skills</legend>
-                  <div class="skill-category-list" data-industry-skill-groups></div>
-                </fieldset>
+                <div class="skill-category-list" data-industry-skill-groups></div>
+                <div class="skill-category-list trade-skill-list" data-trade-skill-groups></div>
+              </div>
+            </section>
 
+            <section class="config-card" data-profile-details aria-labelledby="profile-title">
+              <div class="config-card-heading">
+                <h3 id="profile-title">Production profile</h3>
+              </div>
+              <div class="planner-details-body">
                 <div class="facility-config-grid">
-                  <fieldset class="profile-fieldset activity-config" data-activity-config="manufacturing">
+                  <fieldset class="profile-fieldset activity-config" data-activity-config="manufacturing" data-facility-config="manufacturing">
                     <legend>Manufacturing facility</legend>
+                    <div class="activity-implant-slot" data-profile-implant-slot="manufacturing_time_implant"></div>
                     <div class="activity-config-grid">
                       <label>Structure
                         <select data-structure-select data-profile-activity="manufacturing">
@@ -131,7 +147,7 @@
                     <input data-rig-scope="group_ids" data-profile-activity="manufacturing" type="hidden" value="">
                   </fieldset>
 
-                  <fieldset class="profile-fieldset activity-config" data-activity-config="reaction">
+                  <fieldset class="profile-fieldset activity-config" data-activity-config="reaction" data-facility-config="reaction">
                     <legend>Reaction facility</legend>
                     <div class="activity-config-grid">
                       <label>Structure
@@ -166,82 +182,184 @@
                     <input data-rig-scope="category_ids" data-profile-activity="reaction" type="hidden" value="">
                     <input data-rig-scope="group_ids" data-profile-activity="reaction" type="hidden" value="">
                   </fieldset>
+
+                  <fieldset class="profile-fieldset activity-config" data-facility-config="reprocessing">
+                    <legend>Reprocessing facility</legend>
+                    <div class="activity-implant-slot" data-profile-implant-slot="reprocessing_yield_implant"></div>
+                    <div class="activity-config-grid">
+                      <label>Structure
+                        <select data-structure-select data-profile-activity="reprocessing">
+                          <option value="unbonused">No structure bonus</option>
+                          <option value="athanor">Athanor</option>
+                          <option value="tatara">Tatara</option>
+                        </select>
+                      </label>
+                      <label>Security
+                        <select data-security-select data-profile-activity="reprocessing">
+                          <option value="highsec">Highsec</option>
+                          <option value="lowsec">Lowsec</option>
+                          <option value="nullsec">Nullsec</option>
+                          <option value="wormhole">Wormhole</option>
+                        </select>
+                      </label>
+                      <label>Rig
+                        <select data-rig-tier-select data-profile-activity="reprocessing">
+                          <option value="none">None</option>
+                          <option value="t1">Tech I</option>
+                          <option value="t2">Tech II</option>
+                        </select>
+                      </label>
+                      <label>Material category
+                        <select data-reprocessing-material-skill>
+                          <option value="60381">Abyssal ore</option>
+                          <option value="60378">Coherent ore</option>
+                          <option value="46153">Common moon ore</option>
+                          <option value="60380">Complex ore</option>
+                          <option value="90040">Erratic ore</option>
+                          <option value="46156">Exceptional moon ore</option>
+                          <option value="18025">Ice</option>
+                          <option value="12189">Mercoxit ore</option>
+                          <option value="46155">Rare moon ore</option>
+                          <option value="60377" selected>Simple ore</option>
+                          <option value="46152">Ubiquitous moon ore</option>
+                          <option value="46154">Uncommon moon ore</option>
+                          <option value="90398">Unrefined minerals</option>
+                          <option value="60379">Variegated ore</option>
+                        </select>
+                      </label>
+                    </div>
+                    <dl class="modifier-readout modifier-readout--reprocessing" aria-label="Calculated reprocessing efficiency">
+                      <div><dt>Efficiency</dt><dd data-reprocessing-efficiency>50%</dd></div>
+                    </dl>
+                  </fieldset>
                 </div>
               </div>
             </section>
 
-            <section class="config-card panel" data-pricing-details aria-labelledby="pricing-title">
+            <section class="config-card" data-pricing-details aria-labelledby="pricing-title">
               <div class="config-card-heading">
                 <h3 id="pricing-title">Market and job costs</h3>
-                <small data-pricing-summary>Jita pricing on</small>
               </div>
               <div class="planner-details-body">
-                <label class="pricing-toggle">
-                  <input data-pricing-enabled type="checkbox" checked>
-                  <span>Include cached Jita 4-4 prices</span>
-                </label>
-                <fieldset class="profile-fieldset pricing-fields" data-pricing-fields>
-                  <legend>Cost assumptions</legend>
-                  <p class="pricing-subheading">SCC surcharges</p>
-                  <div class="pricing-grid">
-                    <label>Industry &amp; reactions <span><input data-pricing-percent="scc_surcharge_basis_points" type="number" value="4" min="0" max="100" step="0.01" inputmode="decimal"><small>%</small></span></label>
-                    <label>Science <span><input data-config-percent="science_scc_surcharge_basis_points" type="number" value="2" min="0" max="100" step="0.01" inputmode="decimal"><small>%</small></span></label>
-                  </div>
+                <fieldset class="pricing-fields">
+                  <fieldset class="profile-fieldset pricing-section">
+                    <legend>Industry</legend>
+                    <div class="pricing-grid">
+                      <div class="system-index-row" data-system-picker data-system-activity="manufacturing">
+                        <label>Solar system
+                          <div class="system-search-control">
+                            <input data-system-search data-solar-system-id="30000142" type="text" value="Jita" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="industry-system-results">
+                            <input data-system-id data-pricing-integer="solar_system_id" type="hidden" value="30000142">
+                            <ul id="industry-system-results" class="system-search-results" data-system-results role="listbox" hidden></ul>
+                          </div>
+                        </label>
+                        <div class="system-index" data-state="loading">
+                          <span>Index</span>
+                          <strong data-system-index role="status" aria-live="polite">—</strong>
+                        </div>
+                      </div>
+                      <label>Facility tax <span><input data-pricing-percent="facility_tax_basis_points" type="number" value="0.25" min="0" max="100" step="0.01" inputmode="decimal"><small>%</small></span></label>
+                    </div>
+                    <input data-pricing-percent="job_cost_reduction_basis_points" data-derived-job-cost="manufacturing" type="hidden" value="0">
+                  </fieldset>
 
-                  <div class="skill-category-list trade-skill-list" data-trade-skill-groups></div>
+                  <fieldset class="profile-fieldset pricing-section">
+                    <legend>Reactions</legend>
+                    <div class="pricing-grid">
+                      <div class="system-index-row" data-system-picker data-system-activity="reaction">
+                        <label>Solar system
+                          <div class="system-search-control">
+                            <input data-system-search type="text" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="reaction-system-results" placeholder="Search systems">
+                            <input data-system-id data-pricing-integer="reaction_solar_system_id" data-pricing-optional type="hidden">
+                            <ul id="reaction-system-results" class="system-search-results" data-system-results role="listbox" hidden></ul>
+                          </div>
+                        </label>
+                        <div class="system-index" data-state="empty">
+                          <span>Index</span>
+                          <strong data-system-index role="status" aria-live="polite">—</strong>
+                        </div>
+                      </div>
+                      <label>Facility tax <span><input data-pricing-percent="reaction_facility_tax_basis_points" type="number" value="0.25" min="0" max="100" step="0.01" inputmode="decimal"><small>%</small></span></label>
+                    </div>
+                    <input data-pricing-percent="reaction_job_cost_reduction_basis_points" data-derived-job-cost="reaction" type="hidden" value="0">
+                  </fieldset>
 
-                  <p class="pricing-subheading">Industry</p>
-                  <label class="wide-field">Solar system ID <input data-pricing-integer="solar_system_id" type="number" value="30000142" min="1" max="2147483647" step="1" inputmode="numeric"></label>
-                  <div class="pricing-grid">
-                    <label>Facility tax <span><input data-pricing-percent="facility_tax_basis_points" type="number" value="0.25" min="0" max="100" step="0.01" inputmode="decimal"><small>%</small></span></label>
-                  </div>
-                  <input data-pricing-percent="job_cost_reduction_basis_points" data-derived-job-cost="manufacturing" type="hidden" value="0">
+                  <fieldset class="profile-fieldset pricing-section">
+                    <legend>Science</legend>
+                    <div class="pricing-grid">
+                      <div class="system-index-row" data-system-picker data-system-activity="invention">
+                        <label>Solar system
+                          <div class="system-search-control">
+                            <input data-system-search type="text" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="science-system-results" placeholder="Search systems">
+                            <input data-system-id data-config-integer="science_solar_system_id" data-pricing-optional type="hidden">
+                            <ul id="science-system-results" class="system-search-results" data-system-results role="listbox" hidden></ul>
+                          </div>
+                        </label>
+                        <div class="system-index" data-state="empty">
+                          <span>Index</span>
+                          <strong data-system-index role="status" aria-live="polite">—</strong>
+                        </div>
+                      </div>
+                      <label>Activity
+                        <select data-config-choice="science_activity" data-system-activity-select>
+                          <option value="copying">Copying</option>
+                          <option value="invention" selected>Invention</option>
+                          <option value="research_material">Material research</option>
+                          <option value="research_time">Time research</option>
+                        </select>
+                      </label>
+                      <label>Facility tax <span><input data-config-percent="science_facility_tax_basis_points" type="number" value="0.25" min="0" max="100" step="0.01" inputmode="decimal"><small>%</small></span></label>
+                    </div>
+                  </fieldset>
 
-                  <p class="pricing-subheading">Reactions</p>
-                  <label class="wide-field">Solar system ID <input data-pricing-integer="reaction_solar_system_id" data-pricing-optional type="number" min="1" max="2147483647" step="1" inputmode="numeric" placeholder="Required for reaction routes"></label>
-                  <div class="pricing-grid">
-                    <label>Facility tax <span><input data-pricing-percent="reaction_facility_tax_basis_points" type="number" value="0.25" min="0" max="100" step="0.01" inputmode="decimal"><small>%</small></span></label>
-                  </div>
-                  <input data-pricing-percent="reaction_job_cost_reduction_basis_points" data-derived-job-cost="reaction" type="hidden" value="0">
+                  <fieldset class="profile-fieldset pricing-section">
+                    <legend>SCC surcharges</legend>
+                    <div class="pricing-grid">
+                      <label>Industry &amp; reactions <span><input data-pricing-percent="scc_surcharge_basis_points" type="number" value="4" min="0" max="100" step="0.01" inputmode="decimal"><small>%</small></span></label>
+                      <label>Science <span><input data-config-percent="science_scc_surcharge_basis_points" type="number" value="2" min="0" max="100" step="0.01" inputmode="decimal"><small>%</small></span></label>
+                    </div>
+                  </fieldset>
 
-                  <p class="pricing-subheading">Science</p>
-                  <label class="wide-field">Solar system ID <input data-config-integer="science_solar_system_id" data-pricing-optional type="number" min="1" max="2147483647" step="1" inputmode="numeric" placeholder="Saved for science planning"></label>
-                  <div class="pricing-grid">
-                    <label>Facility tax <span><input data-config-percent="science_facility_tax_basis_points" type="number" value="0.25" min="0" max="100" step="0.01" inputmode="decimal"><small>%</small></span></label>
-                  </div>
-
-                  <p class="pricing-subheading">Taxes</p>
-                  <div class="pricing-grid">
-                    <label>Sales tax <span><input data-pricing-percent="sales_tax_basis_points" type="number" value="0" min="0" max="100" step="0.01" inputmode="decimal"><small>%</small></span></label>
-                    <label>Broker's fee <span><input data-pricing-percent="broker_fee_basis_points" type="number" value="0" min="0" max="100" step="0.01" inputmode="decimal"><small>%</small></span></label>
-                    <label>PI tax <span><input data-config-percent="pi_tax_basis_points" type="number" value="0" min="0" max="100" step="0.01" inputmode="decimal"><small>%</small></span></label>
-                  </div>
+                  <fieldset class="profile-fieldset pricing-section pricing-section--taxes">
+                    <legend>Taxes</legend>
+                    <div class="pricing-grid">
+                      <label>Sales tax <span><input data-pricing-percent="sales_tax_basis_points" type="number" value="0" min="0" max="100" step="0.01" inputmode="decimal"><small>%</small></span></label>
+                      <label>Broker's fee <span><input data-pricing-percent="broker_fee_basis_points" type="number" value="0" min="0" max="100" step="0.01" inputmode="decimal"><small>%</small></span></label>
+                      <label>PI tax <span><input data-config-percent="pi_tax_basis_points" type="number" value="0" min="0" max="100" step="0.01" inputmode="decimal"><small>%</small></span></label>
+                    </div>
+                  </fieldset>
                 </fieldset>
               </div>
             </section>
+
+            <section
+              class="config-card config-card--category-overrides"
+              data-category-overrides-card
+              aria-labelledby="category-overrides-title"
+              aria-describedby="category-overrides-description"
+            >
+              <div class="config-card-heading">
+                <h3 id="category-overrides-title">Category setup overrides</h3>
+                <small data-category-overrides-count>0 active</small>
+              </div>
+              <div class="planner-details-body">
+                <p id="category-overrides-description" class="category-overrides-description">
+                  Use a different manufacturing structure, rig, and system for selected product categories.
+                </p>
+                <div class="category-override-list" data-category-overrides-list></div>
+              </div>
+            </section>
+
           </div>
         </section>
 
         <section id="industry-panel-build" class="industry-tab-panel" data-industry-panel="build" role="tabpanel" aria-labelledby="industry-tab-build" tabindex="0">
-          <header class="tab-heading tab-heading--build panel">
-            <div>
-              <p class="kicker">Production route</p>
-              <h2>Build</h2>
-            </div>
-            <div class="build-heading-meta">
-              <p class="active-profile">Profile: <strong data-active-profile-name>Default</strong></p>
-              <div class="api-state" data-api-state data-state="checking" role="status" aria-live="polite">
-                <span class="api-state-light" aria-hidden="true"></span>
-                <span class="api-state-copy">
-                  <strong data-api-label>Checking calculator</strong>
-                  <small data-api-detail>Connecting to the local API</small>
-                </span>
-              </div>
-            </div>
-          </header>
-
           <div class="industry-workbench">
             <aside class="planner-panel panel" aria-labelledby="planner-title">
+              <div class="build-heading-meta">
+                <p class="active-profile">Profile: <strong data-active-profile-name>Default</strong></p>
+              </div>
+
               <div class="section-heading">
                 <p class="kicker">Build request</p>
                 <h2 id="planner-title">What are you building?</h2>
@@ -370,7 +488,7 @@
                   <div class="market-stamp" data-market-stamp data-state="fresh">
                     <div>
                       <p class="kicker">Market snapshot</p>
-                      <h2 id="valuation-title" data-market-location>Jita 4-4</h2>
+                      <h2 id="valuation-title" data-market-location>Jita</h2>
                     </div>
                     <div class="market-stamp-status">
                       <strong data-market-status>Fresh</strong>
@@ -406,24 +524,18 @@
         </section>
 
         <section id="industry-panel-shopping" class="industry-tab-panel shopping-tab" data-industry-panel="shopping" role="tabpanel" aria-labelledby="industry-tab-shopping" tabindex="0" hidden>
-          <header class="tab-heading shopping-header panel">
-            <div>
-              <p class="kicker">Purchase manifest</p>
-              <h2 id="purchases-title">Shopping</h2>
-            </div>
-            <div class="shopping-actions">
-              <span data-shopping-count>0 items</span>
-              <button class="buy-button buy-button--secondary purchase-action" data-copy-shopping type="button" disabled>Copy multibuy</button>
-            </div>
-            <p class="export-status" data-export-status role="status" aria-live="polite"></p>
-          </header>
-
           <section class="output-placeholder panel" data-shopping-placeholder>
             <p class="kicker">Shopping list</p>
             <h2>Calculate a build to create a purchase list</h2>
           </section>
 
           <section class="purchases-panel panel" data-shopping-output hidden aria-labelledby="purchases-title">
+            <h2 id="purchases-title" class="page-title">Shopping list</h2>
+            <div class="shopping-actions">
+              <span data-shopping-count>0 items</span>
+              <button class="buy-button buy-button--secondary purchase-action" data-copy-shopping type="button" disabled>Copy multibuy</button>
+            </div>
+            <p class="export-status" data-export-status role="status" aria-live="polite"></p>
             <ul class="purchase-list" data-purchases></ul>
           </section>
         </section>

@@ -9,63 +9,11 @@
   const SCHEMA_VERSION = 1;
   const MAX_CONFIGURATIONS = 25;
   const DRAFT_SAVE_DELAY_MS = 250;
-
-  const STRUCTURE_PROFILES = Object.freeze({
-    manufacturing: Object.freeze({
-      unbonused: Object.freeze({ material: 0, time: 0, cost: 0 }),
-      raitaru: Object.freeze({ material: 100, time: 1500, cost: 300 }),
-      azbel: Object.freeze({ material: 100, time: 2000, cost: 400 }),
-      sotiyo: Object.freeze({ material: 100, time: 3000, cost: 500 }),
-    }),
-    reaction: Object.freeze({
-      athanor: Object.freeze({ material: 0, time: 0, cost: 0 }),
-      tatara: Object.freeze({ material: 0, time: 2500, cost: 0 }),
-    }),
-  });
-
-  // Exact final basis-point reductions. Reaction rigs deliberately use different
-  // security scaling from manufacturing rigs in current EVE dogma data.
-  const RIG_PROFILES = Object.freeze({
-    manufacturing: Object.freeze({
-      none: Object.freeze({
-        highsec: Object.freeze({ material: 0, time: 0 }),
-        lowsec: Object.freeze({ material: 0, time: 0 }),
-        nullsec: Object.freeze({ material: 0, time: 0 }),
-        wormhole: Object.freeze({ material: 0, time: 0 }),
-      }),
-      t1: Object.freeze({
-        highsec: Object.freeze({ material: 200, time: 2000 }),
-        lowsec: Object.freeze({ material: 380, time: 3800 }),
-        nullsec: Object.freeze({ material: 420, time: 4200 }),
-        wormhole: Object.freeze({ material: 420, time: 4200 }),
-      }),
-      t2: Object.freeze({
-        highsec: Object.freeze({ material: 240, time: 2400 }),
-        lowsec: Object.freeze({ material: 456, time: 4560 }),
-        nullsec: Object.freeze({ material: 504, time: 5040 }),
-        wormhole: Object.freeze({ material: 504, time: 5040 }),
-      }),
-    }),
-    reaction: Object.freeze({
-      none: Object.freeze({
-        lowsec: Object.freeze({ material: 0, time: 0 }),
-        nullsec: Object.freeze({ material: 0, time: 0 }),
-        wormhole: Object.freeze({ material: 0, time: 0 }),
-      }),
-      t1: Object.freeze({
-        lowsec: Object.freeze({ material: 200, time: 2000 }),
-        nullsec: Object.freeze({ material: 220, time: 2200 }),
-        wormhole: Object.freeze({ material: 220, time: 2200 }),
-      }),
-      t2: Object.freeze({
-        lowsec: Object.freeze({ material: 240, time: 2400 }),
-        nullsec: Object.freeze({ material: 264, time: 2640 }),
-        wormhole: Object.freeze({ material: 264, time: 2640 }),
-      }),
-    }),
-  });
+  const setupOverrides = globalThis.industrySetupOverrides;
+  if (!setupOverrides) return;
 
   const activityPanels = [...app.querySelectorAll("[data-activity-config]")];
+  const facilityPanels = [...app.querySelectorAll("[data-facility-config]")];
   const elements = {
     name: app.querySelector("[data-config-name]"),
     select: app.querySelector("[data-config-select]"),
@@ -74,7 +22,6 @@
     delete: app.querySelector("[data-config-delete]"),
     count: app.querySelector("[data-config-count]"),
     status: app.querySelector("[data-config-status]"),
-    pricingEnabled: app.querySelector("[data-pricing-enabled]"),
     activeProfile: app.querySelector("[data-active-profile-name]"),
   };
 
@@ -117,8 +64,8 @@
     const structureSelect = panel.querySelector("[data-structure-select]");
     const securitySelect = panel.querySelector("[data-security-select]");
     const rigSelect = panel.querySelector("[data-rig-tier-select]");
-    const structure = STRUCTURE_PROFILES[activity]?.[structureSelect?.value];
-    const rig = RIG_PROFILES[activity]?.[rigSelect?.value]?.[securitySelect?.value];
+    const structure = setupOverrides.structureProfile(activity, structureSelect?.value);
+    const rig = setupOverrides.rigProfile(activity, rigSelect?.value, securitySelect?.value);
     if (!structure || !rig) return false;
 
     const facilityMaterial = derivedInput("facility", activity, "material");
@@ -175,11 +122,16 @@
     return [...app.querySelectorAll("[data-pricing-integer], [data-config-integer]")];
   }
 
+  function sourceChoiceInputs() {
+    return [...app.querySelectorAll("[data-config-choice]")];
+  }
+
   function pricingStorageKey(input) {
     return input.dataset.pricingInteger
       || input.dataset.pricingPercent
       || input.dataset.configInteger
-      || input.dataset.configPercent;
+      || input.dataset.configPercent
+      || input.dataset.configChoice;
   }
 
   function sourceControls() {
@@ -187,11 +139,13 @@
       ...profileSkillInputs(),
       ...app.querySelectorAll("[data-profile-implant]"),
       ...app.querySelectorAll(
-        "[data-structure-select], [data-security-select], [data-rig-tier-select]",
+        "[data-structure-select], [data-security-select], [data-rig-tier-select], "
+        + "[data-reprocessing-material-skill]",
       ),
       ...sourcePricingIntegerInputs(),
       ...sourcePricingPercentInputs(),
-      elements.pricingEnabled,
+      ...sourceChoiceInputs(),
+      ...setupOverrides.sourceControls(),
     ].filter(Boolean);
   }
 
@@ -202,13 +156,17 @@
     });
 
     const activities = {};
-    activityPanels.forEach((panel) => {
-      const activity = panel.dataset.activityConfig;
+    facilityPanels.forEach((panel) => {
+      const activity = panel.dataset.facilityConfig;
       activities[activity] = {
         structure: panel.querySelector("[data-structure-select]").value,
         security: panel.querySelector("[data-security-select]").value,
         rig: panel.querySelector("[data-rig-tier-select]").value,
       };
+      const materialSkillSelect = panel.querySelector("[data-reprocessing-material-skill]");
+      if (materialSkillSelect) {
+        activities[activity].material_skill_type_id = materialSkillSelect.value;
+      }
     });
 
     const integers = {};
@@ -219,15 +177,25 @@
     sourcePricingPercentInputs().forEach((input) => {
       percents[pricingStorageKey(input)] = input.value.trim();
     });
+    const choices = {};
+    sourceChoiceInputs().forEach((input) => {
+      choices[pricingStorageKey(input)] = input.value;
+    });
 
     return {
       skills,
-      manufacturing_time_implant: app.querySelector("[data-profile-implant]")?.value || "",
+      manufacturing_time_implant: app.querySelector(
+        '[data-profile-implant="manufacturing_time_implant"]',
+      )?.value || "",
+      reprocessing_yield_implant: app.querySelector(
+        '[data-profile-implant="reprocessing_yield_implant"]',
+      )?.value || "",
       activities,
+      setup_overrides: setupOverrides.capture(),
       pricing: {
-        enabled: Boolean(elements.pricingEnabled?.checked),
         integers,
         percents,
+        choices,
       },
     };
   }
@@ -236,8 +204,12 @@
     if (typeof rawValue !== "string" && typeof rawValue !== "number") return null;
     const value = String(rawValue);
     if (!value) return input.hasAttribute("data-pricing-optional") ? "" : null;
-    if (input.matches("[data-pricing-integer], [data-config-integer]") && !/^\d+$/.test(value)) {
-      return null;
+    if (input.matches("[data-pricing-integer], [data-config-integer]")) {
+      if (!/^\d+$/.test(value)) return null;
+      const number = Number(value);
+      if (!Number.isSafeInteger(number) || number < 1 || number > 2_147_483_647) {
+        return null;
+      }
     }
     if (input.matches("[data-pricing-percent], [data-config-percent]")
       && !/^\d+(?:\.\d{1,2})?$/.test(value)) {
@@ -259,16 +231,22 @@
   function normalizeConfiguration(raw) {
     if (!isRecord(raw) || !isRecord(raw.skills) || !isRecord(raw.activities)) return null;
     if (!isRecord(raw.pricing) || !isRecord(raw.pricing.integers)
-      || !isRecord(raw.pricing.percents) || typeof raw.pricing.enabled !== "boolean") {
+      || !isRecord(raw.pricing.percents)) {
       return null;
     }
 
     const normalized = {
       skills: {},
       manufacturing_time_implant: "",
+      reprocessing_yield_implant: "",
       activities: {},
-      pricing: { enabled: raw.pricing.enabled, integers: {}, percents: {} },
+      setup_overrides: [],
+      pricing: { integers: {}, percents: {}, choices: {} },
     };
+
+    const normalizedOverrides = setupOverrides.normalize(raw.setup_overrides);
+    if (normalizedOverrides === null) return null;
+    normalized.setup_overrides = normalizedOverrides;
 
     for (const input of profileSkillInputs()) {
       const key = skillStorageKey(input);
@@ -279,24 +257,50 @@
       normalized.skills[key] = Number(value);
     }
 
-    const implant = app.querySelector("[data-profile-implant]");
-    const implantValue = String(raw.manufacturing_time_implant ?? "");
-    if (implant && !selectOptionExists(implant, implantValue)) return null;
-    normalized.manufacturing_time_implant = implantValue;
+    const manufacturingImplant = app.querySelector(
+      '[data-profile-implant="manufacturing_time_implant"]',
+    );
+    const manufacturingImplantValue = String(raw.manufacturing_time_implant ?? "");
+    if (manufacturingImplant
+      && !selectOptionExists(manufacturingImplant, manufacturingImplantValue)) return null;
+    normalized.manufacturing_time_implant = manufacturingImplantValue;
 
-    for (const panel of activityPanels) {
-      const activity = panel.dataset.activityConfig;
-      const rawActivity = raw.activities[activity];
-      if (!isRecord(rawActivity)) return null;
-      const structure = String(rawActivity.structure ?? "");
-      const security = String(rawActivity.security ?? "");
-      const rig = String(rawActivity.rig ?? "");
-      if (!selectOptionExists(panel.querySelector("[data-structure-select]"), structure)
-        || !selectOptionExists(panel.querySelector("[data-security-select]"), security)
-        || !selectOptionExists(panel.querySelector("[data-rig-tier-select]"), rig)) {
+    const reprocessingImplant = app.querySelector(
+      '[data-profile-implant="reprocessing_yield_implant"]',
+    );
+    const reprocessingImplantValue = String(raw.reprocessing_yield_implant ?? "");
+    if (reprocessingImplant
+      && !selectOptionExists(reprocessingImplant, reprocessingImplantValue)) return null;
+    normalized.reprocessing_yield_implant = reprocessingImplantValue;
+
+    for (const panel of facilityPanels) {
+      const activity = panel.dataset.facilityConfig;
+      const storedActivity = raw.activities[activity];
+      const rawActivity = isRecord(storedActivity)
+        ? storedActivity
+        : activity === "reprocessing" ? {} : null;
+      if (!rawActivity) return null;
+      const structureSelect = panel.querySelector("[data-structure-select]");
+      const securitySelect = panel.querySelector("[data-security-select]");
+      const rigSelect = panel.querySelector("[data-rig-tier-select]");
+      const materialSkillSelect = panel.querySelector("[data-reprocessing-material-skill]");
+      const structure = String(rawActivity.structure ?? structureSelect.value);
+      const security = String(rawActivity.security ?? securitySelect.value);
+      const rig = String(rawActivity.rig ?? rigSelect.value);
+      const materialSkillTypeId = String(
+        rawActivity.material_skill_type_id ?? materialSkillSelect?.value ?? "",
+      );
+      if (!selectOptionExists(structureSelect, structure)
+        || !selectOptionExists(securitySelect, security)
+        || !selectOptionExists(rigSelect, rig)
+        || (materialSkillSelect
+          && !selectOptionExists(materialSkillSelect, materialSkillTypeId))) {
         return null;
       }
       normalized.activities[activity] = { structure, security, rig };
+      if (materialSkillSelect) {
+        normalized.activities[activity].material_skill_type_id = materialSkillTypeId;
+      }
     }
 
     for (const input of sourcePricingIntegerInputs()) {
@@ -313,6 +317,13 @@
       if (value === null) return null;
       normalized.pricing.percents[key] = value;
     }
+    const rawChoices = isRecord(raw.pricing.choices) ? raw.pricing.choices : {};
+    for (const input of sourceChoiceInputs()) {
+      const key = pricingStorageKey(input);
+      const value = String(rawChoices[key] ?? input.value);
+      if (!selectOptionExists(input, value)) return null;
+      normalized.pricing.choices[key] = value;
+    }
     return normalized;
   }
 
@@ -323,17 +334,30 @@
     profileSkillInputs().forEach((input) => {
       input.value = String(configuration.skills[skillStorageKey(input)]);
     });
-    const implant = app.querySelector("[data-profile-implant]");
-    if (implant) implant.value = configuration.manufacturing_time_implant;
+    const manufacturingImplant = app.querySelector(
+      '[data-profile-implant="manufacturing_time_implant"]',
+    );
+    if (manufacturingImplant) {
+      manufacturingImplant.value = configuration.manufacturing_time_implant;
+    }
+    const reprocessingImplant = app.querySelector(
+      '[data-profile-implant="reprocessing_yield_implant"]',
+    );
+    if (reprocessingImplant) {
+      reprocessingImplant.value = configuration.reprocessing_yield_implant;
+    }
 
-    activityPanels.forEach((panel) => {
-      const values = configuration.activities[panel.dataset.activityConfig];
+    facilityPanels.forEach((panel) => {
+      const values = configuration.activities[panel.dataset.facilityConfig];
       panel.querySelector("[data-structure-select]").value = values.structure;
       panel.querySelector("[data-security-select]").value = values.security;
       panel.querySelector("[data-rig-tier-select]").value = values.rig;
+      const materialSkillSelect = panel.querySelector("[data-reprocessing-material-skill]");
+      if (materialSkillSelect) {
+        materialSkillSelect.value = values.material_skill_type_id;
+      }
     });
 
-    if (elements.pricingEnabled) elements.pricingEnabled.checked = configuration.pricing.enabled;
     sourcePricingIntegerInputs().forEach((input) => {
       input.value = configuration.pricing.integers[pricingStorageKey(input)];
       input.setCustomValidity("");
@@ -342,10 +366,14 @@
       input.value = configuration.pricing.percents[pricingStorageKey(input)];
       input.setCustomValidity("");
     });
+    sourceChoiceInputs().forEach((input) => {
+      input.value = configuration.pricing.choices[pricingStorageKey(input)];
+    });
+    if (!setupOverrides.apply(configuration.setup_overrides)) return false;
 
     updateAllActivities({ notify: false });
     profileSkillInputs()[0]?.dispatchEvent(new Event("input", { bubbles: true }));
-    elements.pricingEnabled?.dispatchEvent(new Event("change", { bubbles: true }));
+    app.dispatchEvent(new CustomEvent("industry:configuration-applied"));
     queueDraftSave();
     return true;
   }
@@ -426,6 +454,11 @@
     if (elements.status) elements.status.textContent = message;
   }
 
+  function setProfileNameEntry(active) {
+    if (elements.select) elements.select.hidden = active;
+    if (elements.name) elements.name.hidden = !active;
+  }
+
   function setActiveProfile(configuration = null) {
     const name = configuration?.name || "Default";
     if (elements.activeProfile) elements.activeProfile.textContent = name;
@@ -499,6 +532,7 @@
     store = nextStore;
     renderSavedConfigurations(selected?.id || "");
     if (elements.name) elements.name.value = selected?.name || "";
+    setProfileNameEntry(false);
     setActiveProfile(selected);
     queueDraftSave();
     if (announce) {
@@ -528,19 +562,23 @@
 
   elements.createNew?.addEventListener("click", () => {
     if (!activateProfile("", { announce: false })) return;
+    setProfileNameEntry(true);
     elements.name?.focus();
-    setStatus("Default restored. Enter a name to create a profile.");
+    setStatus("Enter a name for the new profile.");
   });
 
   elements.save?.addEventListener("click", () => {
     const name = elements.name.value.trim();
     if (!name) {
+      setProfileNameEntry(true);
       setStatus("Enter a profile name before saving.");
       elements.name.focus();
       return;
     }
 
-    const invalid = sourceControls().find((input) => !input.checkValidity());
+    const overrideValidation = setupOverrides.validate();
+    const invalid = overrideValidation.invalid
+      || sourceControls().find((input) => !input.checkValidity());
     if (invalid) {
       setStatus("Fix the highlighted setting before saving.");
       invalid.reportValidity();
@@ -587,6 +625,7 @@
     store = nextStore;
     renderSavedConfigurations(saved.id);
     elements.name.value = saved.name;
+    setProfileNameEntry(false);
     setActiveProfile(saved);
     queueDraftSave();
     setStatus(existing ? `Updated ${saved.name}.` : `Saved ${saved.name}.`);
@@ -608,6 +647,7 @@
     if (defaultConfiguration) applyConfiguration(defaultConfiguration);
     renderSavedConfigurations();
     if (elements.name) elements.name.value = "";
+    setProfileNameEntry(false);
     setActiveProfile();
     queueDraftSave();
     setStatus(`Deleted ${selected.name}.`);
@@ -622,6 +662,7 @@
     if (active) applyConfiguration(active.configuration);
     else if (defaultConfiguration) applyConfiguration(defaultConfiguration);
     if (elements.name) elements.name.value = active?.name || "";
+    setProfileNameEntry(false);
     setActiveProfile(active);
     setStatus("The profile list changed in another tab.");
   });
@@ -633,6 +674,7 @@
   if (active && !restoredDraft) applyConfiguration(active.configuration);
   if (!active && defaultConfiguration) applyConfiguration(defaultConfiguration);
   if (elements.name) elements.name.value = active?.name || "";
+  setProfileNameEntry(false);
   setActiveProfile(active);
   if (storeResult.warning) setStatus(storeResult.warning);
   else if (restoredDraft) setStatus("Restored your last local settings.");

@@ -106,12 +106,16 @@ def parse_blueprint_skill_rows(
                         skill,
                         "level",
                         skill_context,
-                        positive=True,
                     )
-                    if level > 5:
+                    if not 0 <= level <= 5:
                         raise SdeValidationError(
-                            f"{skill_context}.level must be from 1 to 5"
+                            f"{skill_context}.level must be from 0 to 5"
                         )
+                    # CCP includes some skills at level 0. They carry no
+                    # enforceable training requirement and the persistence
+                    # model intentionally stores only requirements from 1-5.
+                    if level == 0:
+                        continue
                     rows.append(
                         {
                             "blueprint_type_id": blueprint_type_id,

@@ -46,6 +46,11 @@ class TypeRow(TypedDict):
     published: bool
 
 
+class SolarSystemRow(TypedDict):
+    solar_system_id: int
+    name: str
+
+
 class ActivityTypeRow(TypedDict):
     activity_id: int
     code: str
@@ -90,6 +95,7 @@ class ParsedSde:
     categories: list[CategoryRow]
     groups: list[GroupRow]
     types: list[TypeRow]
+    solar_systems: list[SolarSystemRow]
     activity_types: list[ActivityTypeRow]
     blueprints: list[BlueprintRow]
     activities: list[ActivityRow]
@@ -105,6 +111,7 @@ class ParsedSde:
             "categories": len(self.categories),
             "groups": len(self.groups),
             "types": len(self.types),
+            "solar_systems": len(self.solar_systems),
             "activity_types": len(self.activity_types),
             "blueprints": len(self.blueprints),
             "activities": len(self.activities),
@@ -276,6 +283,26 @@ def _parse_types(source: SdeSource, group_ids: set[int]) -> list[TypeRow]:
                 "group_id": group_id,
                 "name": _english_name(record, context),
                 "published": _required_bool(record, "published", context),
+            }
+        )
+    return rows
+
+
+def _parse_solar_systems(source: SdeSource) -> list[SolarSystemRow]:
+    rows: list[SolarSystemRow] = []
+    seen: set[int] = set()
+    for line_number, record in _iter_records(source, "solar_systems"):
+        context = f"mapSolarSystems line {line_number}"
+        solar_system_id = _required_int(record, "_key", context, positive=True)
+        if solar_system_id in seen:
+            raise SdeValidationError(
+                f"Duplicate solar system ID {solar_system_id}"
+            )
+        seen.add(solar_system_id)
+        rows.append(
+            {
+                "solar_system_id": solar_system_id,
+                "name": _english_name(record, context),
             }
         )
     return rows
@@ -531,6 +558,9 @@ def parse_sde(source: SdeSource | Path | str) -> ParsedSde:
     types = _parse_types(source, group_ids)
     if not types:
         raise SdeValidationError("SDE contains no types")
+    solar_systems = _parse_solar_systems(source)
+    if not solar_systems:
+        raise SdeValidationError("SDE contains no solar systems")
     activity_types, activity_ids = _parse_activity_types(source)
     (
         blueprints,
@@ -555,6 +585,7 @@ def parse_sde(source: SdeSource | Path | str) -> ParsedSde:
         categories=categories,
         groups=groups,
         types=types,
+        solar_systems=solar_systems,
         activity_types=activity_types,
         blueprints=blueprints,
         activities=activities,

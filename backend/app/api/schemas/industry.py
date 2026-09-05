@@ -23,6 +23,7 @@ from app.industry.models import (
     BuildDecision,
     CharacterIndustrySkills,
     FacilityModifier,
+    IndustrySetupOverride,
     IndustryRecipe,
     IndustryType,
     ItemQuantity,
@@ -33,9 +34,11 @@ from app.industry.models import (
     RecipeKey,
     RigModifier,
 )
+from app.industry.setup_categories import IndustrySetupCategory
 from app.industry.views import (
     DescribedProductionPlan,
     ProductRecipesResult,
+    SolarSystemSearchResult,
     TypeSearchResult,
 )
 
@@ -71,6 +74,7 @@ ReductionBasisPoints = Annotated[
         description="Exact reduction in basis points; 100 basis points is 1%.",
     ),
 ]
+RateBasisPoints = Annotated[int, Field(strict=True, ge=0, le=10_000)]
 SearchText = Annotated[
     str,
     StringConstraints(strip_whitespace=True, min_length=1, max_length=255),
@@ -88,6 +92,11 @@ class ApiModel(BaseModel):
 class TypeSearchQuery(ApiModel):
     search: SearchText
     producible_only: bool = False
+    limit: Annotated[int, Field(ge=1, le=100)] = 20
+
+
+class SolarSystemSearchQuery(ApiModel):
+    search: SearchText
     limit: Annotated[int, Field(ge=1, le=100)] = 20
 
 
@@ -215,6 +224,39 @@ class RigModifierRequest(ApiModel):
         )
 
 
+class IndustrySetupOverrideRequest(ApiModel):
+    """Exact manufacturing setup for one supported product class."""
+
+    category: IndustrySetupCategory
+    solar_system_id: TypeId
+    facility_material_reduction_basis_points: ReductionBasisPoints = 0
+    facility_time_reduction_basis_points: ReductionBasisPoints = 0
+    rig_material_reduction_basis_points: ReductionBasisPoints = 0
+    rig_time_reduction_basis_points: ReductionBasisPoints = 0
+    job_cost_reduction_basis_points: RateBasisPoints = 0
+
+    def to_domain(self) -> IndustrySetupOverride:
+        return IndustrySetupOverride(
+            category=self.category,
+            solar_system_id=self.solar_system_id,
+            facility_material_reduction_basis_points=(
+                self.facility_material_reduction_basis_points
+            ),
+            facility_time_reduction_basis_points=(
+                self.facility_time_reduction_basis_points
+            ),
+            rig_material_reduction_basis_points=(
+                self.rig_material_reduction_basis_points
+            ),
+            rig_time_reduction_basis_points=(
+                self.rig_time_reduction_basis_points
+            ),
+            job_cost_reduction_basis_points=(
+                self.job_cost_reduction_basis_points
+            ),
+        )
+
+
 class ProductionProfileRequest(ApiModel):
     """Request-scoped skills and exact production modifiers.
 
@@ -233,6 +275,10 @@ class ProductionProfileRequest(ApiModel):
         list[RigModifierRequest],
         Field(max_length=100),
     ] = Field(default_factory=list)
+    setup_overrides: Annotated[
+        list[IndustrySetupOverrideRequest],
+        Field(max_length=14),
+    ] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def reject_duplicate_facility_activities(self) -> Self:
@@ -242,6 +288,11 @@ class ProductionProfileRequest(ApiModel):
         if len(activities) != len(set(activities)):
             raise ValueError(
                 "facility_modifiers may contain only one entry per activity"
+            )
+        categories = [override.category for override in self.setup_overrides]
+        if len(categories) != len(set(categories)):
+            raise ValueError(
+                "setup_overrides may contain only one entry per category"
             )
         return self
 
@@ -258,6 +309,9 @@ class ProductionProfileRequest(ApiModel):
             ),
             rig_modifiers=tuple(
                 modifier.to_domain() for modifier in self.rig_modifiers
+            ),
+            setup_overrides=tuple(
+                override.to_domain() for override in self.setup_overrides
             ),
         )
 
@@ -368,6 +422,19 @@ class TypeSearchResponse(ApiModel):
     result_count: int
     limit: int
     items: tuple[IndustryTypeResponse, ...]
+
+
+class SolarSystemResponse(ApiModel):
+    solar_system_id: TypeId
+    name: str
+
+
+class SolarSystemSearchResponse(ApiModel):
+    sde_build_number: SdeBuildNumber
+    query: str
+    result_count: int
+    limit: int
+    systems: tuple[SolarSystemResponse, ...]
 
 
 class ProductRecipesResponse(ApiModel):
@@ -548,6 +615,27 @@ def type_search_response(
         result_count=len(result.items),
         limit=limit,
         items=tuple(_type_response(item) for item in result.items),
+    )
+
+
+def solar_system_search_response(
+    result: SolarSystemSearchResult,
+    *,
+    query: str,
+    limit: int,
+) -> SolarSystemSearchResponse:
+    return SolarSystemSearchResponse(
+        sde_build_number=result.sde_build_number,
+        query=query,
+        result_count=len(result.systems),
+        limit=limit,
+        systems=tuple(
+            SolarSystemResponse(
+                solar_system_id=system.solar_system_id,
+                name=system.name,
+            )
+            for system in result.systems
+        ),
     )
 
 

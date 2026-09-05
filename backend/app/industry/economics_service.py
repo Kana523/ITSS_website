@@ -9,7 +9,7 @@ from app.industry.depth_valuation import (
     calculate_depth_aware_industry_economics,
 )
 from app.industry.errors import MissingActivityPricingError
-from app.industry.models import ActivityKind, ProductionPlan
+from app.industry.models import ActivityKind, ProductionPlan, ProductionStep
 from app.industry.valuation import (
     ActivityFeeRates,
     AdjustedPrice,
@@ -19,6 +19,7 @@ from app.industry.valuation import (
     IndustryValuationInputs,
     MarketQuote,
     MarketQuoteSnapshot,
+    RecipeFeeRates,
     SystemCostIndex,
     SystemCostIndexSnapshot,
 )
@@ -152,6 +153,8 @@ class IndustryPricingOptions:
     def to_fee_rates(
         self,
         activities: set[ActivityKind] | None = None,
+        *,
+        steps: tuple[ProductionStep, ...] = (),
     ) -> IndustryFeeRates:
         selected_activities = activities or {ActivityKind.MANUFACTURING}
         activity_rates = tuple(
@@ -162,6 +165,20 @@ class IndustryPricingOptions:
             )
         )
         manufacturing = self.activity_fee_rates(ActivityKind.MANUFACTURING)
+        recipe_rates = tuple(
+            RecipeFeeRates(
+                recipe_key=step.recipe.key,
+                activity=step.recipe.activity,
+                solar_system_id=override.solar_system_id,
+                facility_tax_rate=manufacturing.facility_tax_rate,
+                scc_surcharge_rate=manufacturing.scc_surcharge_rate,
+                default_job_cost_modifier=_rate(
+                    10_000 - override.job_cost_reduction_basis_points
+                ),
+            )
+            for step in steps
+            if (override := step.industry_setup_override) is not None
+        )
         return IndustryFeeRates(
             solar_system_id=manufacturing.solar_system_id,
             facility_tax_rate=manufacturing.facility_tax_rate,
@@ -170,6 +187,7 @@ class IndustryPricingOptions:
             broker_fee_rate=_rate(self.broker_fee_basis_points),
             default_job_cost_modifier=manufacturing.default_job_cost_modifier,
             activity_fee_rates=activity_rates,
+            recipe_fee_rates=recipe_rates,
         )
 
 
@@ -248,10 +266,10 @@ class IndustryEconomicsService:
             )
             activities.add(step.recipe.activity)
 
-        activity_fee_rates = {
-            activity: options.activity_fee_rates(activity)
-            for activity in activities
-        }
+        fee_rates = options.to_fee_rates(
+            activities,
+            steps=plan.build_steps,
+        )
 
         orders_key = hub_orders_resource_key(
             self._context.region_id,
@@ -283,11 +301,14 @@ class IndustryEconomicsService:
             )
             cost_indices = {}
             activities_by_system: dict[int, set[str]] = {}
-            for activity, rates in activity_fee_rates.items():
+            for rates in (
+                *fee_rates.activity_fee_rates,
+                *fee_rates.recipe_fee_rates,
+            ):
                 activities_by_system.setdefault(
                     rates.solar_system_id,
                     set(),
-                ).add(activity.value)
+                ).add(rates.activity.value)
             for system_id, activity_codes in sorted(
                 activities_by_system.items()
             ):
@@ -367,7 +388,7 @@ class IndustryEconomicsService:
                     )
                 )
             ),
-            fees=options.to_fee_rates(activities),
+            fees=fee_rates,
         )
         depth_by_type = {
             price.type_id: MarketDepthQuote(

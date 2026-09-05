@@ -21,6 +21,7 @@ def test_parser_normalizes_direct_industry_chain() -> None:
         "categories": 2,
         "groups": 2,
         "types": 6,
+        "solar_systems": 3,
         "activity_types": 2,
         "blueprints": 2,
         "activities": 2,
@@ -44,6 +45,10 @@ def test_parser_normalizes_direct_industry_chain() -> None:
             "description": "Combining materials into advanced components",
         },
     ]
+    assert dataset.solar_systems[0] == {
+        "solar_system_id": 30000142,
+        "name": "Jita",
+    }
     assert dataset.materials[1] == {
         "blueprint_type_id": 2002,
         "activity_id": 1,

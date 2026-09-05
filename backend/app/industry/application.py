@@ -24,6 +24,7 @@ from app.industry.service import IndustryPlanningService
 from app.industry.views import (
     DescribedProductionPlan,
     ProductRecipesResult,
+    SolarSystemSearchResult,
     TypeSearchResult,
 )
 
@@ -62,6 +63,21 @@ class IndustryApplicationService:
                 query,
                 published_only=True,
                 producible_only=producible_only,
+                limit=limit,
+            ),
+        )
+
+    def search_solar_systems(
+        self,
+        query: str,
+        *,
+        limit: int = 20,
+    ) -> SolarSystemSearchResult:
+        build_number = self._require_build_number()
+        return SolarSystemSearchResult(
+            sde_build_number=build_number,
+            systems=self._repository.search_solar_systems(
+                query,
                 limit=limit,
             ),
         )

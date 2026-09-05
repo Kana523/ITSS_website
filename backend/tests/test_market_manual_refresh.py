@@ -8,6 +8,7 @@ from fastapi.testclient import TestClient
 
 from app.api.dependencies import get_market_application_service
 from app.market.application import (
+    IndustryIndexSnapshotView,
     JitaSnapshotStatus,
     JitaSnapshotView,
     MarketApplicationService,
@@ -18,9 +19,14 @@ from app.market.domain import (
     OrderPageCache,
     RefreshStatus,
     ResourceState,
+    SystemCostIndex,
 )
 from app.market.esi import EsiClient
-from app.market.refresh import MarketCacheRefresher, hub_orders_resource_key
+from app.market.refresh import (
+    SYSTEM_COST_INDICES_RESOURCE_KEY,
+    MarketCacheRefresher,
+    hub_orders_resource_key,
+)
 from app.main import create_app
 
 
@@ -105,6 +111,47 @@ def test_market_status_reports_unavailable_without_snapshot() -> None:
     assert status.row_count == 0
 
 
+class FakeIndexRepository:
+    def __init__(self) -> None:
+        self.state = ResourceState(
+            SYSTEM_COST_INDICES_RESOURCE_KEY,
+            _metadata(fresh=True),
+            1,
+        )
+
+    @contextmanager
+    def acquire_read_snapshot(self):
+        yield
+
+    def get_resource_state(self, resource_key: str):
+        if resource_key == SYSTEM_COST_INDICES_RESOURCE_KEY:
+            return self.state
+        return None
+
+    def load_system_cost_indices(self, solar_system_id: int, activities):
+        if "manufacturing" not in activities:
+            return {}
+        return {
+            "manufacturing": SystemCostIndex(
+                solar_system_id=solar_system_id,
+                activity="manufacturing",
+                cost_index=Decimal("0.031234"),
+            )
+        }
+
+
+def test_industry_index_view_reads_same_refreshed_esi_cache() -> None:
+    view = MarketApplicationService(
+        FakeIndexRepository(),
+        FakeSettings(),
+        now=lambda: NOW,
+    ).system_cost_index(30_000_142, "manufacturing")
+
+    assert view.status == JitaSnapshotStatus.FRESH
+    assert view.cost_index == Decimal("0.031234")
+    assert view.age_minutes == 4
+
+
 def test_fresh_jita_snapshot_makes_zero_esi_requests() -> None:
     repository = FakeRepository(
         ResourceState(RESOURCE_KEY, _metadata(fresh=True), 1)
@@ -162,6 +209,21 @@ class FakeMarketApplicationService:
     def jita_status(self) -> JitaSnapshotView:
         return self.snapshot
 
+    def system_cost_index(
+        self,
+        solar_system_id: int,
+        activity: str,
+    ) -> IndustryIndexSnapshotView:
+        return IndustryIndexSnapshotView(
+            solar_system_id=solar_system_id,
+            activity=activity,
+            cost_index=Decimal("0.031234"),
+            status=JitaSnapshotStatus.FRESH,
+            fetched_at=NOW - timedelta(minutes=3),
+            fresh_until=NOW + timedelta(minutes=2),
+            age_minutes=3,
+        )
+
 
 def test_market_api_exposes_status_but_not_refresh() -> None:
     application = create_app(cors_origins=())
@@ -183,6 +245,31 @@ def test_market_api_exposes_status_but_not_refresh() -> None:
     assert "/api/market/jita/refresh" not in application.openapi()["paths"]
 
 
+def test_market_api_exposes_cached_industry_index() -> None:
+    application = create_app(cors_origins=())
+    fake_service = FakeMarketApplicationService()
+    application.dependency_overrides[get_market_application_service] = (
+        lambda: fake_service
+    )
+
+    with TestClient(application) as client:
+        response = client.get(
+            "/api/market/industry-index",
+            params={
+                "solar_system_id": 30_000_142,
+                "activity": "manufacturing",
+            },
+        )
+
+    application.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    assert response.json()["solar_system_id"] == 30_000_142
+    assert response.json()["activity"] == "manufacturing"
+    assert Decimal(response.json()["cost_index"]) == Decimal("0.031234")
+    assert response.json()["age_minutes"] == 3
+
+
 def test_market_frontend_reads_status_without_refresh_controls() -> None:
     root = Path(__file__).resolve().parents[2]
     loader = (root / "assets" / "js" / "industry.js").read_text(
@@ -200,6 +287,10 @@ def test_market_frontend_reads_status_without_refresh_controls() -> None:
     assert "loadStatus();" in script
     assert "setInterval" not in script
     assert "setTimeout" not in script
+    assert 'if (minutes <= 5) return "fresh";' in script
+    assert 'if (minutes < 15) return "aging";' in script
+    assert 'return "stale";' in script
+    assert 'panel.dataset.state = status;' in script
 
 
 def test_oracle_timer_uses_only_the_private_market_cli() -> None:

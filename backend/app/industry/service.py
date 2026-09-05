@@ -11,6 +11,7 @@ from app.industry.errors import (
     UnpublishedTypeError,
 )
 from app.industry.models import (
+    ActivityKind,
     BlueprintEfficiency,
     BuildChoice,
     BuildDecision,
@@ -219,22 +220,26 @@ class IndustryPlanningService:
             if missing:
                 raise MissingSpecialistSkillsError(tuple(missing))
 
-        scoped_rig_product_type_ids = {
+        product_metadata_type_ids = {
             recipe.products[0].type_id
             for recipe in recipes_by_key.values()
-            if any(
+            if (
+                recipe.activity == ActivityKind.MANUFACTURING
+                and bool(profile.setup_overrides)
+            )
+            or any(
                 modifier.activity == recipe.activity
                 and (modifier.category_ids or modifier.group_ids)
                 for modifier in profile.rig_modifiers
             )
         }
         product_types = (
-            self._repository.load_types(scoped_rig_product_type_ids)
-            if scoped_rig_product_type_ids
+            self._repository.load_types(product_metadata_type_ids)
+            if product_metadata_type_ids
             else {}
         )
         missing_product_type_ids = tuple(
-            sorted(scoped_rig_product_type_ids - product_types.keys())
+            sorted(product_metadata_type_ids - product_types.keys())
         )
         if missing_product_type_ids:
             raise InvalidIndustryDataError(

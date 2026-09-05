@@ -14,7 +14,6 @@
   const elements = {
     apiState: document.querySelector("[data-api-state]"),
     apiLabel: document.querySelector("[data-api-label]"),
-    apiDetail: document.querySelector("[data-api-detail]"),
     form: app.querySelector("[data-planner-form]"),
     searchInput: app.querySelector("[data-search-input]"),
     searchStatus: app.querySelector("[data-search-status]"),
@@ -31,10 +30,6 @@
     ownedEditor: app.querySelector("[data-owned-editor]"),
     ownedList: app.querySelector("[data-owned-list]"),
     clearOwned: app.querySelector("[data-clear-owned]"),
-    profileSummary: app.querySelector("[data-profile-summary]"),
-    pricingSummary: app.querySelector("[data-pricing-summary]"),
-    pricingEnabled: app.querySelector("[data-pricing-enabled]"),
-    pricingFields: app.querySelector("[data-pricing-fields]"),
     calculateButton: app.querySelector("[data-calculate-button]"),
     overridesPanel: app.querySelector("[data-overrides-panel]"),
     overridesList: app.querySelector("[data-overrides-list]"),
@@ -264,10 +259,9 @@
     });
   }
 
-  function setApiState(status, label, detail) {
+  function setApiState(status, label) {
     elements.apiState.dataset.state = status;
     elements.apiLabel.textContent = label;
-    elements.apiDetail.textContent = detail;
   }
 
   function showConfigTab() {
@@ -336,12 +330,12 @@
       });
       const payload = await response.json();
       if (response.ok && payload.api === "ok" && payload.database === "ok") {
-        setApiState("online", "Calculator online", "Industry data connected");
+        setApiState("online", "Calculator online");
         return;
       }
-      setApiState("offline", "Calculator unavailable", "Database connection failed");
+      setApiState("offline", "Calculator unavailable");
     } catch (_error) {
-      setApiState("offline", "Calculator unavailable", "FastAPI is not reachable");
+      setApiState("offline", "Calculator unavailable");
     }
   }
 
@@ -424,13 +418,13 @@
       if (requestId !== state.searchRequestId) return;
       result.items.forEach((item) => state.typeNames.set(item.type_id, item.name));
       renderSearchResults(result.items, result.sde_build_number);
-      setApiState("online", "Calculator online", "Industry data connected");
+      setApiState("online", "Calculator online");
     } catch (error) {
       if (error.name === "AbortError" || requestId !== state.searchRequestId) return;
       hideSearchResults();
       elements.searchStatus.textContent = error.message;
       if (error.code === "network_error" || error.status === 503) {
-        setApiState("offline", "Calculator unavailable", "Search request failed");
+        setApiState("offline", "Calculator unavailable");
       }
     } finally {
       if (requestId === state.searchRequestId) {
@@ -497,13 +491,13 @@
       if (requestId !== state.ownedSearchRequestId) return;
       result.items.forEach((item) => state.typeNames.set(item.type_id, item.name));
       renderOwnedSearchResults(result.items, result.sde_build_number);
-      setApiState("online", "Calculator online", "Industry data connected");
+      setApiState("online", "Calculator online");
     } catch (error) {
       if (error.name === "AbortError" || requestId !== state.ownedSearchRequestId) return;
       hideOwnedSearchResults();
       elements.ownedSearchStatus.textContent = error.message;
       if (error.code === "network_error" || error.status === 503) {
-        setApiState("offline", "Calculator unavailable", "Inventory search failed");
+        setApiState("offline", "Calculator unavailable");
       }
     } finally {
       if (requestId === state.ownedSearchRequestId) {
@@ -806,6 +800,7 @@
       reactions_level: productionSkillLevel("reactions_level"),
       facility_modifiers: [],
       rig_modifiers: [],
+      setup_overrides: [],
     };
 
     for (const activity of ["manufacturing", "reaction"]) {
@@ -861,11 +856,23 @@
       }
     }
 
+    const setupOverrideResult = globalThis.industrySetupOverrides?.readRequest()
+      || { ok: true, value: [] };
+    if (!setupOverrideResult.ok) {
+      showConfigTab();
+      setupOverrideResult.invalid?.closest("details")?.setAttribute("open", "");
+      setupOverrideResult.invalid?.reportValidity();
+      setupOverrideResult.invalid?.focus();
+      return { ok: false, value: null };
+    }
+    profile.setup_overrides = setupOverrideResult.value;
+
     const hasEffect = profile.industry_level > 0
       || profile.advanced_industry_level > 0
       || profile.reactions_level > 0
       || profile.facility_modifiers.length > 0
-      || profile.rig_modifiers.length > 0;
+      || profile.rig_modifiers.length > 0
+      || profile.setup_overrides.length > 0;
     return { ok: true, value: hasEffect ? profile : null };
   }
 
@@ -887,7 +894,6 @@
   }
 
   function readPricing() {
-    if (!elements.pricingEnabled.checked) return { ok: true, value: null };
     const pricing = {};
     for (const input of app.querySelectorAll("[data-pricing-integer]")) {
       const rawValue = input.value.trim();
@@ -897,13 +903,19 @@
       }
       const value = /^\d+$/.test(rawValue) ? Number(rawValue) : null;
       if (!Number.isSafeInteger(value) || value < 1 || value > 2_147_483_647) {
-        input.setCustomValidity("Enter a valid positive solar system ID.");
+        const systemSearch = input.closest("[data-system-picker]")
+          ?.querySelector("[data-system-search]");
+        const validationTarget = systemSearch || input;
+        validationTarget.setCustomValidity("Select a solar system from the results.");
         showConfigTab();
-        input.reportValidity();
-        input.focus();
+        validationTarget.reportValidity();
+        validationTarget.focus();
         return { ok: false, value: null };
       }
       input.setCustomValidity("");
+      input.closest("[data-system-picker]")
+        ?.querySelector("[data-system-search]")
+        ?.setCustomValidity("");
       pricing[input.dataset.pricingInteger] = value;
     }
     for (const input of app.querySelectorAll("[data-pricing-percent]")) {
@@ -918,25 +930,6 @@
     }
     pricing.reaction_scc_surcharge_basis_points = pricing.scc_surcharge_basis_points;
     return { ok: true, value: pricing };
-  }
-
-  function updateProfileSummary() {
-    const hasSkill = [...app.querySelectorAll("[data-profile-skill]")]
-      .some((input) => Number(input.value) > 0);
-    const hasModifier = [...app.querySelectorAll("[data-profile-modifier]")]
-      .some((input) => Number(input.value) > 0);
-    const hasScope = [...app.querySelectorAll("[data-rig-scope]")]
-      .some((input) => input.value.trim().length > 0);
-    elements.profileSummary.textContent = hasSkill || hasModifier || hasScope
-      ? "Custom"
-      : "Unbonused";
-  }
-
-  function updatePricingState() {
-    elements.pricingFields.disabled = !elements.pricingEnabled.checked;
-    elements.pricingSummary.textContent = elements.pricingEnabled.checked
-      ? "Jita pricing on"
-      : "Pricing off";
   }
 
   function choiceLabel(typeId, choice) {
@@ -1258,7 +1251,7 @@
     if (!valuation) return;
     const { market_snapshot: snapshot, pricing_options: options, economics } = valuation;
     elements.marketStamp.dataset.state = snapshot.status;
-    elements.marketLocation.textContent = snapshot.location_name;
+    elements.marketLocation.textContent = "Jita";
     elements.marketStatus.textContent = snapshot.status === "fresh"
       ? "Fresh snapshot"
       : snapshot.status === "stale" ? "Stale snapshot" : "Snapshot unavailable";
@@ -1454,7 +1447,7 @@
     state.pendingNotice = "";
     renderOverrides();
     updateExportActions();
-    setApiState("online", "Calculator online", "Industry data connected");
+    setApiState("online", "Calculator online");
   }
 
   function updateExportActions() {
@@ -1567,7 +1560,7 @@
     }
 
     if (error.code === "network_error" || error.status === 503) {
-      setApiState("offline", "Calculator unavailable", "Calculation request failed");
+      setApiState("offline", "Calculator unavailable");
     }
   }
 
@@ -1617,7 +1610,7 @@
     if (ownedMaterials.length) body.owned_materials = ownedMaterials;
     if (productionProfile.value) body.production_profile = productionProfile.value;
     if (specialistSkills) body.specialist_skills = specialistSkills;
-    if (pricing.value) body.pricing = pricing.value;
+    body.pricing = pricing.value;
     if (state.sdeBuildNumber) {
       body.expected_sde_build_number = state.sdeBuildNumber;
     }
@@ -1824,13 +1817,11 @@
   app.querySelectorAll("[data-profile-skill], [data-profile-modifier], [data-rig-scope]")
     .forEach((input) => input.addEventListener("input", () => {
       input.setCustomValidity("");
-      updateProfileSummary();
       markCalculationDirty("Production profile changed. Calculate a new production route.");
     }));
 
-  elements.pricingEnabled.addEventListener("change", () => {
-    updatePricingState();
-    markCalculationDirty("Pricing settings changed. Calculate a new production route.");
+  app.addEventListener("industry:setup-overrides-changed", () => {
+    markCalculationDirty("Category setup changed. Calculate a new production route.");
   });
 
   app.querySelectorAll(
@@ -1977,7 +1968,10 @@
       elements.searchInput.focus();
     } else if (action === "pricing") {
       showConfigTab();
-      app.querySelector('[data-pricing-integer="reaction_solar_system_id"]')
+      app.querySelector(
+        '[data-pricing-integer="reaction_solar_system_id"]',
+      )?.closest("[data-system-picker]")
+        ?.querySelector("[data-system-search]")
         ?.focus();
     } else {
       calculate();
@@ -1989,8 +1983,6 @@
   renderDemandList();
   renderOwnedList();
   resetShopping();
-  updateProfileSummary();
-  updatePricingState();
   updateExportActions();
   checkApiHealth();
 })();

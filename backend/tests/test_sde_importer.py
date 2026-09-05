@@ -38,11 +38,11 @@ def _write_jsonl(path: Path, records: list[dict]) -> None:
 def test_importer_rejects_source_that_changes_while_being_read(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    checksums = iter(("a" * 64, "b" * 64))
+    checksums = iter(("a" * 64, "a" * 64, "b" * 64))
     monkeypatch.setattr(
         SdeSource,
         "calculate_checksum",
-        lambda self: next(checksums),
+        lambda self, *_datasets: next(checksums),
     )
 
     with pytest.raises(SdeSourceError, match="changed while it was being read"):

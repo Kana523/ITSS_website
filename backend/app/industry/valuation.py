@@ -286,6 +286,39 @@ class ActivityFeeRates:
 
 
 @dataclass(frozen=True, slots=True)
+class RecipeFeeRates:
+    """Installation-fee context resolved for one selected recipe."""
+
+    recipe_key: RecipeKey
+    activity: ActivityKind
+    solar_system_id: int
+    facility_tax_rate: Decimal
+    scc_surcharge_rate: Decimal
+    default_job_cost_modifier: Decimal = ONE
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.recipe_key, RecipeKey):
+            raise InvalidValuationDataError(
+                "recipe_key must be a RecipeKey"
+            )
+        if not isinstance(self.activity, ActivityKind):
+            raise InvalidValuationDataError(
+                "activity must be an ActivityKind"
+            )
+        _require_positive_int(self.solar_system_id, "solar_system_id")
+        for field_name in (
+            "facility_tax_rate",
+            "scc_surcharge_rate",
+            "default_job_cost_modifier",
+        ):
+            _require_decimal(
+                getattr(self, field_name),
+                field_name,
+                maximum=ONE,
+            )
+
+
+@dataclass(frozen=True, slots=True)
 class IndustryFeeRates:
     """Explicit rates used by one valuation run.
 
@@ -301,6 +334,7 @@ class IndustryFeeRates:
     default_job_cost_modifier: Decimal = ONE
     activity_fee_rates: tuple[ActivityFeeRates, ...] = ()
     recipe_job_cost_modifiers: tuple[RecipeJobCostModifier, ...] = ()
+    recipe_fee_rates: tuple[RecipeFeeRates, ...] = ()
 
     def __post_init__(self) -> None:
         _require_positive_int(self.solar_system_id, "solar_system_id")
@@ -333,6 +367,23 @@ class IndustryFeeRates:
                 "activity fee rates repeat an activity"
             )
         object.__setattr__(self, "activity_fee_rates", activity_rates)
+
+        if any(
+            not isinstance(rate, RecipeFeeRates)
+            for rate in self.recipe_fee_rates
+        ):
+            raise InvalidValuationDataError(
+                "recipe_fee_rates must contain only RecipeFeeRates values"
+            )
+        recipe_rates = tuple(
+            sorted(self.recipe_fee_rates, key=lambda item: item.recipe_key)
+        )
+        recipe_rate_keys = tuple(item.recipe_key for item in recipe_rates)
+        if len(recipe_rate_keys) != len(set(recipe_rate_keys)):
+            raise InvalidValuationDataError(
+                "recipe fee rates repeat a recipe_key"
+            )
+        object.__setattr__(self, "recipe_fee_rates", recipe_rates)
 
         if any(
             not isinstance(modifier, RecipeJobCostModifier)
@@ -370,6 +421,29 @@ class IndustryFeeRates:
             scc_surcharge_rate=self.scc_surcharge_rate,
             default_job_cost_modifier=self.default_job_cost_modifier,
         )
+
+    def for_recipe(
+        self,
+        recipe_key: RecipeKey,
+        activity: ActivityKind,
+    ) -> RecipeFeeRates | ActivityFeeRates:
+        if not isinstance(recipe_key, RecipeKey):
+            raise InvalidValuationDataError(
+                "recipe_key must be a RecipeKey"
+            )
+        if not isinstance(activity, ActivityKind):
+            raise InvalidValuationDataError(
+                "activity must be an ActivityKind"
+            )
+        for rates in self.recipe_fee_rates:
+            if rates.recipe_key != recipe_key:
+                continue
+            if rates.activity != activity:
+                raise InvalidValuationDataError(
+                    "recipe fee context activity does not match the recipe"
+                )
+            return rates
+        return self.for_activity(activity)
 
 
 @dataclass(frozen=True, slots=True)
@@ -733,7 +807,10 @@ def calculate_industry_economics(
             else:
                 all_eiv_complete = False
 
-            activity_fees = inputs.fees.for_activity(step.recipe.activity)
+            activity_fees = inputs.fees.for_recipe(
+                step.recipe.key,
+                step.recipe.activity,
+            )
             index_key = (
                 activity_fees.solar_system_id,
                 step.recipe.activity,

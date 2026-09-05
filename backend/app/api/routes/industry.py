@@ -7,9 +7,12 @@ from app.api.dependencies import get_industry_application_service
 from app.api.schemas.errors import ErrorResponse
 from app.api.schemas.industry import (
     ProductRecipesResponse,
+    SolarSystemSearchQuery,
+    SolarSystemSearchResponse,
     TypeSearchQuery,
     TypeSearchResponse,
     product_recipes_response,
+    solar_system_search_response,
     type_search_response,
 )
 from app.api.schemas.industry_calculation import (
@@ -55,6 +58,30 @@ def search_types(
         limit=query.limit,
     )
     return type_search_response(
+        result,
+        query=query.search,
+        limit=query.limit,
+    )
+
+
+@router.get(
+    "/systems",
+    response_model=SolarSystemSearchResponse,
+    responses={
+        422: ERROR_RESPONSES[422],
+        500: ERROR_RESPONSES[500],
+        503: ERROR_RESPONSES[503],
+    },
+)
+def search_solar_systems(
+    query: Annotated[SolarSystemSearchQuery, Query()],
+    service: IndustryServiceDependency,
+) -> SolarSystemSearchResponse:
+    result = service.search_solar_systems(
+        query.search,
+        limit=query.limit,
+    )
+    return solar_system_search_response(
         result,
         query=query.search,
         limit=query.limit,

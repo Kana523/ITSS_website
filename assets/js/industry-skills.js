@@ -126,8 +126,15 @@
     45746: "reactions_level",
   });
 
+  const INDUSTRY_GROUP_ORDER = Object.freeze([
+    "production",
+    "processing",
+    "science",
+  ]);
+
   function levelSelect(item, category, role) {
     const select = document.createElement("select");
+    select.hidden = true;
     select.dataset.profileSkill = String(item.typeId);
     select.dataset.skillTypeId = String(item.typeId);
     select.dataset.skillCategory = category;
@@ -141,18 +148,52 @@
     return select;
   }
 
-  function renderGroup(item, mount, { open = false, role = "industry" } = {}) {
-    const details = document.createElement("details");
-    details.className = "skill-dropdown";
-    details.dataset.skillGroupId = String(item.groupId);
-    details.open = open;
+  function levelButtons(item, select) {
+    const controls = document.createElement("span");
+    controls.className = "skill-level-buttons";
+    controls.setAttribute("role", "group");
+    controls.setAttribute("aria-label", `${item.name} skill level`);
+    for (let level = 0; level <= 5; level += 1) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = String(level);
+      button.dataset.skillLevel = String(level);
+      button.dataset.skillFor = String(item.typeId);
+      button.setAttribute("aria-pressed", level === 0 ? "true" : "false");
+      button.setAttribute("aria-label", `${item.name} level ${level}`);
+      controls.append(button);
+    }
+    controls.append(select);
+    return controls;
+  }
 
-    const summary = document.createElement("summary");
+  function syncLevelButtons(scope = app) {
+    scope.querySelectorAll("[data-skill-type-id]").forEach((select) => {
+      const selectedLevel = String(select.value);
+      select.closest(".skill-level-buttons")
+        ?.querySelectorAll("[data-skill-level]")
+        .forEach((button) => {
+          button.setAttribute(
+            "aria-pressed",
+            button.dataset.skillLevel === selectedLevel ? "true" : "false",
+          );
+        });
+    });
+  }
+
+  function renderGroup(item, mount, { role = "industry" } = {}) {
+    const details = document.createElement("details");
+    details.className = "skill-group";
+    details.dataset.skillGroupId = String(item.groupId);
+
+    const heading = document.createElement("summary");
+    heading.className = "skill-group-heading";
     const title = document.createElement("span");
+    title.className = "skill-group-title";
     title.textContent = item.name;
     const count = document.createElement("small");
     count.dataset.skillGroupCount = "";
-    summary.append(title, count);
+    heading.append(title, count);
 
     const grid = document.createElement("div");
     grid.className = "skill-select-grid";
@@ -161,29 +202,29 @@
       const label = document.createElement("label");
       const caption = document.createElement("span");
       caption.textContent = entry.name;
-      label.append(caption, levelSelect(entry, item.key, role));
+      const select = levelSelect(entry, item.key, role);
+      label.append(caption, levelButtons(entry, select));
       grid.append(label);
     });
 
-    details.append(summary, grid);
+    details.append(heading, grid);
     mount.append(details);
   }
 
   const industryMount = app.querySelector("[data-industry-skill-groups]");
   if (industryMount) {
-    SKILL_GROUPS.forEach((item, index) => {
-      renderGroup(item, industryMount, { open: index === 0 });
-    });
+    const groupsByKey = new Map(SKILL_GROUPS.map((item) => [item.key, item]));
+    INDUSTRY_GROUP_ORDER.forEach((key) => renderGroup(groupsByKey.get(key), industryMount));
   }
 
   const tradeMount = app.querySelector("[data-trade-skill-groups]");
   if (tradeMount) renderGroup(TRADE_GROUP, tradeMount, { role: "trade" });
 
   function updateCounts() {
-    app.querySelectorAll("[data-skill-group-id]").forEach((details) => {
-      const selects = [...details.querySelectorAll("[data-skill-type-id]")];
+    app.querySelectorAll("[data-skill-group-id]").forEach((groupElement) => {
+      const selects = [...groupElement.querySelectorAll("[data-skill-type-id]")];
       const trained = selects.filter((select) => Number(select.value) > 0).length;
-      const count = details.querySelector("[data-skill-group-count]");
+      const count = groupElement.querySelector("[data-skill-group-count]");
       if (count) count.textContent = `${trained} / ${selects.length} trained`;
     });
   }
@@ -211,6 +252,7 @@
     inputs.forEach((select) => {
       select.value = String(imported.get(Number(select.dataset.skillTypeId)) ?? 0);
     });
+    syncLevelButtons();
     updateCounts();
     inputs[0]?.dispatchEvent(new Event("input", { bubbles: true }));
     inputs[0]?.dispatchEvent(new Event("change", { bubbles: true }));
@@ -221,10 +263,26 @@
   }
 
   app.addEventListener("input", (event) => {
-    if (event.target.matches?.("[data-skill-type-id]")) updateCounts();
+    if (event.target.matches?.("[data-skill-type-id]")) {
+      syncLevelButtons();
+      updateCounts();
+    }
   });
   app.addEventListener("change", (event) => {
-    if (event.target.matches?.("[data-skill-type-id]")) updateCounts();
+    if (event.target.matches?.("[data-skill-type-id]")) {
+      syncLevelButtons();
+      updateCounts();
+    }
+  });
+  app.addEventListener("click", (event) => {
+    const button = event.target.closest?.("[data-skill-level][data-skill-for]");
+    if (!button) return;
+    const select = button.closest(".skill-level-buttons")?.querySelector("[data-skill-type-id]");
+    if (!select) return;
+    select.value = button.dataset.skillLevel;
+    syncLevelButtons(button.closest(".skill-level-buttons"));
+    select.dispatchEvent(new Event("input", { bubbles: true }));
+    select.dispatchEvent(new Event("change", { bubbles: true }));
   });
 
   window.industrySkills = Object.freeze({
@@ -239,5 +297,6 @@
       defaultLevelField: "active_skill_level",
     }),
   });
+  syncLevelButtons();
   updateCounts();
 })();

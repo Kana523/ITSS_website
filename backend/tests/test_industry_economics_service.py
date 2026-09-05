@@ -1,5 +1,6 @@
 from collections.abc import Collection, Iterator, Mapping
 from contextlib import contextmanager
+from dataclasses import replace
 from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal, getcontext
 
@@ -14,11 +15,13 @@ from app.industry.economics_service import (
 )
 from app.industry.models import (
     ActivityKind,
+    AppliedIndustrySetupOverride,
     IndustryRecipe,
     ItemQuantity,
     RecipeKey,
 )
 from app.industry.planner import plan_production
+from app.industry.setup_categories import IndustrySetupCategory
 from app.market.domain import (
     CacheMetadata,
     HubPrice,
@@ -127,6 +130,47 @@ def _mixed_activity_plan():
         (ItemQuantity(1_003, 1),),
         (reaction, manufacturing),
         sde_build_number=1,
+    )
+
+
+def _recipe_specific_system_plan():
+    component = IndustryRecipe(
+        key=RecipeKey(2_004, 1),
+        blueprint_name="Test Component Blueprint",
+        activity=ActivityKind.MANUFACTURING,
+        time_seconds=60,
+        max_production_limit=100,
+        products=(ItemQuantity(1_002, 2),),
+        materials=(ItemQuantity(34, 3),),
+    )
+    finished = IndustryRecipe(
+        key=RecipeKey(2_005, 1),
+        blueprint_name="Test Finished Product Blueprint",
+        activity=ActivityKind.MANUFACTURING,
+        time_seconds=60,
+        max_production_limit=100,
+        products=(ItemQuantity(1_003, 1),),
+        materials=(ItemQuantity(1_002, 2),),
+    )
+    plan = plan_production(
+        (ItemQuantity(1_003, 1),),
+        (component, finished),
+        sde_build_number=1,
+    )
+    component_step, finished_step = plan.build_steps
+    return replace(
+        plan,
+        build_steps=(
+            replace(
+                component_step,
+                industry_setup_override=AppliedIndustrySetupOverride(
+                    category=IndustrySetupCategory.ADVANCED_COMPONENTS,
+                    solar_system_id=30_000_144,
+                    job_cost_reduction_basis_points=2_000,
+                ),
+            ),
+            finished_step,
+        ),
     )
 
 
@@ -560,3 +604,97 @@ def test_mixed_plan_loads_and_applies_activity_costs_from_different_systems(
         ("manufacturing",),
     ) in repository.calls
     assert ("indices", reaction_system, ("reaction",)) in repository.calls
+
+
+def test_recipe_override_loads_second_manufacturing_system_and_falls_back(
+) -> None:
+    override_system = 30_000_144
+    repository = FakeMarketCacheRepository(
+        states=_states(),
+        hub_prices={
+            34: HubPrice(34, Decimal("1"), 100, Decimal("2"), 100),
+            1_002: HubPrice(1_002, Decimal("8"), 100, Decimal("9"), 100),
+            1_003: HubPrice(1_003, Decimal("20"), 100, Decimal("22"), 100),
+        },
+        reference_prices={
+            34: ReferencePrice(34, Decimal("2"), Decimal("2.5")),
+            1_002: ReferencePrice(1_002, Decimal("8"), Decimal("8.5")),
+        },
+        cost_indices={
+            "manufacturing_base": CachedSystemCostIndex(
+                SYSTEM_ID,
+                "manufacturing",
+                Decimal("0.1"),
+            ),
+            "manufacturing_override": CachedSystemCostIndex(
+                override_system,
+                "manufacturing",
+                Decimal("0.2"),
+            ),
+        },
+    )
+    options = IndustryPricingOptions(
+        solar_system_id=SYSTEM_ID,
+        job_cost_reduction_basis_points=1_000,
+    )
+
+    result = _service(repository).value_plan(
+        _recipe_specific_system_plan(),
+        options,
+    )
+
+    component_job, finished_job = result.economics.job_costs
+    assert component_job.solar_system_id == override_system
+    assert component_job.system_cost_index == Decimal("0.2")
+    assert component_job.job_cost_modifier == Decimal("0.8")
+    assert component_job.installation_rate == Decimal("0.2025")
+    assert component_job.installation_cost == Decimal("1.2150")
+    assert finished_job.solar_system_id == SYSTEM_ID
+    assert finished_job.system_cost_index == Decimal("0.1")
+    assert finished_job.job_cost_modifier == Decimal("0.9")
+    assert finished_job.installation_rate == Decimal("0.1325")
+    assert finished_job.installation_cost == Decimal("2.1200")
+    assert repository.calls.count(
+        ("indices", SYSTEM_ID, ("manufacturing",))
+    ) == 1
+    assert repository.calls.count(
+        ("indices", override_system, ("manufacturing",))
+    ) == 1
+
+
+def test_recipe_override_same_system_deduplicates_index_load() -> None:
+    plan = _recipe_specific_system_plan()
+    component_step, finished_step = plan.build_steps
+    assert component_step.industry_setup_override is not None
+    plan = replace(
+        plan,
+        build_steps=(
+            replace(
+                component_step,
+                industry_setup_override=replace(
+                    component_step.industry_setup_override,
+                    solar_system_id=SYSTEM_ID,
+                ),
+            ),
+            finished_step,
+        ),
+    )
+    repository = FakeMarketCacheRepository(
+        states=_states(),
+        cost_indices={
+            "manufacturing": CachedSystemCostIndex(
+                SYSTEM_ID,
+                "manufacturing",
+                Decimal("0.1"),
+            ),
+        },
+    )
+
+    result = _service(repository).value_plan(plan, IndustryPricingOptions())
+
+    assert repository.calls.count(
+        ("indices", SYSTEM_ID, ("manufacturing",))
+    ) == 1
+    assert [
+        job.job_cost_modifier for job in result.economics.job_costs
+    ] == [Decimal("0.8"), Decimal("1")]

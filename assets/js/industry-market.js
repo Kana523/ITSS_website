@@ -4,10 +4,10 @@
   const app = document.querySelector("[data-industry-app]");
   if (!app) return;
 
-  const pricingDetails = app.querySelector("[data-pricing-details]");
-  const pricingBody = pricingDetails?.querySelector(".planner-details-body");
-  const pricingToggle = pricingDetails?.querySelector(".pricing-toggle");
-  if (!pricingDetails || !pricingBody) return;
+  const panel = app.querySelector("[data-price-state]");
+  const label = panel?.querySelector("[data-price-label]");
+  const age = panel?.querySelector("[data-market-age]");
+  if (!panel || !label || !age) return;
 
   function resolveApiBase() {
     const configured = document.body.dataset.industryApiBase?.trim();
@@ -19,30 +19,38 @@
   }
 
   const apiBase = resolveApiBase();
-  const panel = document.createElement("div");
-  panel.dataset.marketStatus = "jita";
 
-  const age = document.createElement("span");
-  age.dataset.marketAge = "jita";
-  age.setAttribute("role", "status");
-  age.setAttribute("aria-live", "polite");
-  age.textContent = "Jita prices: checking...";
-
-  panel.append(age);
-  if (pricingToggle) {
-    pricingToggle.insertAdjacentElement("afterend", panel);
-  } else {
-    pricingBody.prepend(panel);
-  }
-
-  function ageLabel(snapshot) {
+  function freshnessState(snapshot) {
     if (!snapshot || snapshot.status === "unavailable" || snapshot.age_minutes === null) {
-      return "Jita prices: unavailable";
+      return "unavailable";
     }
     const minutes = Number(snapshot.age_minutes);
+    if (!Number.isFinite(minutes) || minutes < 0) return "unavailable";
+    if (minutes <= 5) return "fresh";
+    if (minutes < 15) return "aging";
+    return "stale";
+  }
+
+  function ageLabel(minutes) {
+    if (minutes === 0) return "Jita · less than a minute old";
     const unit = minutes === 1 ? "minute" : "minutes";
-    const freshness = snapshot.status === "fresh" ? "current" : "stale";
-    return `Jita prices: ${minutes} ${unit} old - ${freshness}`;
+    return `Jita · ${minutes} ${unit} old`;
+  }
+
+  function renderStatus(snapshot) {
+    const status = freshnessState(snapshot);
+    panel.dataset.state = status;
+    if (status === "unavailable") {
+      label.textContent = "Prices unavailable";
+      age.textContent = "Jita cache is unavailable";
+      return;
+    }
+
+    const minutes = Number(snapshot.age_minutes);
+    label.textContent = status === "fresh"
+      ? "Prices fresh"
+      : status === "aging" ? "Prices aging" : "Prices stale";
+    age.textContent = ageLabel(minutes);
   }
 
   async function getStatus() {
@@ -55,9 +63,9 @@
 
   async function loadStatus() {
     try {
-      age.textContent = ageLabel(await getStatus());
+      renderStatus(await getStatus());
     } catch (_error) {
-      age.textContent = "Jita prices: unavailable";
+      renderStatus(null);
     }
   }
 

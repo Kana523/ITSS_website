@@ -11,6 +11,7 @@ from app.industry.models import (
     IndustryType,
     ItemQuantity,
     RecipeKey,
+    SolarSystem,
 )
 from app.industry.specialist_skills import SpecialistSkillRequirement
 from app.sde.constants import SDE_IMPORT_ADVISORY_LOCK_ID
@@ -18,6 +19,7 @@ from app.sde.models import (
     Blueprint,
     EveCategory,
     EveGroup,
+    EveSolarSystem,
     EveType,
     IndustryActivity,
     IndustryActivityMaterial,
@@ -143,6 +145,69 @@ class SqlAlchemyIndustryRepository:
         ).limit(limit)
         return tuple(
             self._to_industry_type(row)
+            for row in self._session.execute(statement)
+        )
+
+    def search_solar_systems(
+        self,
+        query: str,
+        *,
+        limit: int = 20,
+    ) -> tuple[SolarSystem, ...]:
+        query = query.strip()
+        if not query:
+            return ()
+        if len(query) > 255:
+            raise ValueError("query must not exceed 255 characters")
+        if (
+            isinstance(limit, bool)
+            or not isinstance(limit, int)
+            or not 1 <= limit <= 100
+        ):
+            raise ValueError("limit must be an integer from 1 through 100")
+
+        self._lock_sde_snapshot()
+        lowered_query = query.lower()
+        escaped_query = _escape_like(lowered_query)
+        lowered_name = func.lower(EveSolarSystem.name)
+        name_match = lowered_name.like(f"%{escaped_query}%", escape="\\")
+
+        numeric_system_id = None
+        if query.isascii() and query.isdigit() and len(query) <= 10:
+            parsed_system_id = int(query)
+            if 0 < parsed_system_id <= 2_147_483_647:
+                numeric_system_id = parsed_system_id
+        match_condition = name_match
+        ranking_conditions = []
+        if numeric_system_id is not None:
+            match_condition = or_(
+                EveSolarSystem.solar_system_id == numeric_system_id,
+                name_match,
+            )
+            ranking_conditions.append(
+                (EveSolarSystem.solar_system_id == numeric_system_id, 0)
+            )
+        ranking_conditions.extend(
+            (
+                (lowered_name == lowered_query, 1),
+                (lowered_name.like(f"{escaped_query}%", escape="\\"), 2),
+            )
+        )
+        statement = (
+            select(EveSolarSystem.solar_system_id, EveSolarSystem.name)
+            .where(match_condition)
+            .order_by(
+                case(*ranking_conditions, else_=3),
+                lowered_name,
+                EveSolarSystem.solar_system_id,
+            )
+            .limit(limit)
+        )
+        return tuple(
+            SolarSystem(
+                solar_system_id=row.solar_system_id,
+                name=row.name,
+            )
             for row in self._session.execute(statement)
         )
 

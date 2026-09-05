@@ -22,6 +22,7 @@ from app.industry.valuation import (
     LowerCostOption,
     MarketQuote,
     MarketQuoteSnapshot,
+    RecipeFeeRates,
     RecipeJobCostModifier,
     SystemCostIndex,
     SystemCostIndexSnapshot,
@@ -505,6 +506,16 @@ def test_recipe_specific_job_cost_modifier_wins_over_default() -> None:
         sales_tax_rate=Decimal("0"),
         broker_fee_rate=Decimal("0"),
         default_job_cost_modifier=Decimal("1"),
+        recipe_fee_rates=(
+            RecipeFeeRates(
+                recipe_key=finished_recipe,
+                activity=ActivityKind.MANUFACTURING,
+                solar_system_id=30000142,
+                facility_tax_rate=Decimal("0"),
+                scc_surcharge_rate=Decimal("0"),
+                default_job_cost_modifier=Decimal("0.8"),
+            ),
+        ),
         recipe_job_cost_modifiers=(
             RecipeJobCostModifier(finished_recipe, Decimal("0.5")),
         ),
@@ -514,6 +525,58 @@ def test_recipe_specific_job_cost_modifier_wins_over_default() -> None:
 
     assert result.job_costs[0].installation_cost == Decimal("1.20")
     assert result.job_costs[1].installation_cost == Decimal("2.800")
+
+
+def test_recipe_fee_context_uses_override_system_and_activity_fallback() -> None:
+    plan = _plan()
+    component_recipe = plan.build_steps[0].recipe.key
+    fees = IndustryFeeRates(
+        solar_system_id=30000142,
+        facility_tax_rate=Decimal("0.0025"),
+        scc_surcharge_rate=Decimal("0.04"),
+        sales_tax_rate=Decimal("0"),
+        broker_fee_rate=Decimal("0"),
+        default_job_cost_modifier=Decimal("0.9"),
+        recipe_fee_rates=(
+            RecipeFeeRates(
+                recipe_key=component_recipe,
+                activity=ActivityKind.MANUFACTURING,
+                solar_system_id=30000144,
+                facility_tax_rate=Decimal("0.0025"),
+                scc_surcharge_rate=Decimal("0.04"),
+                default_job_cost_modifier=Decimal("0.8"),
+            ),
+        ),
+    )
+    inputs = _inputs(
+        indices=(
+            SystemCostIndex(
+                30000142,
+                ActivityKind.MANUFACTURING,
+                Decimal("0.1"),
+            ),
+            SystemCostIndex(
+                30000144,
+                ActivityKind.MANUFACTURING,
+                Decimal("0.2"),
+            ),
+        ),
+        fees=fees,
+    )
+
+    result = calculate_industry_economics(plan, inputs)
+
+    component_job, finished_job = result.job_costs
+    assert component_job.solar_system_id == 30000144
+    assert component_job.system_cost_index == Decimal("0.2")
+    assert component_job.job_cost_modifier == Decimal("0.8")
+    assert component_job.installation_rate == Decimal("0.2025")
+    assert component_job.installation_cost == Decimal("2.43000")
+    assert finished_job.solar_system_id == 30000142
+    assert finished_job.system_cost_index == Decimal("0.1")
+    assert finished_job.job_cost_modifier == Decimal("0.9")
+    assert finished_job.installation_rate == Decimal("0.1325")
+    assert finished_job.installation_cost == Decimal("7.4200")
 
 
 def test_manufacturing_and_reaction_jobs_use_separate_fee_contexts() -> None:

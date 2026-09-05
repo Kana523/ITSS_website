@@ -16,6 +16,7 @@ DATASET_FILENAMES = {
     "types": "types.jsonl",
     "activity_types": "industryActivities.jsonl",
     "blueprints": "blueprints.jsonl",
+    "solar_systems": "mapSolarSystems.jsonl",
 }
 
 
@@ -110,10 +111,18 @@ class SdeSource:
             with TextIOWrapper(binary_stream, encoding="utf-8-sig") as text_stream:
                 yield text_stream
 
-    def calculate_checksum(self) -> str:
+    def calculate_checksum(
+        self,
+        datasets: tuple[str, ...] | None = None,
+    ) -> str:
         """Hash the exact source bytes used by this importer."""
         digest = sha256()
-        for dataset, filename in DATASET_FILENAMES.items():
+        dataset_names = datasets or tuple(DATASET_FILENAMES)
+        for dataset in dataset_names:
+            try:
+                filename = DATASET_FILENAMES[dataset]
+            except KeyError as exc:
+                raise SdeSourceError(f"Unknown SDE dataset: {dataset}") from exc
             digest.update(filename.encode("utf-8"))
             digest.update(b"\0")
             with self.open_binary(dataset) as stream:

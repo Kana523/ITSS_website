@@ -24,6 +24,7 @@ from app.industry.models import (
     ItemQuantity,
     MAX_SAFE_INTEGER,
     RecipeKey,
+    SolarSystem,
 )
 from app.main import create_app
 
@@ -144,6 +145,24 @@ class FakeIndustryDataRepository:
             if query.casefold() in item.name.casefold()
             and (not published_only or item.published)
             and (not producible_only or item.type_id in producible_ids)
+        )
+        return matches[:limit]
+
+    def search_solar_systems(
+        self,
+        query: str,
+        *,
+        limit: int = 20,
+    ) -> tuple[SolarSystem, ...]:
+        systems = (
+            SolarSystem(30_000_142, "Jita"),
+            SolarSystem(30_002_665, "New Caldari"),
+        )
+        matches = tuple(
+            system
+            for system in systems
+            if query.casefold() in system.name.casefold()
+            or query == str(system.solar_system_id)
         )
         return matches[:limit]
 
@@ -456,6 +475,33 @@ def test_calculation_applies_exact_manufacturing_production_profile(
     assert step["total_job_time_centiseconds"] is None
 
 
+def test_calculation_accepts_category_setup_overrides(
+    api_client: TestClient,
+) -> None:
+    response = api_client.post(
+        "/api/industry/calculate",
+        json={
+            "demands": [{"type_id": 1003, "quantity": 1}],
+            "choices": [{"type_id": 1002, "decision": "buy"}],
+            "production_profile": {
+                "setup_overrides": [
+                    {
+                        "category": "t1_large_ships",
+                        "solar_system_id": 30_002_665,
+                        "facility_material_reduction_basis_points": 100,
+                        "facility_time_reduction_basis_points": 3_000,
+                        "rig_material_reduction_basis_points": 456,
+                        "rig_time_reduction_basis_points": 4_560,
+                        "job_cost_reduction_basis_points": 500,
+                    }
+                ]
+            },
+        },
+    )
+
+    assert response.status_code == 200
+
+
 def test_reaction_profile_uses_only_reaction_time_skill(
     api_client: TestClient,
 ) -> None:
@@ -703,6 +749,43 @@ def test_calculation_reports_only_nonzero_blueprint_modifiers(
             "demands": [{"type_id": 1003, "quantity": 1}],
             "production_profile": {
                 "rig_modifiers": [{"activity": "manufacturing"}]
+            },
+        },
+        {
+            "demands": [{"type_id": 1003, "quantity": 1}],
+            "production_profile": {
+                "setup_overrides": [
+                    {
+                        "category": "t1_large_ships",
+                        "solar_system_id": 30_001_142,
+                    },
+                    {
+                        "category": "t1_large_ships",
+                        "solar_system_id": 30_002_665,
+                    },
+                ]
+            },
+        },
+        {
+            "demands": [{"type_id": 1003, "quantity": 1}],
+            "production_profile": {
+                "setup_overrides": [
+                    {
+                        "category": "freighters_jump_freighters",
+                        "solar_system_id": 30_001_142,
+                    }
+                ]
+            },
+        },
+        {
+            "demands": [{"type_id": 1003, "quantity": 1}],
+            "production_profile": {
+                "setup_overrides": [
+                    {
+                        "category": "equipment",
+                        "solar_system_id": 0,
+                    }
+                ]
             },
         },
     ],
@@ -1081,6 +1164,27 @@ def test_calculation_request_body_limit_is_structured() -> None:
             "message": "Calculation request body is too large",
             "details": {"maximum_bytes": 1_024},
         }
+    }
+
+
+def test_solar_system_search_contract(api_client: TestClient) -> None:
+    response = api_client.get(
+        "/api/industry/systems",
+        params={"search": "Jita"},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "sde_build_number": 9_000_001,
+        "query": "Jita",
+        "result_count": 1,
+        "limit": 20,
+        "systems": [
+            {
+                "solar_system_id": 30_000_142,
+                "name": "Jita",
+            }
+        ],
     }
 
 

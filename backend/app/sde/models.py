@@ -82,6 +82,22 @@ class EveType(Base):
     )
 
 
+class EveSolarSystem(Base):
+    __tablename__ = "eve_solar_systems"
+    __table_args__ = (
+        CheckConstraint(
+            "solar_system_id > 0",
+            name="solar_system_id_positive",
+        ),
+    )
+
+    solar_system_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(255), index=True)
+    last_seen_import_id: Mapped[int] = mapped_column(
+        ForeignKey("sde_imports.id", ondelete="RESTRICT")
+    )
+
+
 class IndustryActivityType(Base):
     __tablename__ = "industry_activity_types"
 
