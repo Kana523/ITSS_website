@@ -303,6 +303,59 @@ def _calculation_request(*, include_pricing: bool = True) -> dict:
     return request
 
 
+@pytest.mark.parametrize("method, unit_cost, expected_inventory", [
+    ("replacement_cost", None, "58.5"),
+    ("recorded_cost", "10.12345678", "30.37037034"),
+    ("recorded_cost", "0", "0"),
+    ("recorded_cost", None, None),
+])
+def test_owned_output_api_separates_inventory_value_and_cash(method, unit_cost, expected_inventory):
+    request = _calculation_request()
+    request["owned_materials"] = [{"type_id": PRODUCT_TYPE_ID, "quantity": 5}]
+    request["specialist_skills"] = []
+    request["pricing"]["inventory_valuation_method"] = method
+    if unit_cost is not None:
+        request["pricing"]["recorded_inventory_costs"] = [
+            {"type_id": PRODUCT_TYPE_ID, "unit_cost_isk": unit_cost},
+        ]
+    with _api_client(_complete_market_repository()) as client:
+        response = client.post("/api/industry/calculate", json=request)
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["build_steps"] == []
+    assert body["purchases"] == []
+    assert body["consumed_inventory"] == [{
+        "item": {"type_id": PRODUCT_TYPE_ID, "name": "Test Product"}, "quantity": 3,
+    }]
+    economics = body["valuation"]["economics"]
+    assert economics["cash_required_isk"] == "0"
+    assert economics["cash_surplus_isk"] == "53.25"
+    assert economics["consumed_inventory_value"]["amount_isk"] == expected_inventory
+    if expected_inventory is None:
+        assert economics["profit_isk"] is None
+        assert economics["complete"] is False
+        assert economics["missing_data"]["inventory_cost_type_ids"] == [PRODUCT_TYPE_ID]
+    else:
+        assert Decimal(economics["profit_isk"]) == Decimal("53.25") - Decimal(expected_inventory)
+        assert economics["complete"] is True
+
+
+@pytest.mark.parametrize("costs", [
+    [{"type_id": PRODUCT_TYPE_ID, "unit_cost_isk": "-1"}],
+    [{"type_id": PRODUCT_TYPE_ID, "unit_cost_isk": "NaN"}],
+    [{"type_id": PRODUCT_TYPE_ID, "unit_cost_isk": "Infinity"}],
+    [{"type_id": PRODUCT_TYPE_ID, "unit_cost_isk": "0.123456789"}],
+    [{"type_id": PRODUCT_TYPE_ID, "unit_cost_isk": "1"}] * 2,
+])
+def test_invalid_recorded_inventory_costs_return_validation_error(costs):
+    request = _calculation_request()
+    request["pricing"]["recorded_inventory_costs"] = costs
+    with _api_client(_complete_market_repository()) as client:
+        response = client.post("/api/industry/calculate", json=request)
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "validation_error"
+
+
 @pytest.mark.parametrize(
     "pricing",
     (
@@ -375,6 +428,8 @@ def test_fresh_valuation_serializes_every_decimal_as_an_exact_string() -> None:
         for resource in valuation["market_snapshot"]["resources"]
     } == {COMPATIBILITY_DATE.isoformat()}
     assert valuation["pricing_options"] == {
+        "inventory_valuation_method": "replacement_cost",
+        "recorded_inventory_costs": [],
         "solar_system_id": SYSTEM_ID,
         "facility_tax_basis_points": 25,
         "scc_surcharge_basis_points": 400,
@@ -456,6 +511,8 @@ def test_unavailable_cache_returns_an_explicit_incomplete_valuation() -> None:
     assert economics["total_cost_isk"] is None
     assert economics["profit_isk"] is None
     assert economics["missing_data"] == {
+        "inventory_cost_type_ids": [],
+        "inventory_sell_liquidity_type_ids": [],
         "shopping_sell_quote_type_ids": [RAW_TYPE_ID],
         "shopping_sell_liquidity_type_ids": [],
         "output_buy_quote_type_ids": [PRODUCT_TYPE_ID],

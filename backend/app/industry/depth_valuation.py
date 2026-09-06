@@ -11,6 +11,7 @@ from dataclasses import dataclass, replace
 from decimal import Decimal, localcontext
 
 from app.industry.models import ProductionPlan
+from app.industry.inventory_valuation import apply_inventory_valuation
 from app.industry.valuation import (
     ExactDecimalRatio,
     IndustryEconomics,
@@ -358,7 +359,7 @@ def calculate_depth_aware_industry_economics(
             system_cost_index_keys=base.missing_data.system_cost_index_keys,
         )
 
-        return replace(
+        economics = replace(
             base,
             shopping_list=shopping_list,
             shopping_list_cost=shopping_cost,
@@ -390,4 +391,8 @@ def calculate_depth_aware_industry_economics(
             ),
             step_comparisons=tuple(comparisons),
             missing_data=missing_data,
+        )
+        return apply_inventory_valuation(
+            plan, inputs, economics,
+            lambda quantities: _value_items(quantities, depth_by_type, side="sell"),
         )

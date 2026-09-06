@@ -17,6 +17,8 @@ from app.industry.valuation import (
     IndustryEconomics,
     IndustryFeeRates,
     IndustryValuationInputs,
+    InventoryValuationMethod,
+    RecordedInventoryCost,
     MarketQuote,
     MarketQuoteSnapshot,
     RecipeFeeRates,
@@ -99,6 +101,8 @@ class IndustryPricingOptions:
     reaction_facility_tax_basis_points: int = 25
     reaction_scc_surcharge_basis_points: int = 400
     reaction_job_cost_reduction_basis_points: int = 0
+    inventory_valuation_method: InventoryValuationMethod = InventoryValuationMethod.REPLACEMENT_COST
+    recorded_inventory_costs: tuple[RecordedInventoryCost, ...] = ()
 
     def __post_init__(self) -> None:
         _require_positive_int(self.solar_system_id, "solar_system_id")
@@ -256,6 +260,7 @@ class IndustryEconomicsService:
         quote_type_ids = {
             item.type_id for item in plan.requested
         } | {item.type_id for item in plan.purchases}
+        quote_type_ids.update(item.type_id for item in plan.consumed_inventory)
         adjusted_price_type_ids: set[int] = set()
         activities: set[ActivityKind] = set()
         for step in plan.build_steps:
@@ -389,6 +394,8 @@ class IndustryEconomicsService:
                 )
             ),
             fees=fee_rates,
+            inventory_valuation_method=options.inventory_valuation_method,
+            recorded_inventory_costs=options.recorded_inventory_costs,
         )
         depth_by_type = {
             price.type_id: MarketDepthQuote(

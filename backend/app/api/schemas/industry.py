@@ -424,9 +424,18 @@ class TypeSearchResponse(ApiModel):
     items: tuple[IndustryTypeResponse, ...]
 
 
+class RigScopeGroupResponse(ApiModel):
+    group_id: TypeId
+    group_name: str
+    category_id: TypeId
+    category_name: str
+
+
 class SolarSystemResponse(ApiModel):
     solar_system_id: TypeId
     name: str
+    security_status: float | None
+    security_space: Literal["highsec", "lowsec", "nullsec", "wormhole"] | None
 
 
 class SolarSystemSearchResponse(ApiModel):
@@ -468,7 +477,16 @@ class CharacterIndustrySkillsResponse(ApiModel):
     reactions_level: SkillLevel
 
 
+class AppliedSpecialistSkillResponse(ApiModel):
+    type_id: TypeId
+    level: SkillLevel
+    time_reduction_per_level_basis_points: ReductionBasisPoints
+    time_multiplier: ExactFractionResponse
+
+
 class AppliedProductionModifiersResponse(ApiModel):
+    specialist_skills: tuple[AppliedSpecialistSkillResponse, ...]
+    specialist_time_multiplier: ExactFractionResponse
     skills: CharacterIndustrySkillsResponse
     character_time_multiplier: ExactFractionResponse
     facility_material_reduction_basis_points: ReductionBasisPoints
@@ -518,6 +536,7 @@ class CalculationResponse(ApiModel):
             "blueprint_time_efficiency",
             "industry_skill_time",
             "advanced_industry_skill_time",
+            "specialist_skill_time",
             "reactions_skill_time",
             "facility_material_efficiency",
             "facility_time_efficiency",
@@ -528,6 +547,7 @@ class CalculationResponse(ApiModel):
     ]
     excluded_modifiers: tuple[str, ...]
     requested: tuple[ItemQuantityResponse, ...]
+    consumed_inventory: tuple[ItemQuantityResponse, ...]
     build_steps: tuple[ProductionStepResponse, ...]
     purchases: tuple[PurchaseRequirementResponse, ...]
     valuation: ValuationResponse | None
@@ -633,6 +653,8 @@ def solar_system_search_response(
             SolarSystemResponse(
                 solar_system_id=system.solar_system_id,
                 name=system.name,
+                security_status=system.security_status,
+                security_space=system.security_space,
             )
             for system in result.systems
         ),
@@ -695,6 +717,18 @@ def calculation_response(
                     else None
                 ),
                 production_modifiers=AppliedProductionModifiersResponse(
+                    specialist_skills=tuple(
+                        AppliedSpecialistSkillResponse(
+                            type_id=skill.type_id,
+                            level=skill.level,
+                            time_reduction_per_level_basis_points=skill.time_reduction_per_level_basis_points,
+                            time_multiplier=_fraction_response(skill.time_multiplier),
+                        )
+                        for skill in step.production_modifiers.specialist_skills
+                    ),
+                    specialist_time_multiplier=_fraction_response(
+                        step.production_modifiers.specialist_time_multiplier
+                    ),
                     skills=CharacterIndustrySkillsResponse(
                         industry_level=(
                             step.production_modifiers.skills.industry_level
@@ -840,7 +874,15 @@ def calculation_response(
     return CalculationResponse(
         sde_build_number=plan.sde_build_number,
         calculation_basis="sde_base_quantities",
-        applied_modifiers=tuple(applied_modifiers),
+        applied_modifiers=tuple(applied_modifiers) + (
+            ("specialist_skill_time",)
+            if any(step.production_modifiers.specialist_skills for step in plan.build_steps)
+            else ()
+        ),
+        consumed_inventory=tuple(
+            ItemQuantityResponse(item=_item_reference(item.type_id, item_types), quantity=item.quantity)
+            for item in plan.consumed_inventory
+        ),
         excluded_modifiers=(
             "character_implants",
             "owned_materials",

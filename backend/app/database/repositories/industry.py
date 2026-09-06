@@ -11,6 +11,7 @@ from app.industry.models import (
     IndustryType,
     ItemQuantity,
     RecipeKey,
+    RigScopeGroup,
     SolarSystem,
 )
 from app.industry.specialist_skills import SpecialistSkillRequirement
@@ -80,6 +81,22 @@ class SqlAlchemyIndustryRepository:
         return self._session.scalar(
             select(SdeImport.build_number).order_by(SdeImport.id.desc()).limit(1)
         )
+
+    def rig_scope_groups(self, activity: ActivityKind) -> tuple[RigScopeGroup, ...]:
+        self._lock_sde_snapshot()
+        statement = (
+            select(EveGroup.group_id, EveGroup.name.label("group_name"),
+                   EveCategory.category_id, EveCategory.name.label("category_name"))
+            .select_from(EveType)
+            .join(EveGroup, EveGroup.group_id == EveType.group_id)
+            .join(EveCategory, EveCategory.category_id == EveGroup.category_id)
+            .join(IndustryActivityProduct, IndustryActivityProduct.product_type_id == EveType.type_id)
+            .join(IndustryActivityType, IndustryActivityType.activity_id == IndustryActivityProduct.activity_id)
+            .where(EveType.published.is_(True), IndustryActivityType.code == activity.value)
+            .distinct()
+            .order_by(EveCategory.name, EveGroup.name, EveGroup.group_id)
+        )
+        return tuple(RigScopeGroup(**row._mapping) for row in self._session.execute(statement))
 
     def search_types(
         self,
@@ -194,7 +211,7 @@ class SqlAlchemyIndustryRepository:
             )
         )
         statement = (
-            select(EveSolarSystem.solar_system_id, EveSolarSystem.name)
+            select(EveSolarSystem.solar_system_id, EveSolarSystem.name, EveSolarSystem.security_status)
             .where(match_condition)
             .order_by(
                 case(*ranking_conditions, else_=3),
@@ -207,6 +224,7 @@ class SqlAlchemyIndustryRepository:
             SolarSystem(
                 solar_system_id=row.solar_system_id,
                 name=row.name,
+                security_status=row.security_status,
             )
             for row in self._session.execute(statement)
         )

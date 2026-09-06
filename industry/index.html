@@ -119,7 +119,8 @@
                         </select>
                       </label>
                       <label>Security
-                        <select data-security-select data-profile-activity="manufacturing">
+                        <select data-security-select data-profile-activity="manufacturing" disabled>
+                          <option value="">From selected system</option>
                           <option value="highsec">Highsec</option>
                           <option value="lowsec">Lowsec</option>
                           <option value="nullsec">Nullsec</option>
@@ -143,6 +144,11 @@
                     <input data-profile-modifier="facility" data-profile-activity="manufacturing" data-profile-effect="time" type="hidden" value="0">
                     <input data-profile-modifier="rig" data-profile-activity="manufacturing" data-profile-effect="material" type="hidden" value="0">
                     <input data-profile-modifier="rig" data-profile-activity="manufacturing" data-profile-effect="time" type="hidden" value="0">
+                    <label class="rig-coverage-label">Rig coverage (product categories or groups)
+                      <select data-rig-coverage data-profile-activity="manufacturing" multiple size="6" aria-describedby="manufacturing-rig-coverage-help"></select>
+                    </label>
+                    <p class="rig-coverage-note" id="manufacturing-rig-coverage-help">Select the coverage of your installed rigs. Material and time bonuses apply only to selected products. Ctrl/Cmd-click to select more than one.</p>
+                    <p class="rig-coverage-note" data-rig-coverage-status data-profile-activity="manufacturing" role="status">Loading product coverage?</p>
                     <input data-rig-scope="category_ids" data-profile-activity="manufacturing" type="hidden" value="">
                     <input data-rig-scope="group_ids" data-profile-activity="manufacturing" type="hidden" value="">
                   </fieldset>
@@ -157,7 +163,9 @@
                         </select>
                       </label>
                       <label>Security
-                        <select data-security-select data-profile-activity="reaction">
+                        <select data-security-select data-profile-activity="reaction" disabled>
+                          <option value="">From selected system</option>
+                          <option value="highsec">Highsec (reactions unavailable)</option>
                           <option value="lowsec">Lowsec</option>
                           <option value="nullsec">Nullsec</option>
                           <option value="wormhole">Wormhole</option>
@@ -179,6 +187,11 @@
                     <input data-profile-modifier="facility" data-profile-activity="reaction" data-profile-effect="time" type="hidden" value="0">
                     <input data-profile-modifier="rig" data-profile-activity="reaction" data-profile-effect="material" type="hidden" value="0">
                     <input data-profile-modifier="rig" data-profile-activity="reaction" data-profile-effect="time" type="hidden" value="0">
+                    <label class="rig-coverage-label">Rig coverage (product categories or groups)
+                      <select data-rig-coverage data-profile-activity="reaction" multiple size="6" aria-describedby="reaction-rig-coverage-help"></select>
+                    </label>
+                    <p class="rig-coverage-note" id="reaction-rig-coverage-help">Select the coverage of your installed rigs. Material and time bonuses apply only to selected products. Ctrl/Cmd-click to select more than one.</p>
+                    <p class="rig-coverage-note" data-rig-coverage-status data-profile-activity="reaction" role="status">Loading product coverage?</p>
                     <input data-rig-scope="category_ids" data-profile-activity="reaction" type="hidden" value="">
                     <input data-rig-scope="group_ids" data-profile-activity="reaction" type="hidden" value="">
                   </fieldset>
@@ -420,6 +433,13 @@
                       <ul id="industry-owned-search-results" class="search-results" data-owned-search-results hidden aria-label="Matching owned materials"></ul>
                     </div>
                     <section class="owned-editor" data-owned-editor hidden aria-labelledby="owned-list-title">
+                      <label>Inventory valuation
+                        <select data-inventory-valuation aria-describedby="inventory-valuation-note">
+                          <option value="replacement_cost">Market replacement cost</option>
+                          <option value="recorded_cost">Recorded unit costs</option>
+                        </select>
+                      </label>
+                      <p id="inventory-valuation-note" class="field-status">Only inventory used by this plan is valued. Replacement cost uses cached sell orders after shopping purchases. In recorded-cost mode, enter your average acquisition cost per unit; missing costs leave profit incomplete.</p>
                       <div class="demand-heading">
                         <h3 id="owned-list-title">Inventory</h3>
                         <button class="text-button" data-clear-owned type="button">Clear all</button>
@@ -498,15 +518,22 @@
                   <dl class="economics-grid">
                     <div><dt>Shopping list</dt><dd data-economics-shopping>—</dd></div>
                     <div><dt>Installation</dt><dd data-economics-installation>—</dd></div>
-                    <div><dt>Total cost</dt><dd data-economics-cost>—</dd></div>
+                    <div><dt>Cash required</dt><dd data-economics-cash-required>—</dd></div>
+                    <div><dt>Inventory consumed</dt><dd data-economics-inventory>—</dd></div>
+                    <div><dt>Total cost incl. sale fees</dt><dd data-economics-cost>—</dd></div>
                     <div><dt>Requested net output</dt><dd data-economics-output>—</dd></div>
-                    <div data-profit-state="neutral"><dt>Requested profit</dt><dd data-economics-profit>—</dd></div>
-                    <div><dt>Requested margin</dt><dd data-economics-margin>—</dd></div>
+                    <div><dt>Net cash proceeds</dt><dd data-economics-cash-surplus>—</dd></div>
+                    <div data-profit-state="neutral"><dt>Economic profit</dt><dd data-economics-profit>—</dd></div>
+                    <div><dt>Economic margin</dt><dd data-economics-margin>—</dd></div>
                     <div><dt>Surplus inventory</dt><dd data-economics-surplus>—</dd></div>
                     <div data-profit-state="neutral"><dt>Profit incl. surplus</dt><dd data-economics-profit-surplus>—</dd></div>
                     <div><dt>Margin incl. surplus</dt><dd data-economics-margin-surplus>—</dd></div>
                   </dl>
                   <p class="valuation-note" data-valuation-note></p>
+                  <details class="planner-details" hidden>
+                    <summary>Consumed inventory details</summary>
+                    <ul class="consumed-inventory-list" data-consumed-inventory></ul>
+                  </details>
                 </section>
 
                 <section class="production-panel panel" data-production-panel aria-labelledby="production-title">

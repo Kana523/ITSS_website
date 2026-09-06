@@ -33,6 +33,7 @@ from app.industry.specialist_skills import (
     MissingSpecialistSkillsError,
     SpecialistSkillRequirement,
     effective_required_skill_level,
+    manufacturing_skill_bonuses,
     normalize_specialist_skill_levels,
 )
 
@@ -190,35 +191,20 @@ class IndustryPlanningService:
             frontier = next_frontier
 
         profile = production_profile or ProductionProfile()
+        requirements_by_recipe: Mapping[
+            RecipeKey, tuple[SpecialistSkillRequirement, ...]
+        ] = {}
         if enforce_specialist_skills and recipes_by_key:
             skill_loader = getattr(
                 self._repository,
                 "load_recipe_skill_requirements",
                 None,
             )
-            requirements_by_recipe: Mapping[
-                RecipeKey, tuple[SpecialistSkillRequirement, ...]
-            ] = (
+            requirements_by_recipe = (
                 skill_loader(tuple(recipes_by_key))
                 if callable(skill_loader)
                 else {}
             )
-            missing: list[
-                tuple[RecipeKey, SpecialistSkillRequirement, int]
-            ] = []
-            for recipe_key in sorted(recipes_by_key):
-                for requirement in requirements_by_recipe.get(recipe_key, ()):
-                    current_level = effective_required_skill_level(
-                        requirement.type_id,
-                        specialist_skill_levels,
-                        profile.skills,
-                    )
-                    if current_level < requirement.level:
-                        missing.append(
-                            (recipe_key, requirement, current_level)
-                        )
-            if missing:
-                raise MissingSpecialistSkillsError(tuple(missing))
 
         product_metadata_type_ids = {
             recipe.products[0].type_id
@@ -247,7 +233,7 @@ class IndustryPlanningService:
                 + ", ".join(str(type_id) for type_id in missing_product_type_ids)
             )
 
-        return plan_production(
+        plan = plan_production(
             demand_tuple,
             tuple(sorted(recipes_by_key.values(), key=lambda recipe: recipe.key)),
             sde_build_number=build_number,
@@ -258,4 +244,23 @@ class IndustryPlanningService:
             owned_materials=owned_materials,
             blueprint_copy_run_limits=blueprint_copy_run_limits,
             manufacturing_time_multiplier=manufacturing_time_multiplier,
+            specialist_skill_bonuses={
+                key: manufacturing_skill_bonuses(requirements, specialist_skill_levels)
+                for key, requirements in requirements_by_recipe.items()
+                if recipes_by_key[key].activity == ActivityKind.MANUFACTURING
+            },
         )
+        # Inventory can remove entire jobs and their dependency chains. Check
+        # eligibility only after the final quantities and timed job splits exist.
+        missing: list[tuple[RecipeKey, SpecialistSkillRequirement, int]] = []
+        if enforce_specialist_skills:
+            for step in sorted(plan.build_steps, key=lambda step: step.recipe.key):
+                for requirement in requirements_by_recipe.get(step.recipe.key, ()):
+                    current_level = effective_required_skill_level(
+                        requirement.type_id, specialist_skill_levels, profile.skills,
+                    )
+                    if current_level < requirement.level:
+                        missing.append((step.recipe.key, requirement, current_level))
+        if missing:
+            raise MissingSpecialistSkillsError(tuple(missing))
+        return plan

@@ -24,6 +24,7 @@ from app.industry.models import (
     ItemQuantity,
     MAX_SAFE_INTEGER,
     RecipeKey,
+    RigScopeGroup,
     SolarSystem,
 )
 from app.main import create_app
@@ -126,6 +127,10 @@ class FakeIndustryDataRepository:
     def latest_sde_build_number(self) -> int | None:
         return 9_000_001
 
+    def rig_scope_groups(self, activity: ActivityKind) -> tuple[RigScopeGroup, ...]:
+        assert activity in (ActivityKind.MANUFACTURING, ActivityKind.REACTION)
+        return (RigScopeGroup(18, "Mineral", 4, "Material"),)
+
     def search_types(
         self,
         query: str,
@@ -155,7 +160,7 @@ class FakeIndustryDataRepository:
         limit: int = 20,
     ) -> tuple[SolarSystem, ...]:
         systems = (
-            SolarSystem(30_000_142, "Jita"),
+            SolarSystem(30_000_142, "Jita", 0.945913),
             SolarSystem(30_002_665, "New Caldari"),
         )
         matches = tuple(
@@ -302,6 +307,8 @@ def test_calculation_contract_aggregates_demands_and_honors_buy(
     }
     assert step["total_job_time_centiseconds"] == "18600"
     assert step["production_modifiers"] == {
+        "specialist_skills": [],
+        "specialist_time_multiplier": {"numerator": "1", "denominator": "1"},
         "skills": {
             "industry_level": 0,
             "advanced_industry_level": 0,
@@ -1167,6 +1174,16 @@ def test_calculation_request_body_limit_is_structured() -> None:
     }
 
 
+@pytest.mark.parametrize("activity", ["manufacturing", "reaction"])
+def test_rig_scope_catalog(api_client: TestClient, activity: str) -> None:
+    response = api_client.get("/api/industry/rig-scopes", params={"activity": activity})
+    assert response.status_code == 200
+    assert response.json() == [{
+        "group_id": 18, "group_name": "Mineral", "category_id": 4, "category_name": "Material",
+    }]
+    assert api_client.get("/api/industry/rig-scopes", params={"activity": "invention"}).status_code == 422
+
+
 def test_solar_system_search_contract(api_client: TestClient) -> None:
     response = api_client.get(
         "/api/industry/systems",
@@ -1183,6 +1200,8 @@ def test_solar_system_search_contract(api_client: TestClient) -> None:
             {
                 "solar_system_id": 30_000_142,
                 "name": "Jita",
+                "security_status": 0.945913,
+                "security_space": "highsec",
             }
         ],
     }

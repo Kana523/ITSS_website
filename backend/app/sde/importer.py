@@ -136,7 +136,7 @@ def _synchronize_solar_system_rows(
         EveSolarSystem,
         dataset.solar_systems,
         conflict_columns=("solar_system_id",),
-        update_columns=("name", "last_seen_import_id"),
+        update_columns=("name", "security_status", "last_seen_import_id"),
         batch_size=batch_size,
         import_id=import_id,
     )
@@ -240,13 +240,15 @@ def _synchronize_sde(
             existing_row_counts["skills"] = len(skill_rows)
             import_metadata_changed = True
 
+        # Re-read verified source metadata even for the same build, so newly
+        # added solar-system columns are populated after schema upgrades.
+        _synchronize_solar_system_rows(
+            connection,
+            dataset,
+            batch_size=batch_size,
+            import_id=existing_import["id"],
+        )
         if needs_solar_system_backfill:
-            _synchronize_solar_system_rows(
-                connection,
-                dataset,
-                batch_size=batch_size,
-                import_id=existing_import["id"],
-            )
             existing_row_counts["solar_systems"] = len(dataset.solar_systems)
             import_metadata_changed = True
 

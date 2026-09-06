@@ -1,4 +1,5 @@
 from fractions import Fraction
+from dataclasses import asdict
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Path, Query
@@ -7,6 +8,7 @@ from app.api.dependencies import get_industry_application_service
 from app.api.schemas.errors import ErrorResponse
 from app.api.schemas.industry import (
     ProductRecipesResponse,
+    RigScopeGroupResponse,
     SolarSystemSearchQuery,
     SolarSystemSearchResponse,
     TypeSearchQuery,
@@ -21,6 +23,7 @@ from app.api.schemas.industry_calculation import (
     industry_calculation_response,
 )
 from app.industry.application import IndustryApplicationService
+from app.industry.models import ActivityKind
 
 
 router = APIRouter(prefix="/api/industry", tags=["industry"])
@@ -86,6 +89,14 @@ def search_solar_systems(
         query=query.search,
         limit=query.limit,
     )
+
+
+@router.get("/rig-scopes", response_model=tuple[RigScopeGroupResponse, ...])
+def rig_scopes(
+    activity: ActivityKind,
+    service: IndustryServiceDependency,
+) -> tuple[RigScopeGroupResponse, ...]:
+    return tuple(RigScopeGroupResponse(**asdict(group)) for group in service.rig_scope_groups(activity))
 
 
 @router.get(

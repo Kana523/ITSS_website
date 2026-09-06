@@ -33,6 +33,7 @@
       searchTimer: null,
       searchRequest: null,
       indexRequest: null,
+      resolveRequest: null,
     };
     controls.set(picker, state);
     return state;
@@ -62,6 +63,46 @@
     app.dispatchEvent(new CustomEvent("industry:system-picker-resolved", {
       detail: { picker },
     }));
+  }
+
+  function setSecurity(picker, system = null) {
+    const state = pickerControls(picker);
+    const space = system?.security_space;
+    const known = ["highsec", "lowsec", "nullsec", "wormhole"].includes(space);
+    picker.dataset.securitySpace = known ? space : "";
+    picker.dataset.resolvedSystemId = known ? String(system.solar_system_id) : "";
+    const override = picker.closest("[data-setup-override]");
+    const select = override?.querySelector("[data-setup-override-security]")
+      || app.querySelector(`[data-security-select][data-profile-activity="${activityFor(picker)}"]`);
+    if (select) {
+      select.disabled = true;
+      select.value = known ? space : "";
+    }
+    const invalidReaction = activityFor(picker) === "reaction" && space === "highsec";
+    state.search.setCustomValidity(invalidReaction
+      ? "Reactions require a lowsec, nullsec, or wormhole system."
+      : state.systemId.value && !known ? "System security is unavailable. Select a system with known security." : "");
+    notifyPickerResolved(picker);
+  }
+
+  function validate() {
+    for (const picker of pickers) {
+      const state = pickerControls(picker);
+      if (state.search.matches(":disabled")) continue;
+      const activity = activityFor(picker);
+      if (!["manufacturing", "reaction"].includes(activity)) continue;
+      const rig = app.querySelector(`[data-rig-tier-select][data-profile-activity="${activity}"]`);
+      if (!state.systemId.value && !state.search.value.trim() && activity === "reaction"
+        && (!rig || rig.value === "none")) continue;
+      const ready = picker.dataset.resolvedSystemId === state.systemId.value
+        && Boolean(picker.dataset.securitySpace);
+      const message = !ready ? "Select a solar system and wait for its security to load."
+        : activity === "reaction" && picker.dataset.securitySpace === "highsec"
+          ? "Reactions require a lowsec, nullsec, or wormhole system." : "";
+      state.search.setCustomValidity(message);
+      if (message) return { ok: false, invalid: state.search };
+    }
+    return { ok: true, invalid: null };
   }
 
   function freshnessState(snapshot) {
@@ -115,7 +156,7 @@
         formatted ? `${formatted} ${activity.replaceAll("_", " ")} index` : "Index unavailable",
       );
     } catch (error) {
-      if (error.name !== "AbortError") setIndex(picker, "unavailable", "—");
+      if (error.name !== "AbortError" && state.indexRequest === request) setIndex(picker, "unavailable", "—");
     } finally {
       if (state.indexRequest === request) state.indexRequest = null;
     }
@@ -138,10 +179,15 @@
 
   function selectSystem(picker, system) {
     const state = pickerControls(picker);
+    window.clearTimeout(state.searchTimer);
+    state.searchRequest?.abort();
+    state.searchRequest = null;
+    state.resolveRequest = null;
     state.search.value = system.name;
     state.search.dataset.solarSystemId = String(system.solar_system_id);
     state.search.setCustomValidity("");
     state.systemId.value = String(system.solar_system_id);
+    setSecurity(picker, system);
     hideResults(picker);
     state.systemId.dispatchEvent(new Event("input", { bubbles: true }));
     state.systemId.dispatchEvent(new Event("change", { bubbles: true }));
@@ -165,7 +211,7 @@
         button.id = `${state.results.id}-option-${index}`;
         button.dataset.systemResult = String(index);
         const name = document.createElement("span");
-        name.textContent = system.name;
+        name.textContent = `${system.name} · ${system.security_space || "Security unavailable"}`;
         button.append(name);
         item.append(button);
         state.results.append(item);
@@ -192,7 +238,7 @@
       if (state.searchRequest !== request || state.search.value.trim() !== query) return;
       renderResults(picker, Array.isArray(payload.systems) ? payload.systems : []);
     } catch (error) {
-      if (error.name !== "AbortError") renderResults(picker, [], "System search unavailable");
+      if (error.name !== "AbortError" && state.searchRequest === request) renderResults(picker, [], "System search unavailable");
     } finally {
       if (state.searchRequest === request) state.searchRequest = null;
     }
@@ -201,8 +247,15 @@
   function queueSearch(picker) {
     const state = pickerControls(picker);
     window.clearTimeout(state.searchTimer);
+    state.searchRequest?.abort();
+    state.searchRequest = null;
+    state.resolveRequest = null;
+    state.indexRequest?.abort();
+    state.indexRequest = null;
+    hideResults(picker);
     const query = state.search.value.trim();
     state.systemId.value = "";
+    setSecurity(picker);
     delete state.search.dataset.solarSystemId;
     state.search.setCustomValidity("");
     setIndex(picker, "empty", "—");
@@ -218,6 +271,12 @@
     const state = pickerControls(picker);
     window.clearTimeout(state.searchTimer);
     state.searchRequest?.abort();
+    state.searchRequest = null;
+    const request = {};
+    state.resolveRequest = request;
+    state.indexRequest?.abort();
+    state.indexRequest = null;
+    setSecurity(picker);
     hideResults(picker);
     state.search.setCustomValidity("");
     const solarSystemId = Number(state.systemId.value);
@@ -244,17 +303,18 @@
       const system = payload.systems?.find(
         (candidate) => Number(candidate.solar_system_id) === solarSystemId,
       );
-      if (Number(state.systemId.value) === solarSystemId) {
+      if (state.resolveRequest === request && Number(state.systemId.value) === solarSystemId) {
         state.search.value = system?.name || `System ${solarSystemId}`;
         state.search.dataset.solarSystemId = String(solarSystemId);
-        if (system) state.search.setCustomValidity("");
+        setSecurity(picker, system);
       }
     } catch (_error) {
-      if (Number(state.systemId.value) === solarSystemId) {
+      if (state.resolveRequest === request && Number(state.systemId.value) === solarSystemId) {
         state.search.value = `System ${solarSystemId}`;
         state.search.dataset.solarSystemId = String(solarSystemId);
       }
     }
+    if (state.resolveRequest !== request) return;
     notifyPickerResolved(picker);
     loadIndex(picker);
   }
@@ -302,4 +362,5 @@
   });
 
   pickers.forEach(resolveStoredSystem);
+  globalThis.industrySystems = Object.freeze({ validate });
 })();

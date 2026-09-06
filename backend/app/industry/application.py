@@ -12,12 +12,14 @@ from app.industry.economics_service import (
     IndustryPricingOptions,
 )
 from app.industry.models import (
+    ActivityKind,
     BlueprintEfficiency,
     BuildChoice,
     IndustryType,
     ItemQuantity,
     ProductionProfile,
     RecipeKey,
+    RigScopeGroup,
 )
 from app.industry.repository import IndustryDataRepository
 from app.industry.service import IndustryPlanningService
@@ -82,6 +84,10 @@ class IndustryApplicationService:
             ),
         )
 
+    def rig_scope_groups(self, activity: ActivityKind) -> tuple[RigScopeGroup, ...]:
+        self._require_build_number()
+        return self._repository.rig_scope_groups(activity)
+
     def get_product_recipes(self, product_type_id: int) -> ProductRecipesResult:
         build_number = self._require_build_number()
         loaded_product = self._repository.load_types({product_type_id})
@@ -140,6 +146,7 @@ class IndustryApplicationService:
         )
         related_type_ids = {item.type_id for item in plan.requested}
         related_type_ids.update(item.type_id for item in plan.purchases)
+        related_type_ids.update(item.type_id for item in plan.consumed_inventory)
         for step in plan.build_steps:
             related_type_ids.add(step.product_type_id)
             related_type_ids.add(step.recipe.key.blueprint_type_id)

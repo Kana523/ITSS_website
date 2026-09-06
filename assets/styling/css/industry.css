@@ -20,6 +20,18 @@
   display: none !important;
 }
 
+.owned-unit-cost {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 4px;
+  font-size: var(--font-sm);
+}
+
+.consumed-inventory-list {
+  padding: 12px 24px;
+  overflow-wrap: anywhere;
+}
+
 .api-state {
   flex: 0 0 auto;
   min-width: 210px;
@@ -2266,4 +2278,20 @@
     animation: none;
     width: 100%;
   }
+}
+.rig-coverage-label {
+  display: grid;
+  gap: 0.4rem;
+  margin-top: 0.75rem;
+}
+
+.rig-coverage-label select {
+  width: 100%;
+  min-height: 9rem;
+}
+
+.rig-coverage-note {
+  margin: 0.5rem 0;
+  font-size: 0.8rem;
+  line-height: 1.5;
 }

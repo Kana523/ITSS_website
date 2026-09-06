@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.database.repositories.industry import SqlAlchemyIndustryRepository
 from app.industry.models import (
+    ActivityKind,
     BuildChoice,
     BuildDecision,
     ItemQuantity,
@@ -65,6 +66,12 @@ def test_repository_loads_types_and_recipes(
 
         system_results = repository.search_solar_systems("Jita")
         assert system_results[0].solar_system_id == 30_000_142
+        assert system_results[0].security_status == 0.945913
+        assert system_results[0].security_space == "highsec"
+        assert repository.search_solar_systems("31000005")[0].security_space == "wormhole"
+        for activity in (ActivityKind.MANUFACTURING, ActivityKind.REACTION):
+            groups = repository.rig_scope_groups(activity)
+            assert [(group.group_id, group.category_id) for group in groups] == [(10, 1)]
         assert repository.search_solar_systems("30002665")[0].name == "New Caldari"
         assert repository.search_solar_systems("%") == ()
 

@@ -45,6 +45,7 @@ AppliedModifier = Literal[
     "blueprint_time_efficiency",
     "industry_skill_time",
     "advanced_industry_skill_time",
+    "specialist_skill_time",
     "reactions_skill_time",
     "manufacturing_implant_time",
     "facility_material_efficiency",

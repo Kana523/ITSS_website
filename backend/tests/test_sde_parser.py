@@ -48,6 +48,7 @@ def test_parser_normalizes_direct_industry_chain() -> None:
     assert dataset.solar_systems[0] == {
         "solar_system_id": 30000142,
         "name": "Jita",
+        "security_status": 0.945913,
     }
     assert dataset.materials[1] == {
         "blueprint_type_id": 2002,

@@ -447,13 +447,37 @@ class IndustryFeeRates:
 
 
 @dataclass(frozen=True, slots=True)
+class RecordedInventoryCost:
+    type_id: int
+    unit_cost: Decimal
+
+    def __post_init__(self) -> None:
+        _require_positive_int(self.type_id, "recorded inventory type_id")
+        _require_decimal(self.unit_cost, "recorded inventory unit_cost")
+
+
+class InventoryValuationMethod(StrEnum):
+    REPLACEMENT_COST = "replacement_cost"
+    RECORDED_COST = "recorded_cost"
+
+
+@dataclass(frozen=True, slots=True)
 class IndustryValuationInputs:
     market: MarketQuoteSnapshot
     adjusted_prices: AdjustedPriceSnapshot
     system_cost_indices: SystemCostIndexSnapshot
     fees: IndustryFeeRates
+    inventory_valuation_method: InventoryValuationMethod = InventoryValuationMethod.REPLACEMENT_COST
+    recorded_inventory_costs: tuple[RecordedInventoryCost, ...] = ()
 
     def __post_init__(self) -> None:
+        if not isinstance(self.inventory_valuation_method, InventoryValuationMethod):
+            raise InvalidValuationDataError("Invalid inventory valuation method")
+        if any(not isinstance(cost, RecordedInventoryCost) for cost in self.recorded_inventory_costs):
+            raise InvalidValuationDataError("Invalid recorded inventory cost")
+        ids = [cost.type_id for cost in self.recorded_inventory_costs]
+        if len(ids) != len(set(ids)):
+            raise InvalidValuationDataError("Recorded inventory costs repeat a type_id")
         if not isinstance(self.market, MarketQuoteSnapshot):
             raise InvalidValuationDataError(
                 "market must be a MarketQuoteSnapshot"
@@ -579,6 +603,8 @@ class MissingValuationData:
     output_buy_liquidity_type_ids: tuple[int, ...]
     adjusted_price_type_ids: tuple[int, ...]
     system_cost_index_keys: tuple[tuple[int, ActivityKind], ...]
+    inventory_cost_type_ids: tuple[int, ...] = ()
+    inventory_sell_liquidity_type_ids: tuple[int, ...] = ()
 
     @property
     def has_missing_data(self) -> bool:
@@ -590,6 +616,8 @@ class MissingValuationData:
                 self.output_buy_liquidity_type_ids,
                 self.adjusted_price_type_ids,
                 self.system_cost_index_keys,
+                self.inventory_cost_type_ids,
+                self.inventory_sell_liquidity_type_ids,
             )
         )
 
@@ -623,6 +651,11 @@ class IndustryEconomics:
     profit_margin_including_surplus: ExactDecimalRatio | None
     step_comparisons: tuple[StepBuildBuyComparison, ...]
     missing_data: MissingValuationData
+    consumed_inventory: tuple[ValuedItem, ...] = ()
+    consumed_inventory_value: ValuationSubtotal = ValuationSubtotal(ZERO, (), ())
+    cash_required: Decimal | None = None
+    cash_surplus: Decimal | None = None
+    cash_surplus_including_surplus: Decimal | None = None
 
     @property
     def is_complete(self) -> bool:
@@ -690,8 +723,8 @@ def calculate_industry_economics(
 
     EIV intentionally uses the SDE recipe's base material quantities multiplied
     by runs.  It does not use ME/facility-adjusted ``ProductionStep.inputs``.
-    Overall input cost uses only ``plan.purchases``, so intermediates produced by
-    another step are not charged twice.
+    Cash input cost uses ``plan.purchases``. Consumed owned inventory is valued
+    separately; intermediates produced by another step are not charged twice.
     """
     if not isinstance(plan, ProductionPlan):
         raise InvalidValuationDataError("plan must be a ProductionPlan")
@@ -1080,7 +1113,7 @@ def calculate_industry_economics(
             ),
         )
 
-        return IndustryEconomics(
+        economics = IndustryEconomics(
             shopping_list=shopping_list,
             shopping_list_cost=shopping_cost,
             requested_outputs=requested_outputs,
@@ -1114,4 +1147,10 @@ def calculate_industry_economics(
             ),
             step_comparisons=tuple(comparisons),
             missing_data=missing_data,
+        )
+        from app.industry.inventory_valuation import apply_inventory_valuation
+
+        return apply_inventory_valuation(
+            plan, inputs, economics,
+            lambda quantities: _value_items(quantities, best_sell_by_type, best_sell_volume_by_type),
         )

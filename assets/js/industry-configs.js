@@ -59,14 +59,102 @@
     );
   }
 
+  function coverageInput(panel, scope) {
+    return panel.querySelector(`[data-rig-scope="${scope}"]`);
+  }
+
+  function coverageIds(value) {
+    if (value === "") return [];
+    if (typeof value !== "string" || !/^\d+(?:,\d+)*$/.test(value)) return null;
+    const ids = value.split(",").map(Number);
+    return ids.length <= 100 && new Set(ids).size === ids.length
+      && ids.every((id) => Number.isSafeInteger(id) && id > 0 && id <= 2_147_483_647)
+      ? ids : null;
+  }
+
+  function restoreCoverageSelection(panel) {
+    const select = panel.querySelector("[data-rig-coverage]");
+    if (!select) return;
+    const categories = coverageIds(coverageInput(panel, "category_ids").value) || [];
+    const groups = coverageIds(coverageInput(panel, "group_ids").value) || [];
+    for (const option of select.options) {
+      const [kind, id] = option.value.split(":");
+      option.selected = (kind === "category" ? categories : groups).includes(Number(id));
+    }
+  }
+
+  async function loadCoverage(panel) {
+    const select = panel.querySelector("[data-rig-coverage]");
+    if (!select) return;
+    const status = panel.querySelector("[data-rig-coverage-status]");
+    select.dataset.loaded = "false";
+    const configured = document.body.dataset.industryApiBase?.trim();
+    const base = configured ? configured.replace(/\/$/, "")
+      : ["127.0.0.1", "localhost"].includes(window.location.hostname) ? "http://127.0.0.1:8000" : "";
+    try {
+      const response = await fetch(`${base}/api/industry/rig-scopes?activity=${panel.dataset.activityConfig}`, {
+        headers: { Accept: "application/json" },
+      });
+      if (!response.ok) throw new Error("Coverage unavailable");
+      const groups = await response.json();
+      if (!Array.isArray(groups)) throw new Error("Invalid coverage");
+      select.replaceChildren();
+      const categories = new Map(groups.map((group) => [group.category_id, group.category_name]));
+      for (const [id, name] of categories) {
+        const section = document.createElement("optgroup");
+        section.label = name;
+        section.append(new Option(`All ${name}`, `category:${id}`));
+        for (const group of groups.filter((entry) => entry.category_id === id)) {
+          section.append(new Option(group.group_name, `group:${group.group_id}`));
+        }
+        select.append(section);
+      }
+      select.dataset.loaded = "true";
+      restoreCoverageSelection(panel);
+      status.textContent = "Bonuses apply to the selected categories and groups only.";
+    } catch (_error) {
+      status.textContent = "Product coverage unavailable. Reload to retry before using rigs.";
+    }
+    updateActivity(panel, { notify: true });
+  }
+
+  function validateFacilities() {
+    const systems = globalThis.industrySystems?.validate();
+    if (!systems?.ok) return systems || { ok: false, invalid: null };
+    for (const panel of activityPanels) {
+      const select = panel.querySelector("[data-rig-coverage]");
+      const rig = panel.querySelector("[data-rig-tier-select]");
+      select.setCustomValidity("");
+      if (rig.value === "none") continue;
+      const categories = coverageIds(coverageInput(panel, "category_ids").value);
+      const groups = coverageIds(coverageInput(panel, "group_ids").value);
+      const options = new Set([...select.options].map((option) => option.value));
+      const valid = select.dataset.loaded === "true" && categories && groups
+        && categories.length + groups.length > 0
+        && categories.every((id) => options.has(`category:${id}`))
+        && groups.every((id) => options.has(`group:${id}`));
+      if (!valid) {
+        select.setCustomValidity("Select the product coverage of your installed rigs. Saved coverage must be available for this activity.");
+        return { ok: false, invalid: select };
+      }
+    }
+    return { ok: true, invalid: null };
+  }
+
   function updateActivity(panel, { notify = false } = {}) {
     const activity = panel.dataset.activityConfig;
     const structureSelect = panel.querySelector("[data-structure-select]");
     const securitySelect = panel.querySelector("[data-security-select]");
     const rigSelect = panel.querySelector("[data-rig-tier-select]");
     const structure = setupOverrides.structureProfile(activity, structureSelect?.value);
-    const rig = setupOverrides.rigProfile(activity, rigSelect?.value, securitySelect?.value);
-    if (!structure || !rig) return false;
+    const picker = app.querySelector(`[data-pricing-details] [data-system-picker][data-system-activity="${activity}"]`);
+    const security = picker?.dataset.securitySpace || "";
+    securitySelect.value = security;
+    const rig = setupOverrides.rigProfile(activity, rigSelect?.value, security) || { material: 0, time: 0 };
+    if (!structure) return false;
+    const coverage = panel.querySelector("[data-rig-coverage]");
+    coverage.disabled = rigSelect.value === "none";
+    if (coverage.disabled) coverage.setCustomValidity("");
 
     const facilityMaterial = derivedInput("facility", activity, "material");
     const facilityTime = derivedInput("facility", activity, "time");
@@ -145,6 +233,7 @@
       ...sourcePricingIntegerInputs(),
       ...sourcePricingPercentInputs(),
       ...sourceChoiceInputs(),
+      ...app.querySelectorAll("[data-rig-coverage]"),
       ...setupOverrides.sourceControls(),
     ].filter(Boolean);
   }
@@ -163,6 +252,10 @@
         security: panel.querySelector("[data-security-select]").value,
         rig: panel.querySelector("[data-rig-tier-select]").value,
       };
+      if (panel.querySelector("[data-rig-coverage]")) {
+        activities[activity].category_ids = coverageInput(panel, "category_ids").value;
+        activities[activity].group_ids = coverageInput(panel, "group_ids").value;
+      }
       const materialSkillSelect = panel.querySelector("[data-reprocessing-material-skill]");
       if (materialSkillSelect) {
         activities[activity].material_skill_type_id = materialSkillSelect.value;
@@ -298,6 +391,13 @@
         return null;
       }
       normalized.activities[activity] = { structure, security, rig };
+      if (panel.querySelector("[data-rig-coverage]")) {
+        for (const scope of ["category_ids", "group_ids"]) {
+          const value = rawActivity[scope] ?? "";
+          if (coverageIds(value) === null) return null;
+          normalized.activities[activity][scope] = value;
+        }
+      }
       if (materialSkillSelect) {
         normalized.activities[activity].material_skill_type_id = materialSkillTypeId;
       }
@@ -352,6 +452,10 @@
       panel.querySelector("[data-structure-select]").value = values.structure;
       panel.querySelector("[data-security-select]").value = values.security;
       panel.querySelector("[data-rig-tier-select]").value = values.rig;
+      if (panel.querySelector("[data-rig-coverage]")) {
+        for (const scope of ["category_ids", "group_ids"]) coverageInput(panel, scope).value = values[scope];
+        restoreCoverageSelection(panel);
+      }
       const materialSkillSelect = panel.querySelector("[data-reprocessing-material-skill]");
       if (materialSkillSelect) {
         materialSkillSelect.value = values.material_skill_type_id;
@@ -544,6 +648,16 @@
   }
 
   activityPanels.forEach((panel) => {
+    panel.querySelector("[data-rig-coverage]").addEventListener("change", (event) => {
+      const selected = [...event.target.selectedOptions].map((option) => option.value);
+      for (const [scope, kind] of [["category_ids", "category"], ["group_ids", "group"]]) {
+        coverageInput(panel, scope).value = selected.filter((value) => value.startsWith(`${kind}:`))
+          .map((value) => value.split(":")[1]).join(",");
+      }
+      event.target.setCustomValidity("");
+      updateActivity(panel, { notify: true });
+      queueDraftSave();
+    });
     panel.querySelectorAll("[data-structure-select], [data-security-select], [data-rig-tier-select]")
       .forEach((select) => select.addEventListener("change", () => {
         updateActivity(panel, { notify: true });
@@ -576,8 +690,9 @@
       return;
     }
 
+    const facilityValidation = validateFacilities();
     const overrideValidation = setupOverrides.validate();
-    const invalid = overrideValidation.invalid
+    const invalid = facilityValidation.invalid || overrideValidation.invalid
       || sourceControls().find((input) => !input.checkValidity());
     if (invalid) {
       setStatus("Fix the highlighted setting before saving.");
@@ -668,6 +783,11 @@
   });
 
   updateAllActivities({ notify: false });
+  app.addEventListener("industry:system-picker-resolved", () => {
+    updateAllActivities({ notify: true });
+  });
+  globalThis.industryFacilityConfig = Object.freeze({ validate: validateFacilities });
+  activityPanels.forEach(loadCoverage);
   renderSavedConfigurations();
   const active = store.configurations.find(({ id }) => id === store.active_configuration_id) || null;
   const restoredDraft = active ? restoreDraft() : false;

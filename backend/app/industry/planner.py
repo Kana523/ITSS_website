@@ -1,5 +1,6 @@
 from collections import defaultdict
 from collections.abc import Iterable, Mapping
+from dataclasses import replace
 from fractions import Fraction
 
 from app.industry.errors import (
@@ -20,6 +21,7 @@ from app.industry.models import (
     ActivityKind,
     AppliedIndustrySetupOverride,
     AppliedProductionModifiers,
+    AppliedSpecialistSkill,
     BlueprintEfficiency,
     BuildChoice,
     BuildDecision,
@@ -405,6 +407,7 @@ def plan_production(
     owned_materials: Mapping[int, int] | None = None,
     blueprint_copy_run_limits: Mapping[RecipeKey, int] | None = None,
     manufacturing_time_multiplier: Fraction = Fraction(1),
+    specialist_skill_bonuses: Mapping[RecipeKey, tuple[AppliedSpecialistSkill, ...]] | None = None,
 ) -> ProductionPlan:
     """Create a deterministic production plan without database access."""
     if (
@@ -579,6 +582,11 @@ def plan_production(
                 product_type_by_id,
             )
         )
+        if recipe.activity == ActivityKind.MANUFACTURING:
+            production_modifiers = replace(
+                production_modifiers,
+                specialist_skills=(specialist_skill_bonuses or {}).get(recipe.key, ()),
+            )
         blueprint_material_multiplier = (
             Fraction(100 - efficiency.material_efficiency, 100)
             if efficiency is not None
@@ -683,4 +691,9 @@ def plan_production(
         requested=requested,
         build_steps=build_steps,
         purchases=purchases,
+        consumed_inventory=tuple(
+            ItemQuantity(type_id, quantity - owned_remaining.get(type_id, 0))
+            for type_id, quantity in sorted((owned_materials or {}).items())
+            if quantity > owned_remaining.get(type_id, 0)
+        ),
     )

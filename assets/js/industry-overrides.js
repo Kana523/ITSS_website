@@ -94,6 +94,7 @@
     Object.freeze({ value: "sotiyo", label: "Sotiyo" }),
   ]);
   const SECURITY_OPTIONS = Object.freeze([
+    Object.freeze({ value: "", label: "From selected system" }),
     Object.freeze({ value: "highsec", label: "Highsec" }),
     Object.freeze({ value: "lowsec", label: "Lowsec" }),
     Object.freeze({ value: "nullsec", label: "Nullsec" }),
@@ -226,6 +227,9 @@
       labelledSelect(definition.category, "rig", "Rig", RIG_OPTIONS),
       createSystemPicker(definition),
     );
+    grid.querySelector("[data-setup-override-security]").disabled = true;
+    fields.append(createElement("p", "rig-coverage-note",
+      "The selected rig bonuses apply only to this product category (materials and job time)."));
     fields.append(legend, grid);
     body.append(toggle, fields);
     details.append(summary, body);
@@ -308,7 +312,9 @@
     if (facility) {
       controls.structure.value = facility.querySelector("[data-structure-select]").value;
       controls.security.value = facility.querySelector("[data-security-select]").value;
-      controls.rig.value = facility.querySelector("[data-rig-tier-select]").value;
+      // General coverage may cover only part of this bucket. Require an
+      // explicit rig choice when enabling a category override.
+      controls.rig.value = "none";
     }
     controls.systemId.value = generalSystemId?.value || "";
     controls.systemSearch.value = generalSearch?.value || "";
@@ -344,7 +350,7 @@
       return [{
         category: row.dataset.setupOverride,
         structure: controls.structure.value,
-        security: controls.security.value,
+        security: controls.picker.dataset.securitySpace || "",
         rig: controls.rig.value,
         solar_system_id: controls.systemId.value.trim(),
       }];
@@ -365,7 +371,8 @@
       const solarSystemId = String(entry.solar_system_id ?? "");
       if (!CATEGORY_SET.has(category) || seen.has(category)
         || !structureProfile("manufacturing", structure)
-        || !rigProfile("manufacturing", rig, security)
+        || !["", "highsec", "lowsec", "nullsec", "wormhole"].includes(security)
+        || !rigProfile("manufacturing", rig, "highsec")
         || !validSystemId(solarSystemId)) {
         return null;
       }
@@ -392,7 +399,9 @@
       const controls = controlsFor(row);
       const stored = byCategory.get(row.dataset.setupOverride);
       controls.structure.value = stored?.structure || "unbonused";
-      controls.security.value = stored?.security || "highsec";
+      controls.security.value = "";
+      delete controls.picker.dataset.securitySpace;
+      delete controls.picker.dataset.resolvedSystemId;
       controls.rig.value = stored?.rig || "none";
       controls.systemId.value = stored?.solar_system_id || "";
       controls.systemSearch.value = "";
@@ -418,7 +427,9 @@
     let invalid = null;
     rows.forEach((row) => {
       const controls = controlsFor(row);
-      const valid = !controls.enabled.checked || validSystemId(controls.systemId.value);
+      const valid = !controls.enabled.checked || (validSystemId(controls.systemId.value)
+        && controls.picker.dataset.resolvedSystemId === controls.systemId.value
+        && Boolean(controls.picker.dataset.securitySpace));
       controls.systemSearch.setCustomValidity(
         valid ? "" : "Select a solar system from the results.",
       );

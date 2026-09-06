@@ -2,7 +2,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.industry.economics_service import (
     IndustryPricingOptions,
@@ -10,7 +10,9 @@ from app.industry.economics_service import (
     ValuedProductionPlan,
 )
 from app.industry.models import ActivityKind, IndustryType
-from app.industry.valuation import IndustryEconomics, ValuedItem
+from app.industry.valuation import (
+    IndustryEconomics, ValuedItem, InventoryValuationMethod, RecordedInventoryCost,
+)
 
 
 TypeId = Annotated[int, Field(strict=True, gt=0, le=2_147_483_647)]
@@ -19,6 +21,11 @@ BasisPoints = Annotated[int, Field(strict=True, ge=0, le=10_000)]
 
 class EconomicsApiModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
+
+
+class RecordedInventoryCostRequest(EconomicsApiModel):
+    type_id: TypeId
+    unit_cost_isk: Annotated[Decimal, Field(ge=0, max_digits=32, decimal_places=8)]
 
 
 class IndustryPricingRequest(EconomicsApiModel):
@@ -34,9 +41,23 @@ class IndustryPricingRequest(EconomicsApiModel):
     reaction_facility_tax_basis_points: BasisPoints = 25
     reaction_scc_surcharge_basis_points: BasisPoints = 400
     reaction_job_cost_reduction_basis_points: BasisPoints = 0
+    inventory_valuation_method: InventoryValuationMethod = InventoryValuationMethod.REPLACEMENT_COST
+    recorded_inventory_costs: Annotated[list[RecordedInventoryCostRequest], Field(max_length=500)] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def unique_inventory_costs(self):
+        ids = [cost.type_id for cost in self.recorded_inventory_costs]
+        if len(ids) != len(set(ids)):
+            raise ValueError("recorded_inventory_costs must contain at most one entry per type_id")
+        return self
 
     def to_domain(self) -> IndustryPricingOptions:
         return IndustryPricingOptions(
+            inventory_valuation_method=self.inventory_valuation_method,
+            recorded_inventory_costs=tuple(
+                RecordedInventoryCost(cost.type_id, cost.unit_cost_isk)
+                for cost in self.recorded_inventory_costs
+            ),
             solar_system_id=self.solar_system_id,
             facility_tax_basis_points=self.facility_tax_basis_points,
             scc_surcharge_basis_points=self.scc_surcharge_basis_points,
@@ -88,6 +109,8 @@ class MarketSnapshotResponse(EconomicsApiModel):
 
 
 class PricingOptionsResponse(EconomicsApiModel):
+    inventory_valuation_method: InventoryValuationMethod
+    recorded_inventory_costs: tuple[RecordedInventoryCostRequest, ...]
     solar_system_id: int
     facility_tax_basis_points: int
     scc_surcharge_basis_points: int
@@ -163,6 +186,8 @@ class MissingSystemCostIndexResponse(EconomicsApiModel):
 
 
 class MissingValuationDataResponse(EconomicsApiModel):
+    inventory_cost_type_ids: tuple[int, ...]
+    inventory_sell_liquidity_type_ids: tuple[int, ...]
     shopping_sell_quote_type_ids: tuple[int, ...]
     shopping_sell_liquidity_type_ids: tuple[int, ...]
     output_buy_quote_type_ids: tuple[int, ...]
@@ -172,6 +197,11 @@ class MissingValuationDataResponse(EconomicsApiModel):
 
 
 class IndustryEconomicsResponse(EconomicsApiModel):
+    consumed_inventory: tuple[ValuedItemResponse, ...]
+    consumed_inventory_value: ValuationSubtotalResponse
+    cash_required_isk: str | None
+    cash_surplus_isk: str | None
+    cash_surplus_including_surplus_isk: str | None
     complete: bool
     shopping_list: tuple[ValuedItemResponse, ...]
     shopping_list_cost: ValuationSubtotalResponse
@@ -254,6 +284,13 @@ def _economics_response(
         )
 
     return IndustryEconomicsResponse(
+        consumed_inventory=tuple(
+            _valued_item_response(item, item_types) for item in economics.consumed_inventory
+        ),
+        consumed_inventory_value=subtotal(economics.consumed_inventory_value),
+        cash_required_isk=_decimal(economics.cash_required),
+        cash_surplus_isk=_decimal(economics.cash_surplus),
+        cash_surplus_including_surplus_isk=_decimal(economics.cash_surplus_including_surplus),
         complete=economics.is_complete,
         shopping_list=tuple(
             _valued_item_response(item, item_types)
@@ -415,6 +452,8 @@ def _economics_response(
             for comparison in economics.step_comparisons
         ),
         missing_data=MissingValuationDataResponse(
+            inventory_cost_type_ids=economics.missing_data.inventory_cost_type_ids,
+            inventory_sell_liquidity_type_ids=economics.missing_data.inventory_sell_liquidity_type_ids,
             shopping_sell_quote_type_ids=(
                 economics.missing_data.shopping_sell_quote_type_ids
             ),
@@ -474,6 +513,11 @@ def valuation_response(
             ),
         ),
         pricing_options=PricingOptionsResponse(
+            inventory_valuation_method=options.inventory_valuation_method,
+            recorded_inventory_costs=tuple(
+                RecordedInventoryCostRequest(type_id=cost.type_id, unit_cost_isk=cost.unit_cost)
+                for cost in options.recorded_inventory_costs
+            ),
             solar_system_id=options.solar_system_id,
             facility_tax_basis_points=options.facility_tax_basis_points,
             scc_surcharge_basis_points=options.scc_surcharge_basis_points,

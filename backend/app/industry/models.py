@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from enum import StrEnum
 from fractions import Fraction
+from math import isfinite
 
 from app.industry.errors import InvalidIndustryDataError
 from app.industry.setup_categories import (
@@ -134,14 +135,44 @@ class IndustryType:
 
 
 @dataclass(frozen=True, slots=True)
+class RigScopeGroup:
+    group_id: int
+    group_name: str
+    category_id: int
+    category_name: str
+
+
+@dataclass(frozen=True, slots=True)
 class SolarSystem:
     solar_system_id: int
     name: str
+    security_status: float | None = None
 
     def __post_init__(self) -> None:
         _require_positive_int(self.solar_system_id, "solar_system_id")
         if not self.name:
             raise InvalidIndustryDataError("solar system name must not be empty")
+        if self.security_status is not None and (
+            isinstance(self.security_status, bool)
+            or not isinstance(self.security_status, (float, int))
+            or not isfinite(self.security_status)
+            or not -1 <= self.security_status <= 1
+        ):
+            raise InvalidIndustryDataError("security_status must be between -1 and 1")
+
+    @property
+    def security_space(self) -> str | None:
+        # CCP's system-security and ID-range guides: use true security, not
+        # Python's rounded display value (0.45 is already highsec).
+        if self.security_status is None:
+            return None
+        if 31_000_000 <= self.solar_system_id <= 31_999_999:
+            return "wormhole"
+        if not 30_000_000 <= self.solar_system_id <= 30_999_999:
+            return None
+        if self.security_status >= 0.45:
+            return "highsec"
+        return "lowsec" if self.security_status > 0 else "nullsec"
 
 
 @dataclass(frozen=True, slots=True)
@@ -539,6 +570,31 @@ class AppliedIndustrySetupOverride:
 
 
 @dataclass(frozen=True, slots=True)
+class AppliedSpecialistSkill:
+    type_id: int
+    level: int
+    time_reduction_per_level_basis_points: int
+
+    def __post_init__(self) -> None:
+        _require_positive_int(self.type_id, "specialist skill type_id")
+        _require_skill_level(self.level, "specialist skill level")
+        _require_reduction_basis_points(
+            self.time_reduction_per_level_basis_points,
+            "specialist time reduction per level",
+        )
+        _require_reduction_basis_points(
+            self.level * self.time_reduction_per_level_basis_points,
+            "specialist time reduction",
+        )
+
+    @property
+    def time_multiplier(self) -> Fraction:
+        return _reduction_factor(
+            self.level * self.time_reduction_per_level_basis_points
+        )
+
+
+@dataclass(frozen=True, slots=True)
 class AppliedProductionModifiers:
     """Resolved exact modifier factors for one production step."""
 
@@ -548,6 +604,7 @@ class AppliedProductionModifiers:
     facility_time_reduction_basis_points: int = 0
     rig_material_reduction_basis_points: int = 0
     rig_time_reduction_basis_points: int = 0
+    specialist_skills: tuple[AppliedSpecialistSkill, ...] = ()
 
     def __post_init__(self) -> None:
         if not isinstance(self.activity, ActivityKind):
@@ -601,9 +658,18 @@ class AppliedProductionModifiers:
         return self.facility_material_multiplier * self.rig_material_multiplier
 
     @property
+    def specialist_time_multiplier(self) -> Fraction:
+        multiplier = Fraction(1)
+        if self.activity == ActivityKind.MANUFACTURING:
+            for skill in self.specialist_skills:
+                multiplier *= skill.time_multiplier
+        return multiplier
+
+    @property
     def time_multiplier(self) -> Fraction:
         return (
             self.character_time_multiplier
+            * self.specialist_time_multiplier
             * self.facility_time_multiplier
             * self.rig_time_multiplier
         )
@@ -659,3 +725,4 @@ class ProductionPlan:
     requested: tuple[ItemQuantity, ...]
     build_steps: tuple[ProductionStep, ...]
     purchases: tuple[PurchaseRequirement, ...]
+    consumed_inventory: tuple[ItemQuantity, ...] = ()

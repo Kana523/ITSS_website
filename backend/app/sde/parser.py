@@ -1,4 +1,5 @@
 import json
+import math
 from collections.abc import Iterator, Mapping
 from dataclasses import dataclass
 from datetime import datetime
@@ -49,6 +50,7 @@ class TypeRow(TypedDict):
 class SolarSystemRow(TypedDict):
     solar_system_id: int
     name: str
+    security_status: float | None
 
 
 class ActivityTypeRow(TypedDict):
@@ -299,10 +301,19 @@ def _parse_solar_systems(source: SdeSource) -> list[SolarSystemRow]:
                 f"Duplicate solar system ID {solar_system_id}"
             )
         seen.add(solar_system_id)
+        security = record.get("securityStatus")
+        if security is not None and (
+            isinstance(security, bool)
+            or not isinstance(security, (int, float))
+            or not math.isfinite(security)
+            or not -1 <= security <= 1
+        ):
+            raise SdeValidationError(f"{context}.securityStatus must be between -1 and 1")
         rows.append(
             {
                 "solar_system_id": solar_system_id,
                 "name": _english_name(record, context),
+                "security_status": float(security) if security is not None else None,
             }
         )
     return rows

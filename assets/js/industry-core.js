@@ -57,6 +57,11 @@
     marketDetail: app.querySelector("[data-market-detail]"),
     economicsShopping: app.querySelector("[data-economics-shopping]"),
     economicsInstallation: app.querySelector("[data-economics-installation]"),
+    economicsCashRequired: app.querySelector("[data-economics-cash-required]"),
+    economicsCashSurplus: app.querySelector("[data-economics-cash-surplus]"),
+    economicsInventory: app.querySelector("[data-economics-inventory]"),
+    consumedInventory: app.querySelector("[data-consumed-inventory]"),
+    inventoryValuation: app.querySelector("[data-inventory-valuation]"),
     economicsCost: app.querySelector("[data-economics-cost]"),
     economicsOutput: app.querySelector("[data-economics-output]"),
     economicsProfit: app.querySelector("[data-economics-profit]"),
@@ -621,6 +626,18 @@
       remove.dataset.removeOwned = String(typeId);
       remove.setAttribute("aria-label", `Remove owned ${owned.item.name}`);
       item.append(copy, quantityLabel, remove);
+      const costLabel = createElement("label", "owned-unit-cost", "Recorded cost per unit (ISK)");
+      costLabel.hidden = elements.inventoryValuation.value !== "recorded_cost";
+      const cost = document.createElement("input");
+      cost.type = "text";
+      cost.inputMode = "decimal";
+      cost.value = owned.unitCost || "";
+      cost.placeholder = "Cost unknown";
+      cost.maxLength = 33;
+      cost.dataset.ownedUnitCost = String(typeId);
+      cost.setAttribute("aria-label", `Recorded unit cost of ${owned.item.name} in ISK`);
+      costLabel.append(cost);
+      item.append(costLabel);
       fragment.append(item);
     });
     elements.ownedList.append(fragment);
@@ -794,6 +811,14 @@
   }
 
   function readProductionProfile() {
+    const validation = globalThis.industryFacilityConfig?.validate() || { ok: false };
+    if (!validation.ok) {
+      showConfigTab();
+      validation.invalid?.closest("details")?.setAttribute("open", "");
+      validation.invalid?.reportValidity();
+      validation.invalid?.focus();
+      return { ok: false, value: null };
+    }
     const profile = {
       industry_level: productionSkillLevel("industry_level"),
       advanced_industry_level: productionSkillLevel("advanced_industry_level"),
@@ -847,12 +872,6 @@
           category_ids: categoryIds,
           group_ids: groupIds,
         });
-      } else if (categoryIds.length || groupIds.length) {
-        rigMaterialInput.setCustomValidity("Enter a rig material or time reduction for this scope.");
-        showConfigTab();
-        rigMaterialInput.reportValidity();
-        rigMaterialInput.focus();
-        return { ok: false, value: null };
       }
     }
 
@@ -895,6 +914,24 @@
 
   function readPricing() {
     const pricing = {};
+    pricing.inventory_valuation_method = elements.inventoryValuation.value;
+    pricing.recorded_inventory_costs = [];
+    if (pricing.inventory_valuation_method === "recorded_cost") {
+      for (const input of elements.ownedList.querySelectorAll("[data-owned-unit-cost]")) {
+        const raw = input.value.trim();
+        if (raw && !/^\d{1,24}(?:\.\d{1,8})?$/.test(raw)) {
+          input.setCustomValidity("Enter a non-negative ISK amount with up to 24 integer digits and 8 decimal places.");
+          elements.ownedDetails.open = true;
+          input.reportValidity();
+          input.focus();
+          return { ok: false, value: null };
+        }
+        input.setCustomValidity("");
+        if (raw) pricing.recorded_inventory_costs.push({
+          type_id: Number(input.dataset.ownedUnitCost), unit_cost_isk: raw,
+        });
+      }
+    }
     for (const input of app.querySelectorAll("[data-pricing-integer]")) {
       const rawValue = input.value.trim();
       if (!rawValue && input.hasAttribute("data-pricing-optional")) {
@@ -1163,6 +1200,19 @@
       step.total_job_time_centiseconds,
     );
     addMetric(metrics, "Job time", exactJobTime);
+    const specialistBonuses = step.production_modifiers?.specialist_skills || [];
+    if (specialistBonuses.length) {
+      const skillNames = new Map(
+        (window.industrySkills?.groups || []).flatMap((group) => group.skills)
+          .map((skill) => [skill.typeId, skill.name]),
+      );
+      const bonusMetric = addMetric(metrics, "Specialist time bonuses", specialistBonuses.map((skill) => {
+        const name = skillNames.get(skill.type_id) || app.querySelector(`[data-skill-type-id="${skill.type_id}"]`)
+          ?.getAttribute("aria-label") || `Skill ${skill.type_id}`;
+        return `${name} ${skill.level}: −${skill.level * skill.time_reduction_per_level_basis_points / 100}%`;
+      }).join("; "));
+      bonusMetric.title = "Required specialist skill bonuses multiply with each other and the other time bonuses.";
+    }
 
     const inputs = createElement("div", "route-inputs");
     if (step.inputs.length) {
@@ -1272,6 +1322,17 @@
 
     elements.economicsShopping.textContent = formatIsk(economics.shopping_list_cost.amount_isk);
     elements.economicsInstallation.textContent = formatIsk(economics.installation_cost_total_isk);
+    elements.economicsCashRequired.textContent = formatIsk(economics.cash_required_isk);
+    elements.economicsCashSurplus.textContent = formatIsk(economics.cash_surplus_isk);
+    elements.economicsInventory.textContent = formatIsk(economics.consumed_inventory_value?.amount_isk);
+    elements.consumedInventory.replaceChildren();
+    for (const line of economics.consumed_inventory || []) {
+      const detail = line.total_isk !== null ? formatIsk(line.total_isk)
+        : line.has_sufficient_liquidity === false ? "Insufficient replacement sell volume"
+        : options.inventory_valuation_method === "recorded_cost" ? "Recorded unit cost missing" : "Replacement price missing";
+      elements.consumedInventory.append(createElement("li", "", `${formatNumber(line.quantity)} × ${line.item.name}: ${detail}`));
+    }
+    elements.consumedInventory.closest("details").hidden = !economics.consumed_inventory?.length;
     elements.economicsCost.textContent = formatIsk(economics.total_cost_isk);
     elements.economicsOutput.textContent = formatIsk(economics.net_output_value_isk);
     elements.economicsProfit.textContent = formatIsk(economics.profit_isk);
@@ -1312,6 +1373,15 @@
       ...economics.missing_data.output_buy_liquidity_type_ids,
     ]);
     const noteParts = [];
+    noteParts.push("Cash required covers purchases and installation. Net cash proceeds deduct that cash from net sales. Economic profit also deducts consumed inventory.");
+    noteParts.push(options.inventory_valuation_method === "recorded_cost"
+      ? "Inventory uses recorded unit costs."
+      : "Inventory uses market replacement cost after shopping purchases.");
+    const missingInventory = economics.missing_data.inventory_cost_type_ids || [];
+    const insufficientInventory = economics.missing_data.inventory_sell_liquidity_type_ids || [];
+    if (missingInventory.length || insufficientInventory.length) {
+      noteParts.push("Inventory valuation is incomplete; see consumed inventory details.");
+    }
     noteParts.push(economics.complete ? "Estimate complete." : "Estimate incomplete.");
     if (economics.surplus_inventory.length) {
       noteParts.push(
@@ -1782,6 +1852,14 @@
   });
 
   elements.ownedList.addEventListener("input", (event) => {
+    const costInput = event.target.closest("[data-owned-unit-cost]");
+    if (costInput) {
+      const owned = state.ownedMaterials.get(Number(costInput.dataset.ownedUnitCost));
+      if (owned) owned.unitCost = costInput.value;
+      costInput.setCustomValidity("");
+      markCalculationDirty("Inventory costs changed. Calculate a new production route.");
+      return;
+    }
     const quantityInput = event.target.closest("[data-owned-quantity]");
     if (!quantityInput) return;
     const owned = state.ownedMaterials.get(Number(quantityInput.dataset.ownedQuantity));
@@ -1812,6 +1890,11 @@
     renderOwnedList();
     elements.ownedSearchStatus.textContent = "Owned materials cleared.";
     elements.ownedSearchInput.focus();
+  });
+
+  elements.inventoryValuation.addEventListener("change", () => {
+    markCalculationDirty("Inventory valuation changed. Calculate a new production route.");
+    renderOwnedList();
   });
 
   app.querySelectorAll("[data-profile-skill], [data-profile-modifier], [data-rig-scope]")
