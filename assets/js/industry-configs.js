@@ -315,9 +315,12 @@
       if (!Number.isFinite(number) || number < minimum || number > maximum) return null;
     }
     const previous = input.value;
+    const previousCustomError = input.validity?.customError ? input.validationMessage : "";
+    input.setCustomValidity("");
     input.value = value;
     const valid = input.checkValidity();
     input.value = previous;
+    input.setCustomValidity(previousCustomError);
     return valid ? value : null;
   }
 
@@ -420,7 +423,10 @@
     const rawChoices = isRecord(raw.pricing.choices) ? raw.pricing.choices : {};
     for (const input of sourceChoiceInputs()) {
       const key = pricingStorageKey(input);
-      const value = String(rawChoices[key] ?? input.value);
+      // Profiles predating Accounting mode keep their explicitly saved fee.
+      const legacyTaxMode = key === "sales_tax_mode" && rawChoices[key] === undefined
+        && Object.hasOwn(raw.pricing.percents, "sales_tax_basis_points") ? "manual" : input.value;
+      const value = String(rawChoices[key] ?? legacyTaxMode);
       if (!selectOptionExists(input, value)) return null;
       normalized.pricing.choices[key] = value;
     }
@@ -772,6 +778,13 @@
     if (event.key !== STORAGE_KEY) return;
     storeResult = readStore();
     store = storeResult.store;
+    if (app.dataset.projectWorkspace === "active") {
+      store = { ...store, active_configuration_id: null };
+      renderSavedConfigurations();
+      setActiveProfile({ name: "Project settings" });
+      setStatus("The profile list changed in another tab. Select a profile to apply it to this project.");
+      return;
+    }
     renderSavedConfigurations();
     const active = store.configurations.find(({ id }) => id === store.active_configuration_id) || null;
     if (active) applyConfiguration(active.configuration);
@@ -786,7 +799,21 @@
   app.addEventListener("industry:system-picker-resolved", () => {
     updateAllActivities({ notify: true });
   });
-  globalThis.industryFacilityConfig = Object.freeze({ validate: validateFacilities });
+  globalThis.industryFacilityConfig = Object.freeze({
+    validate: validateFacilities,
+    capture: captureConfiguration,
+    normalize: normalizeConfiguration,
+    applyProject(raw) {
+      if (!applyConfiguration(raw)) return false;
+      // A project embeds its settings; loading it must not masquerade as a saved character profile.
+      store = { ...store, active_configuration_id: null };
+      renderSavedConfigurations();
+      setProfileNameEntry(false);
+      setActiveProfile({ name: "Project settings" });
+      setStatus("Using the project's settings. Saved profiles are available above.");
+      return true;
+    },
+  });
   activityPanels.forEach(loadCoverage);
   renderSavedConfigurations();
   const active = store.configurations.find(({ id }) => id === store.active_configuration_id) || null;

@@ -1,7 +1,7 @@
 from collections.abc import Collection, Mapping
 from typing import Protocol
 
-from app.industry.models import ActivityKind, IndustryRecipe, IndustryType, RecipeKey, RigScopeGroup, SolarSystem
+from app.industry.models import ActivityKind, BlueprintCatalogEntry, IndustryRecipe, IndustryType, RecipeKey, RigScopeGroup, SolarSystem
 from app.industry.specialist_skills import SpecialistSkillRequirement
 
 
@@ -9,6 +9,12 @@ class IndustryCatalogRepository(Protocol):
     """Read-only item discovery for a future API boundary."""
 
     def rig_scope_groups(self, activity: ActivityKind) -> tuple[RigScopeGroup, ...]: ...
+
+    def search_blueprints(self, query: str, *, limit: int = 20) -> tuple[BlueprintCatalogEntry, ...]: ...
+
+    def resolve_types(
+        self, queries: Collection[str], *, producible_only: bool = False,
+    ) -> tuple[IndustryType, ...]: ...
 
     def search_types(
         self,

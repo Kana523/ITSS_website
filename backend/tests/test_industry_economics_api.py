@@ -401,6 +401,19 @@ def test_manual_broker_fee_is_applied_to_output_value() -> None:
     assert economics["broker_fee_including_surplus_isk"] == "0.71"
 
 
+def test_accounting_rate_reaches_sale_valuation_without_rounding() -> None:
+    payload = _calculation_request()
+    payload["pricing"]["accounting_level"] = 5
+    with _api_client(_complete_market_repository()) as client:
+        response = client.post("/api/industry/calculate", json=payload)
+    assert response.status_code == 200
+    valuation = response.json()["valuation"]
+    assert valuation["pricing_options"]["effective_sales_tax_rate"] == "0.03375"
+    assert valuation["pricing_options"]["accounting_level"] == 5
+    gross = Decimal(valuation["economics"]["requested_output_value"]["amount_isk"])
+    assert Decimal(valuation["economics"]["sales_tax_isk"]) == gross * Decimal("0.03375")
+
+
 def test_fresh_valuation_serializes_every_decimal_as_an_exact_string() -> None:
     repository = _complete_market_repository()
 
@@ -434,6 +447,8 @@ def test_fresh_valuation_serializes_every_decimal_as_an_exact_string() -> None:
         "facility_tax_basis_points": 25,
         "scc_surcharge_basis_points": 400,
         "sales_tax_basis_points": 0,
+        "accounting_level": None,
+        "effective_sales_tax_rate": "0.0000",
         "broker_fee_basis_points": 0,
         "job_cost_reduction_basis_points": 0,
         "reaction_solar_system_id": None,

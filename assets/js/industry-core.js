@@ -83,6 +83,9 @@
     sdeBuildNumber: null,
     choices: new Map(),
     blueprintEfficiencies: new Map(),
+    blueprintSelections: [],
+    requireOwnedBlueprints: false,
+    scheduleOptions: null,
     typeNames: new Map(),
     latestPlan: null,
     searchTimer: null,
@@ -330,11 +333,11 @@
 
   async function checkApiHealth() {
     try {
-      const response = await fetch(apiUrl("/api/health"), {
+      const response = await fetch(apiUrl("/api/ready"), {
         headers: { Accept: "application/json" },
       });
       const payload = await response.json();
-      if (response.ok && payload.api === "ok" && payload.database === "ok") {
+      if (response.ok && payload.status === "ready") {
         setApiState("online", "Calculator online");
         return;
       }
@@ -532,6 +535,7 @@
   }
 
   function markCalculationDirty(message = "Inputs changed. Calculate a new production route.") {
+    app.dispatchEvent?.(new CustomEvent("industry:workspace-changed"));
     const hadVisibleResult = state.latestPlan || !elements.loading.hidden || !elements.error.hidden;
     state.inputRevision += 1;
     invalidateCalculation();
@@ -886,7 +890,10 @@
     }
     profile.setup_overrides = setupOverrideResult.value;
 
-    const hasEffect = profile.industry_level > 0
+    const implant = app.querySelector('[data-profile-implant="manufacturing_time_implant"]');
+    if (implant?.value) profile.manufacturing_time_implant = Number(implant.value);
+    const hasEffect = Boolean(profile.manufacturing_time_implant)
+      || profile.industry_level > 0
       || profile.advanced_industry_level > 0
       || profile.reactions_level > 0
       || profile.facility_modifiers.length > 0
@@ -956,6 +963,10 @@
       pricing[input.dataset.pricingInteger] = value;
     }
     for (const input of app.querySelectorAll("[data-pricing-percent]")) {
+      if (input.dataset.pricingPercent === "sales_tax_basis_points" && globalThis.industryFees?.usesAccounting()) {
+        pricing.sales_tax_basis_points = 0;
+        continue;
+      }
       const basisPoints = percentToBasisPoints(input, 10_000);
       if (basisPoints === null) {
         showConfigTab();
@@ -966,6 +977,7 @@
       pricing[input.dataset.pricingPercent] = basisPoints;
     }
     pricing.reaction_scc_surcharge_basis_points = pricing.scc_surcharge_basis_points;
+    Object.assign(pricing, globalThis.industryFees?.readOptions() || {});
     return { ok: true, value: pricing };
   }
 
@@ -982,6 +994,7 @@
   }
 
   function renderOverrides() {
+    app.dispatchEvent?.(new CustomEvent("industry:workspace-changed"));
     elements.overridesList.replaceChildren();
     const sortedChoices = [...state.choices.entries()].sort(([left], [right]) => left - right);
     const sortedEfficiencies = [...state.blueprintEfficiencies.entries()].sort(
@@ -1075,6 +1088,9 @@
 
   function renderEfficiencyControls(step) {
     if (step.activity !== "manufacturing") return null;
+    if (state.scheduleOptions && step.blueprint_efficiency === null) {
+      return createElement("p", "field-note", "Mixed blueprint efficiencies: see each job's ME/TE in Schedule.");
+    }
 
     const efficiency = step.blueprint_efficiency || {
       material_efficiency: 0,
@@ -1312,7 +1328,9 @@
       ? new Date(Math.min(...resourceDates.map((date) => date.getTime())))
       : null;
     elements.marketDetail.textContent = [
-      "best sell inputs · best unrestricted buy outputs",
+      "sell-order depth for inputs · unrestricted buy-order depth for outputs",
+      `${Number((Number(options.effective_sales_tax_rate ?? (options.sales_tax_basis_points || 0) / 10000) * 100).toFixed(3))}% sales tax`,
+      `${(options.broker_fee_basis_points || 0) / 100}% broker fee`,
       oldestFetch ? `oldest fetch ${formatEveTimestamp(oldestFetch.toISOString())}` : "no cached resources",
       `manufacturing system ${options.solar_system_id}`,
       options.reaction_solar_system_id
@@ -1410,7 +1428,8 @@
       state.typeNames.set(step.product.type_id, step.product.name);
       state.typeNames.set(step.blueprint.type_id, step.blueprint.name);
       if (
-        step.blueprint_efficiency
+        !state.blueprintSelections.some(entry => entry.blueprint_type_id === step.recipe_key.blueprint_type_id)
+        && step.blueprint_efficiency
         && (step.blueprint_efficiency.material_efficiency > 0
           || step.blueprint_efficiency.time_efficiency > 0)
       ) {
@@ -1518,6 +1537,7 @@
     renderOverrides();
     updateExportActions();
     setApiState("online", "Calculator online");
+    app.dispatchEvent?.(new CustomEvent("industry:plan-calculated", { detail: plan }));
   }
 
   function updateExportActions() {
@@ -1600,6 +1620,10 @@
         const typeName = state.typeNames.get(typeId) || `type ${typeId}`;
         addErrorAction(`Buy ${typeName}`, "buy", { typeId });
       });
+    } else if (error.code === "invalid_schedule") {
+      addErrorAction("Review scheduling settings", "schedule");
+    } else if (error.code === "insufficient_blueprint_stock") {
+      addErrorAction("Review blueprint library", "blueprints");
     } else if (error.code === "ambiguous_recipe" && Array.isArray(error.details?.candidates)) {
       elements.errorTitle.textContent = "Choose a production recipe";
       error.details.candidates.forEach((candidate) => {
@@ -1671,12 +1695,17 @@
         type_id: typeId,
         ...choice,
       })),
-      blueprint_efficiencies: [...state.blueprintEfficiencies.values()].map((setting) => ({
+      blueprint_efficiencies: [...state.blueprintEfficiencies.values()]
+        .filter(setting => !state.blueprintSelections.some(entry => entry.blueprint_type_id === setting.recipe_key.blueprint_type_id))
+        .map((setting) => ({
         recipe_key: setting.recipe_key,
         material_efficiency: setting.material_efficiency,
         time_efficiency: setting.time_efficiency,
       })),
     };
+    if (state.blueprintSelections.length) body.blueprint_selections = globalThis.industryBlueprintData.toRequest(state.blueprintSelections, Boolean(state.scheduleOptions));
+    if (state.scheduleOptions) body.schedule = state.scheduleOptions;
+    if (state.requireOwnedBlueprints) body.require_owned_blueprints = true;
     if (ownedMaterials.length) body.owned_materials = ownedMaterials;
     if (productionProfile.value) body.production_profile = productionProfile.value;
     if (specialistSkills) body.specialist_skills = specialistSkills;
@@ -2049,6 +2078,8 @@
       calculate();
     } else if (action === "change") {
       elements.searchInput.focus();
+    } else if (action === "blueprints" || action === "schedule") {
+      window.industryTabs?.activate(action);
     } else if (action === "pricing") {
       showConfigTab();
       app.querySelector(
@@ -2059,6 +2090,85 @@
     } else {
       calculate();
     }
+  });
+
+  globalThis.industryWorkspace = Object.freeze({
+    calculate,
+    setSchedule(options) {
+      const normalized = globalThis.industryScheduleData.normalize(options);
+      if (!normalized && new Set(state.blueprintSelections.map(row => row.blueprint_type_id)).size !== state.blueprintSelections.length) {
+        throw new Error("Remove extra lots for each recipe before disabling scheduling.");
+      }
+      state.scheduleOptions = normalized;
+      markCalculationDirty("Scheduling settings changed. Recalculate materials, jobs and finish dates.");
+      app.dispatchEvent(new CustomEvent("industry:schedule-settings-changed"));
+    },
+    setBlueprintSelections(entries, requireOwned = state.requireOwnedBlueprints) {
+      state.blueprintSelections = globalThis.industryBlueprintData.normalizeEntries(entries, { selections: true, multiple: Boolean(state.scheduleOptions) });
+      state.requireOwnedBlueprints = Boolean(requireOwned);
+      for (const entry of state.blueprintSelections) {
+        state.blueprintEfficiencies.delete(`${entry.blueprint_type_id}:1`);
+      }
+      markCalculationDirty("Blueprint selections changed. Calculate to check stock and refresh the route.");
+      renderOverrides();
+      app.dispatchEvent(new CustomEvent("industry:blueprints-selected"));
+    },
+    capture() {
+      return JSON.parse(JSON.stringify({
+        sde_build_number: state.sdeBuildNumber,
+        demands: [...state.demands.values()],
+        owned_materials: [...state.ownedMaterials.values()],
+        inventory_valuation: elements.inventoryValuation.value,
+        choices: [...state.choices].map(([type_id, choice]) => ({ type_id, ...choice })),
+        blueprint_efficiencies: [...state.blueprintEfficiencies.values()],
+        blueprint_selections: state.blueprintSelections,
+        require_owned_blueprints: state.requireOwnedBlueprints,
+        schedule: state.scheduleOptions,
+      }));
+    },
+    apply(raw) {
+      const data = globalThis.industryProjectData.normalizeWorkspace(raw);
+      invalidateSearch();
+      invalidateOwnedSearch();
+      markCalculationDirty("Project loaded. Calculate to refresh the route and market prices.");
+      resetOutput();
+      state.demands = new Map(data.demands.map(row => [row.item.type_id, row]));
+      state.ownedMaterials = new Map(data.owned_materials.map(row => [row.item.type_id, row]));
+      state.choices = new Map(data.choices.map(({ type_id, ...choice }) => [type_id, choice]));
+      state.blueprintEfficiencies = new Map(data.blueprint_efficiencies.map(row => [recipeKeyId(row.recipe_key), row]));
+      state.typeNames = new Map([...data.demands, ...data.owned_materials].map(row => [row.item.type_id, row.item.name]));
+      state.sdeBuildNumber = data.sde_build_number;
+      state.blueprintSelections = data.blueprint_selections;
+      state.requireOwnedBlueprints = data.require_owned_blueprints;
+      state.scheduleOptions = data.schedule;
+      state.pendingNotice = "";
+      state.pendingChoiceFocusTypeId = null;
+      state.pendingEfficiencyFocusKey = null;
+      elements.inventoryValuation.value = data.inventory_valuation;
+      elements.searchInput.value = "";
+      elements.ownedSearchInput.value = "";
+      hideSearchResults();
+      hideOwnedSearchResults();
+      renderDemandList();
+      renderOwnedList();
+      renderOverrides();
+    },
+    merge(target, rows, mode, buildNumber) {
+      if (!["demands", "owned_materials"].includes(target) || !["add", "replace"].includes(mode)) {
+        throw new Error("Invalid paste destination or merge mode.");
+      }
+      const snapshot = this.capture();
+      snapshot[target] = globalThis.industryProjectData.mergeRows(snapshot[target], rows, target === "demands" ? 50 : 500, mode);
+      // Validate before touching state, including overflow and per-list limits.
+      globalThis.industryProjectData.normalizeWorkspace(snapshot);
+      if (snapshot.sde_build_number && snapshot.sde_build_number !== buildNumber) {
+        snapshot.choices = [];
+        snapshot.blueprint_efficiencies = [];
+      }
+      snapshot.sde_build_number = buildNumber;
+      this.apply(snapshot);
+      if (target === "owned_materials") elements.ownedDetails.open = true;
+    },
   });
 
   elements.copyShopping.addEventListener("click", copyShoppingList);

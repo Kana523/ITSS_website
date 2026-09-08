@@ -110,6 +110,14 @@ class ItemQuantity:
 
 
 @dataclass(frozen=True, slots=True)
+class BlueprintCatalogEntry:
+    blueprint_type_id: int
+    blueprint_name: str
+    product_type_id: int
+    product_name: str
+
+
+@dataclass(frozen=True, slots=True)
 class IndustryType:
     type_id: int
     name: str
@@ -676,6 +684,16 @@ class AppliedProductionModifiers:
 
 
 @dataclass(frozen=True, slots=True)
+class ProductionBatch:
+    runs: int
+    blueprint_efficiency: BlueprintEfficiency | None
+    exact_time_seconds: Fraction
+    inputs: tuple[ItemQuantity, ...]
+    lot_id: str | None = None
+    blueprint_instance: int = 1
+
+
+@dataclass(frozen=True, slots=True)
 class ProductionStep:
     product_type_id: int
     recipe: IndustryRecipe
@@ -690,6 +708,7 @@ class ProductionStep:
     exact_job_time_seconds: Fraction
     inputs: tuple[ItemQuantity, ...]
     industry_setup_override: AppliedIndustrySetupOverride | None = None
+    batches: tuple[ProductionBatch, ...] = ()
 
     @property
     def total_job_time_centiseconds(self) -> int | None:

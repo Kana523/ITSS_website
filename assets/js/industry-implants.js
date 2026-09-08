@@ -63,28 +63,4 @@
     reactionsSelect.dispatchEvent(new Event("input", { bubbles: true }));
   });
 
-  const originalFetch = window.fetch.bind(window);
-  window.fetch = (input, init = {}) => {
-    const url = typeof input === "string" ? input : input?.url || "";
-    const method = String(init.method || "GET").toUpperCase();
-    if (
-      method === "POST"
-      && /\/api\/industry\/calculate(?:\?|$)/.test(url)
-      && typeof init.body === "string"
-    ) {
-      try {
-        const body = JSON.parse(init.body);
-        if (select.value) {
-          body.production_profile = body.production_profile || {};
-          body.production_profile.manufacturing_time_implant = Number(select.value);
-        } else if (body.production_profile?.manufacturing_time_implant !== undefined) {
-          delete body.production_profile.manufacturing_time_implant;
-        }
-        init = { ...init, body: JSON.stringify(body) };
-      } catch (_error) {
-        // Preserve the original request if another caller supplied non-JSON data.
-      }
-    }
-    return originalFetch(input, init);
-  };
 })();

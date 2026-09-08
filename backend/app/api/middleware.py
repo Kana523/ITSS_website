@@ -63,7 +63,7 @@ class CalculationRequestGuardMiddleware:
         return (
             scope["type"] == "http"
             and scope["method"] == "POST"
-            and scope["path"] == "/api/industry/calculate"
+            and scope["path"] in {"/api/industry/calculate", "/api/industry/types/resolve"}
         )
 
     def _content_length(self, scope: Scope) -> int | None:

@@ -69,8 +69,21 @@ def _job_material_quantity(
     material_multiplier: Fraction,
     *,
     max_runs_per_job: int | None = None,
+    runs_per_copy: int | None = None,
 ) -> int:
     """Apply factors and EVE's final material ceiling independently per job."""
+    if runs_per_copy is not None and runs > runs_per_copy:
+        # Each physical copy has its own remainder after time-limited jobs.
+        # Do not pool those remaining runs across different copies.
+        full_copies, remainder = divmod(runs, runs_per_copy)
+        total = full_copies * _job_material_quantity(
+            quantity_per_run, runs_per_copy, material_multiplier,
+            max_runs_per_job=max_runs_per_job,
+        )
+        if remainder:
+            total += _job_material_quantity(quantity_per_run, remainder, material_multiplier,
+                                            max_runs_per_job=max_runs_per_job)
+        return _require_safe_integer(total, "Adjusted material quantity")
     if max_runs_per_job is None or runs <= max_runs_per_job:
         reduced_total = _ceil_fraction(
             quantity_per_run * runs * material_multiplier
@@ -408,8 +421,14 @@ def plan_production(
     blueprint_copy_run_limits: Mapping[RecipeKey, int] | None = None,
     manufacturing_time_multiplier: Fraction = Fraction(1),
     specialist_skill_bonuses: Mapping[RecipeKey, tuple[AppliedSpecialistSkill, ...]] | None = None,
+    scheduled_lots: Mapping | None = None,
+    schedule_max_runs: int | None = None,
 ) -> ProductionPlan:
     """Create a deterministic production plan without database access."""
+    if schedule_max_runs is not None:
+        if isinstance(schedule_max_runs, bool) or not isinstance(schedule_max_runs, int) or schedule_max_runs <= 0:
+            raise InvalidIndustryDataError("Schedule runs per job must be a positive integer")
+        _require_safe_integer(schedule_max_runs, "Schedule runs per job")
     if (
         isinstance(sde_build_number, bool)
         or not isinstance(sde_build_number, int)
@@ -614,8 +633,6 @@ def plan_production(
         exact_job_time_seconds = exact_time_per_run * runs
         max_runs_per_job = _max_runs_within_job_time(exact_time_per_run)
         copy_run_limit = copy_run_limit_by_recipe.get(recipe.key)
-        if copy_run_limit is not None:
-            max_runs_per_job = min(max_runs_per_job, copy_run_limit)
         inputs_list: list[ItemQuantity] = []
         for material in recipe.materials:
             _require_safe_integer(
@@ -627,6 +644,7 @@ def plan_production(
                 runs,
                 material_multiplier,
                 max_runs_per_job=max_runs_per_job,
+                runs_per_copy=copy_run_limit,
             )
             inputs_list.append(
                 ItemQuantity(
@@ -638,6 +656,23 @@ def plan_production(
                 )
             )
         inputs = tuple(inputs_list)
+        batches = ()
+        if schedule_max_runs is not None:
+            from app.industry.batches import allocate_batches, MAX_SCHEDULE_JOBS
+            from app.industry.errors import InvalidScheduleError
+            batches = allocate_batches(recipe, runs, (scheduled_lots or {}).get(recipe.key, ()),
+                efficiency, production_modifiers, manufacturing_time_multiplier, schedule_max_runs, copy_run_limit)
+            if sum(len(step.batches) for step in steps_by_product.values()) + len(batches) > MAX_SCHEDULE_JOBS:
+                raise InvalidScheduleError("Schedule exceeds 2,000 jobs. Increase runs per job or reduce quantities.")
+            totals = defaultdict(int)
+            for batch in batches:
+                for material in batch.inputs:
+                    totals[material.type_id] += material.quantity
+            inputs = tuple(ItemQuantity(type_id, _require_safe_integer(quantity, "Scheduled input quantity"))
+                           for type_id, quantity in sorted(totals.items()))
+            exact_job_time_seconds = sum((batch.exact_time_seconds for batch in batches), Fraction(0))
+            efficiencies_used = {batch.blueprint_efficiency for batch in batches}
+            efficiency = next(iter(efficiencies_used)) if len(efficiencies_used) == 1 else None
         for material in inputs:
             required_quantities[material.type_id] = _require_safe_integer(
                 required_quantities[material.type_id] + material.quantity,
@@ -658,6 +693,7 @@ def plan_production(
             exact_job_time_seconds=exact_job_time_seconds,
             inputs=inputs,
             industry_setup_override=industry_setup_override,
+            batches=batches,
         )
 
     purchases_list: list[PurchaseRequirement] = []

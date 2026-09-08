@@ -8,7 +8,7 @@
   <link rel="preload" href="../assets/styling/fonts/Roboto-Regular.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="../assets/styling/css/base.css">
   <link rel="stylesheet" href="../assets/styling/css/industry.css">
-  <script src="../assets/js/industry.js" defer></script>
+  <script type="module" src="../assets/js/industry.js"></script>
 
   <meta name="description" content="Plan EVE Online manufacturing and reaction chains with the Interstellar Systems industry calculator.">
   <meta name="keywords" content="EVE Online industry calculator, manufacturing, reactions, build plan, materials, Interstellar Systems">
@@ -47,7 +47,28 @@
           <button id="industry-tab-shopping" data-industry-tab="shopping" type="button" role="tab" aria-selected="false" aria-controls="industry-panel-shopping" tabindex="-1">
             <span>Shopping</span>
           </button>
+          <button id="industry-tab-blueprints" data-industry-tab="blueprints" type="button" role="tab" aria-selected="false" aria-controls="industry-panel-blueprints" tabindex="-1">
+            <span>Blueprints</span>
+          </button>
+          <button id="industry-tab-schedule" data-industry-tab="schedule" type="button" role="tab" aria-selected="false" aria-controls="industry-panel-schedule" tabindex="-1"><span>Schedule</span></button>
         </nav>
+
+        <section class="profile-panel profile-save panel project-panel" aria-labelledby="projects-title" data-project-panel>
+          <h3 id="projects-title">Projects</h3>
+          <p class="field-status">Whole plans, saved automatically in this browser. Export a backup to move between devices.</p>
+          <label>Open project<select data-project-select></select></label>
+          <label>Project name<input data-project-name maxlength="60" value="Working draft" autocomplete="off"></label>
+          <div class="saved-config-actions">
+            <button class="buy-button buy-button--primary config-button" type="button" data-project-save>Save project</button>
+            <button class="buy-button buy-button--secondary config-button" type="button" data-project-new>New project</button>
+            <button class="buy-button buy-button--secondary config-button" type="button" data-project-duplicate>Duplicate</button>
+            <button class="buy-button buy-button--secondary config-button" type="button" data-project-export>Export JSON</button>
+            <button class="buy-button buy-button--secondary config-button" type="button" data-project-import>Import JSON</button>
+            <button class="buy-button buy-button--danger config-button" type="button" data-project-delete>Delete project</button>
+          </div>
+          <input type="file" accept=".json,application/json" data-project-file hidden aria-label="Import project file">
+          <p class="field-status" data-project-status role="status" aria-live="polite"></p>
+        </section>
 
         <section class="profile-panel profile-save panel" aria-labelledby="saved-configs-title">
           <div class="saved-configs-heading">
@@ -88,6 +109,74 @@
       </aside>
 
       <div class="industry-tab-stage">
+        <section id="industry-panel-schedule" class="industry-tab-panel" data-industry-panel="schedule" role="tabpanel" aria-labelledby="industry-tab-schedule" tabindex="0" hidden>
+          <section class="panel blueprint-library" data-schedule-panel aria-labelledby="schedule-title">
+            <p class="kicker">Production calendar</p><h2 id="schedule-title">Plan your jobs</h2>
+            <p>Split runs into physical jobs and assign character slots and facilities. All characters use this project's skill profile. Facilities must match the configured system and use its production bonuses. Concurrency is your planning allowance, not an EVE facility limit.</p>
+            <label class="blueprint-checkbox"><input type="checkbox" data-schedule-enabled> Enable scheduling for this project</label>
+            <form data-schedule-form hidden>
+              <div class="blueprint-fields"><label>Start time (your local timezone)<input type="datetime-local" step="0.001" data-schedule-start required></label><label>Maximum runs per job<input type="number" data-schedule-max-runs min="1" max="9007199254740991" step="1" value="100" required></label></div>
+              <h3>Characters</h3><p class="field-status">Set slots to zero for activities a character cannot run. Availability applies to all that character's slots.</p>
+              <div class="blueprint-table-scroll"><table class="blueprint-table"><thead><tr><th>Character</th><th>Manufacturing slots</th><th>Reaction slots</th><th>Available from (local)</th><th>Action</th></tr></thead><tbody data-schedule-workers></tbody></table></div>
+              <button type="button" class="buy-button buy-button--secondary" data-schedule-add-worker>Add character</button>
+              <h3>Facilities</h3><p class="field-status">Add each production system used by Config, including category overrides. Choose a facility explicitly below when several share a system.</p>
+              <div class="blueprint-table-scroll"><table class="blueprint-table"><thead><tr><th>Name</th><th>Activity</th><th>System ID</th><th>Concurrent jobs</th><th>Action</th></tr></thead><tbody data-schedule-facilities></tbody></table></div>
+              <button type="button" class="buy-button buy-button--secondary" data-schedule-add-facility>Add facility</button>
+              <h3>Recipe assignments</h3><p class="field-status">Calculate once to list the route's recipes. Automatic picks the earliest available eligible slot.</p>
+              <div class="blueprint-table-scroll"><table class="blueprint-table"><thead><tr><th>Blueprint</th><th>Character</th><th>Facility</th></tr></thead><tbody data-schedule-assignments></tbody></table></div>
+              <p>With scheduling enabled, select multiple lots for the same recipe on Blueprints. Lots are allocated in selection order; “Use first” changes priority. Jobs on the same physical blueprint run sequentially. Untracked manufacturing assumes one original.</p>
+              <div class="blueprint-actions"><button type="button" class="buy-button buy-button--secondary" data-schedule-apply>Apply settings</button><button type="submit" class="buy-button buy-button--primary">Calculate schedule</button></div>
+            </form>
+            <p class="field-status" data-schedule-status role="status" aria-live="polite"></p>
+          </section>
+          <section class="panel blueprint-library" data-schedule-results hidden aria-labelledby="schedule-results-title">
+            <h2 id="schedule-results-title">Production schedule</h2><p data-schedule-summary role="status"></p>
+            <button type="button" class="buy-button buy-button--secondary" data-schedule-export>Export jobs CSV</button>
+            <ul data-schedule-assumptions class="schedule-assumptions"></ul>
+            <ol data-schedule-timeline class="schedule-timeline" aria-label="Job timeline"></ol>
+            <div class="blueprint-table-scroll"><table class="blueprint-table schedule-jobs"><thead><tr><th>Job / product</th><th>Runs / ME / TE</th><th>Blueprint lot / instance</th><th>Character / slot</th><th>Facility / slot</th><th>Start</th><th>Finish</th><th>Dependencies</th></tr></thead><tbody data-schedule-jobs></tbody></table></div>
+          </section>
+        </section>
+        <section id="industry-panel-blueprints" class="industry-tab-panel" data-industry-panel="blueprints" role="tabpanel" aria-labelledby="industry-tab-blueprints" tabindex="0" hidden>
+          <section class="panel blueprint-library" data-blueprint-library aria-labelledby="blueprint-library-title">
+            <p class="kicker">Blueprint ownership</p>
+            <h2 id="blueprint-library-title">Your blueprint library</h2>
+            <p>Track manufacturing originals and copies in this browser. Group copies only when their ME, TE and remaining runs are identical. Calculating never consumes stock or reserves it across projects.</p>
+            <div class="blueprint-actions">
+              <button type="button" class="buy-button buy-button--secondary" data-blueprint-export>Export library</button>
+              <button type="button" class="buy-button buy-button--secondary" data-blueprint-import>Import library</button>
+              <input type="file" accept=".json,application/json" data-blueprint-file hidden aria-label="Import blueprint library file">
+            </div>
+            <p class="field-status" data-blueprint-status role="status" aria-live="polite"></p>
+            <form data-blueprint-search-form class="blueprint-search">
+              <label>Find a blueprint or product<input type="search" data-blueprint-search maxlength="255" placeholder="Rifter, Rifter Blueprint, or type ID" autocomplete="off" required></label>
+              <button class="buy-button buy-button--secondary" type="submit" data-blueprint-search-button>Search blueprints</button>
+            </form>
+            <p class="field-status" data-blueprint-search-status role="status" aria-live="polite"></p>
+            <ul class="blueprint-search-results" data-blueprint-search-results aria-label="Matching manufacturing blueprints"></ul>
+            <form data-blueprint-editor hidden>
+              <h3 data-blueprint-editor-title>Add blueprint stock</h3>
+              <div class="blueprint-fields">
+                <label>Lot label<input data-blueprint-label maxlength="60" required></label>
+                <label>Ownership<select data-blueprint-kind><option value="bpo">Original (BPO)</option><option value="bpc">Copy (BPC)</option></select></label>
+                <label>Number of originals or copies<input data-blueprint-quantity type="number" min="1" max="9007199254740991" step="1" value="1" required></label>
+                <label>Material efficiency (%)<input data-blueprint-me type="number" min="0" max="10" step="1" value="0" required></label>
+                <label>Time efficiency (%)<select data-blueprint-te><option>0</option><option>2</option><option>4</option><option>6</option><option>8</option><option>10</option><option>12</option><option>14</option><option>16</option><option>18</option><option>20</option></select></label>
+                <label data-blueprint-runs-field hidden>Remaining runs per copy<input data-blueprint-runs type="number" min="0" max="9007199254740991" step="1" value="1"></label>
+              </div>
+              <div class="blueprint-actions"><button class="buy-button buy-button--primary" type="submit">Save blueprint lot</button><button class="buy-button buy-button--secondary" type="button" data-blueprint-cancel>Cancel edit</button></div>
+            </form>
+            <label>Filter owned blueprints<input type="search" data-blueprint-filter placeholder="Name or lot label"></label>
+            <div class="blueprint-table-scroll"><table class="blueprint-table"><caption data-blueprint-count>Owned blueprint lots</caption><thead><tr><th>Blueprint / lot</th><th>Stock</th><th>ME / TE</th><th>Available runs</th><th>Actions</th></tr></thead><tbody data-blueprint-rows></tbody></table></div>
+          </section>
+          <section class="panel blueprint-library" aria-labelledby="blueprint-selections-title">
+            <h2 id="blueprint-selections-title">Blueprints selected for this project</h2>
+            <p>Choose lots using “Use in project”. With scheduling enabled, multiple lots are allocated in the order shown; otherwise choose one lot per recipe. Their ME/TE and copy limits replace manual settings. Other recipes keep the calculator defaults unless ownership is required below. Refresh selections explicitly after editing the library.</p>
+            <label class="blueprint-checkbox"><input type="checkbox" data-blueprint-require> Require owned blueprints for every manufacturing step</label>
+            <p class="field-status" data-blueprint-usage role="status" aria-live="polite">Calculate to check required runs.</p>
+            <div class="blueprint-table-scroll"><table class="blueprint-table"><caption>Project selections</caption><thead><tr><th>Blueprint / lot</th><th>ME / TE</th><th>Available runs</th><th>Library status</th><th>Actions</th></tr></thead><tbody data-blueprint-selections></tbody></table></div>
+          </section>
+        </section>
         <section id="industry-panel-config" class="industry-tab-panel" data-industry-panel="config" role="tabpanel" aria-labelledby="industry-tab-config" tabindex="0" hidden>
           <div class="config-workspace">
             <section class="config-card config-card--skills" aria-labelledby="skills-title">
@@ -97,6 +186,7 @@
               <div class="planner-details-body">
                 <div class="skill-category-list" data-industry-skill-groups></div>
                 <div class="skill-category-list trade-skill-list" data-trade-skill-groups></div>
+                <p class="rig-coverage-note">Accounting determines sales tax in automatic mode. Broker Relations affects NPC order placement; Advanced Broker Relations affects relisting. Neither changes this calculator's immediate-sale quote.</p>
               </div>
             </section>
 
@@ -299,6 +389,7 @@
 
                   <fieldset class="profile-fieldset pricing-section">
                     <legend>Science</legend>
+                      <p class="rig-coverage-note">Preview only: science jobs and fees are not included in this plan.</p>
                     <div class="pricing-grid">
                       <div class="system-index-row" data-system-picker data-system-activity="invention">
                         <label>Solar system
@@ -321,7 +412,7 @@
                           <option value="research_time">Time research</option>
                         </select>
                       </label>
-                      <label>Facility tax <span><input data-config-percent="science_facility_tax_basis_points" type="number" value="0.25" min="0" max="100" step="0.01" inputmode="decimal"><small>%</small></span></label>
+                      <label>Facility tax <span><input data-config-percent="science_facility_tax_basis_points" disabled type="number" value="0.25" min="0" max="100" step="0.01" inputmode="decimal"><small>%</small></span></label>
                     </div>
                   </fieldset>
 
@@ -329,16 +420,24 @@
                     <legend>SCC surcharges</legend>
                     <div class="pricing-grid">
                       <label>Industry &amp; reactions <span><input data-pricing-percent="scc_surcharge_basis_points" type="number" value="4" min="0" max="100" step="0.01" inputmode="decimal"><small>%</small></span></label>
-                      <label>Science <span><input data-config-percent="science_scc_surcharge_basis_points" type="number" value="2" min="0" max="100" step="0.01" inputmode="decimal"><small>%</small></span></label>
+                      <label>Science <span><input data-config-percent="science_scc_surcharge_basis_points" disabled type="number" value="2" min="0" max="100" step="0.01" inputmode="decimal"><small>%</small></span></label>
                     </div>
                   </fieldset>
 
                   <fieldset class="profile-fieldset pricing-section pricing-section--taxes">
                     <legend>Taxes</legend>
                     <div class="pricing-grid">
-                      <label>Sales tax <span><input data-pricing-percent="sales_tax_basis_points" type="number" value="0" min="0" max="100" step="0.01" inputmode="decimal"><small>%</small></span></label>
+                      <label>Sales tax mode
+                        <select data-config-choice="sales_tax_mode">
+                          <option value="accounting">From Accounting skill</option>
+                          <option value="manual">Manual rate</option>
+                        </select>
+                      </label>
+                      <label>Manual sales tax <span><input data-pricing-percent="sales_tax_basis_points" type="number" value="7.5" min="0" max="100" step="0.01" inputmode="decimal"><small>%</small></span></label>
+                      <p class="rig-coverage-note" data-effective-sales-tax role="status"></p>
                       <label>Broker's fee <span><input data-pricing-percent="broker_fee_basis_points" type="number" value="0" min="0" max="100" step="0.01" inputmode="decimal"><small>%</small></span></label>
-                      <label>PI tax <span><input data-config-percent="pi_tax_basis_points" type="number" value="0" min="0" max="100" step="0.01" inputmode="decimal"><small>%</small></span></label>
+                      <label>PI tax (not included) <span><input data-config-percent="pi_tax_basis_points" type="number" value="0" min="0" max="100" step="0.01" inputmode="decimal" disabled><small>%</small></span></label>
+                      <p class="rig-coverage-note">Immediate sales have no broker fee. Leave it at 0 unless adding an explicit custom fee assumption. Science and PI fees are excluded from the current manufacturing/reaction totals.</p>
                     </div>
                   </fieldset>
                 </fieldset>
@@ -367,6 +466,23 @@
         </section>
 
         <section id="industry-panel-build" class="industry-tab-panel" data-industry-panel="build" role="tabpanel" aria-labelledby="industry-tab-build" tabindex="0">
+              <details class="planner-details bulk-paste" data-bulk-panel>
+                <summary>Paste an inventory, multibuy list or fitting</summary>
+                <div class="planner-details-body">
+                  <label>Add to<select data-bulk-target><option value="demands">Build list</option><option value="owned_materials">Owned inventory</option></select></label>
+                  <label>Matching existing items<select data-bulk-mode><option value="add">Add quantities</option><option value="replace">Replace quantities for pasted items</option></select></label>
+                  <label for="industry-bulk-text">Item list</label>
+                  <textarea id="industry-bulk-text" data-bulk-text rows="7" maxlength="200000" placeholder="Tritanium&#9;1,000&#10;Rifter x2" aria-describedby="bulk-help"></textarea>
+                  <p id="bulk-help" class="field-status">Use exact English names or type IDs. Inventory columns, Name ×quantity (use x), Name quantity, and EFT fittings are supported. Loaded charges count as one per module; adjust ammunition quantities before previewing. Up to 500 item entries.</p>
+                  <button class="buy-button buy-button--secondary" type="button" data-bulk-preview>Preview items</button>
+                  <p class="field-status" data-bulk-status role="status" aria-live="polite"></p>
+                  <div class="bulk-preview-scroll" data-bulk-results hidden>
+                    <table class="bulk-preview-table"><thead><tr><th>Line</th><th>Item</th><th>Quantity</th><th>Status</th></tr></thead><tbody data-bulk-rows></tbody></table>
+                  </div>
+                  <button class="buy-button buy-button--primary" type="button" data-bulk-apply disabled>Add matched items</button>
+                </div>
+              </details>
+
           <div class="industry-workbench">
             <aside class="planner-panel panel" aria-labelledby="planner-title">
               <div class="build-heading-meta">
@@ -494,7 +610,7 @@
                   </div>
                   <dl class="summary-counts">
                     <div>
-                      <dt>Jobs</dt>
+                      <dt>Production steps</dt>
                       <dd data-step-count>0</dd>
                     </div>
                     <div>

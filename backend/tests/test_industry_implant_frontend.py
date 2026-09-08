@@ -25,4 +25,5 @@ def test_industry_frontend_loads_implant_extension() -> None:
     assert '["27175", "RX-801 · 1%"]' in implants
     assert '["27169", "RX-802 · 2%"]' in implants
     assert '["27174", "RX-804 · 4%"]' in implants
-    assert "body.production_profile.manufacturing_time_implant" in implants
+    assert "profile.manufacturing_time_implant = Number(implant.value)" in core
+    assert "window.fetch =" not in implants

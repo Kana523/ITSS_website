@@ -37,8 +37,8 @@ def _override_source() -> str:
 def test_industry_frontend_loads_saved_configs_after_implants() -> None:
     html, loader, configs = _frontend_sources()
 
-    assert 'skills.src = new URL("industry-skills.js", baseUrl).href' in loader
-    assert 'skills.addEventListener("load", loadCore' in loader
+    assert 'import "./industry-skills.js";' in loader
+    assert '<script type="module" src="../assets/js/industry.js"></script>' in html
     assert loader.index("industry-core.js") < loader.index("industry-implants.js")
     assert loader.index("industry-implants.js") < loader.index("industry-reprocessing.js")
     assert loader.index("industry-reprocessing.js") < loader.index("industry-tabs.js")
@@ -81,11 +81,13 @@ def test_profiles_live_below_tabs_and_config_cards_follow_requested_order() -> N
     assert "Delete profile" in html
 
 
-def test_workspace_has_three_persistent_tabs_with_build_as_default() -> None:
+def test_workspace_has_five_persistent_tabs_with_build_as_default() -> None:
     html, loader, tabs, _ = _workspace_sources()
 
-    assert html.count("data-industry-tab=") == 3
-    assert html.count("data-industry-panel=") == 3
+    assert html.count("data-industry-tab=") == 5
+    assert html.count("data-industry-panel=") == 5
+    assert 'data-industry-tab="schedule"' in html
+    assert 'data-industry-tab="blueprints"' in html
     assert 'data-industry-tab="config"' in html
     assert 'data-industry-tab="build"' in html
     assert 'data-industry-tab="shopping"' in html
@@ -347,7 +349,7 @@ def test_market_costs_are_grouped_with_general_scc_and_future_settings() -> None
     )
     assert "Cost assumptions" not in html
     assert html.index("data-trade-skill-groups") < html.index("data-profile-details")
-    assert "Immediate sale" not in html
+    assert "Immediate sales have no broker fee" in html
     assert 'data-pricing-percent="broker_fee_basis_points"' in html
     assert 'data-config-percent="pi_tax_basis_points"' in html
     assert 'data-config-integer="science_solar_system_id"' in html

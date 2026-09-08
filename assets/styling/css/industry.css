@@ -2055,9 +2055,14 @@
 
   .industry-tabs button {
     min-height: 54px;
-    padding: 8px 10px 10px;
+    padding: 8px 4px 10px;
     border-left: 0;
     border-bottom: 3px solid transparent;
+  }
+
+  .industry-tabs button span {
+    font-size: 0.8rem;
+    letter-spacing: 0;
   }
 
   .industry-tabs button[aria-selected="true"] {
@@ -2295,3 +2300,80 @@
   font-size: 0.8rem;
   line-height: 1.5;
 }
+
+/* Size dense controls by the available workspace, including the sidebar. */
+.config-card[data-profile-details],
+.config-card[data-pricing-details] {
+  grid-column: 1 / -1;
+}
+
+.config-workspace .facility-config-grid,
+.config-workspace .pricing-fields {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
+  align-items: start;
+}
+
+.pricing-section--taxes {
+  grid-column: 1 / -1;
+}
+
+.pricing-grid > .rig-coverage-note {
+  grid-column: 1 / -1;
+}
+/* Complete project controls and a bounded, keyboard-accessible paste preview. */
+.project-panel { display: grid; gap: .7rem; }
+.project-panel .saved-config-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.project-panel .config-button { min-width: 0; padding: .65rem .4rem; }
+.project-panel label, .bulk-paste label { display: grid; gap: .35rem; }
+.project-panel input, .project-panel select, .bulk-paste select, .bulk-paste textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  padding: .65rem;
+  border: 1px solid #3e505a;
+  border-radius: 4px;
+  background: #111b23;
+  color: #e3eaf0;
+  font: inherit;
+}
+.bulk-paste { margin-bottom: 1.2rem; padding: 1rem; border: 1px solid #3e505a; background: #111b23; }
+.bulk-paste .planner-details-body { display: grid; gap: .7rem; }
+.bulk-paste textarea { resize: vertical; font-family: monospace; }
+.bulk-preview-scroll { max-height: 22rem; overflow: auto; }
+.bulk-preview-table { width: 100%; min-width: 500px; border-collapse: collapse; font-size: .82rem; }
+.bulk-preview-table th, .bulk-preview-table td { padding: .45rem; text-align: left; border-bottom: 1px solid #35454f; overflow-wrap: anywhere; }
+.bulk-preview-table tr[data-issue] { color: #f0c17d; }
+.blueprint-library { padding: 1.5rem; margin-bottom: 1rem; min-width: 0; }
+.blueprint-library p { max-width: 80ch; }
+.blueprint-library label { display: grid; gap: .4rem; }
+.blueprint-library input:not([type="checkbox"]), .blueprint-library select {
+  width: 100%; min-width: 0; box-sizing: border-box; padding: .65rem;
+  background: var(--surface-control, #111b23); color: var(--text-primary, #e3eaf0);
+  border: 1px solid var(--border-subtle, #3e505a); border-radius: 4px; font: inherit;
+}
+.blueprint-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: .8rem; margin: 1rem 0; }
+.blueprint-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin: .6rem 0; }
+.blueprint-actions button { padding: .55rem .7rem; }
+.blueprint-search { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .75rem; align-items: end; margin-top: 1rem; }
+.blueprint-search-results { display: grid; gap: .4rem; list-style: none; padding: 0; }
+.blueprint-table-scroll { overflow-x: auto; margin: 1rem 0; }
+.blueprint-table { width: 100%; min-width: 650px; border-collapse: collapse; font-size: .9rem; }
+.blueprint-table caption { text-align: left; padding: .7rem 0; }
+.blueprint-table th, .blueprint-table td { text-align: left; padding: .7rem; border-bottom: 1px solid var(--border-subtle, #3e505a); overflow-wrap: anywhere; }
+.blueprint-table td:first-child { min-width: 150px; }
+.blueprint-table td:nth-child(2), .blueprint-table td:nth-child(3) { white-space: nowrap; }
+.blueprint-library .blueprint-checkbox { display: flex; align-items: center; }
+@media (max-width: 600px) {
+  .blueprint-library { padding: 1rem; }
+  .blueprint-search { grid-template-columns: minmax(0, 1fr); }
+}
+.schedule-timeline { display: grid; gap: .65rem; padding-left: 1.5rem; max-height: 35rem; overflow-y: auto; }
+.schedule-timeline li > span { display: block; font-size: .85rem; margin-bottom: .25rem; }
+.schedule-track { height: 14px; background: #1c2732; overflow: hidden; }
+.schedule-bar { display: block; height: 100%; min-width: 2px; background: #64acd7; }
+.schedule-bar[data-activity="reaction"] { background: #bf94d8; }
+.schedule-jobs { min-width: 1200px; }
+[data-schedule-panel] h3 { margin-top: 1.25rem; }
+[data-schedule-panel] th { white-space: nowrap; }
+[data-schedule-workers] input, [data-schedule-facilities] input { min-width: 90px !important; }
+[data-schedule-workers] input[type="datetime-local"] { min-width: 210px !important; }

@@ -36,10 +36,10 @@ The `CALCULATION_*` settings bound calculation body size, request rate, and
 concurrency. Rate and concurrency limits are enforced per API worker; the
 production image currently runs two workers.
 
-Then deploy:
+Download a CCP SDE JSONL ZIP onto the VM, then deploy with its absolute path:
 
 ```bash
-bash deploy/oracle/deploy.sh
+INDUSTRY_SDE_ARCHIVE=/opt/data/eve-online-static-data-latest-jsonl.zip bash deploy/oracle/deploy.sh
 ```
 
 The script performs these operations in order:
@@ -48,22 +48,32 @@ The script performs these operations in order:
 2. builds the backend image before touching the running API;
 3. starts or verifies PostgreSQL;
 4. runs `alembic upgrade head` as a one-shot migration;
-5. recreates the FastAPI container only after migrations succeed;
-6. waits for `/api/health` to report healthy.
+5. imports the supplied SDE ZIP through a read-only bind mount;
+6. verifies usable industry data and populated system security;
+7. recreates the FastAPI container only after these checks succeed;
+8. waits for `/api/ready` to report ready.
+
+Production uses `uv sync --locked --no-dev --no-editable`, so runtime dependencies
+come from `backend/uv.lock`. A lockfile mismatch fails the image build.
 
 Verify locally on the VM:
 
 ```bash
-curl http://127.0.0.1:8000/api/health
+curl http://127.0.0.1:8000/api/ready
 ```
 
 Expected result:
 
 ```json
-{"api":"ok","database":"ok"}
+{"status":"ready","reason":null,"sde_build_number":3484357}
 ```
 
 ## Updating an existing deployment
+
+The build number above is illustrative. `/api/health` remains the basic API/database
+probe. Readiness returns HTTP 503 if the database/schema, imported recipes, or
+system security are missing. Market-cache freshness is reported separately by
+the calculator and does not block readiness.
 
 Develop and test changes normally, then merge or push the production-ready code
 to the `main` branch on GitHub. On the Oracle VM run:
@@ -79,6 +89,11 @@ secret file is ignored by Git and is not replaced by pulls.
 
 The PostgreSQL data is stored in the Compose named volume `postgres_data`; normal
 updates, container recreation, and image rebuilds do not delete it.
+
+If an update needs SDE backfilling (including migration `0007`), supply
+`INDUSTRY_SDE_ARCHIVE` when running `update.sh`. Re-importing the same SDE build is
+supported. Normal updates with complete data can omit the archive. A failed
+import or readiness check stops deployment before replacing the API container.
 
 Do not use this unless you intentionally want to destroy the database:
 

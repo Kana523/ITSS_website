@@ -56,9 +56,20 @@ def test_repository_loads_types_and_recipes(
         )
         assert search_results[0].type_id == 1003
         assert repository.search_types("1003")[0].type_id == 1003
+        for query in ("Final Product", "Final Product Blueprint", "2002", "1003"):
+            catalog = repository.search_blueprints(query)
+            assert catalog[0].blueprint_type_id == 2002
+            assert catalog[0].product_type_id == 1003
+        assert repository.search_blueprints("%") == ()
+        assert repository.search_blueprints("Component Reaction") == ()
         assert repository.search_types("%") == ()
         assert repository.search_types("_") == ()
         assert repository.search_types("\\") == ()
+        resolved = repository.resolve_types((" RAW RESOURCE ", "1003", "Final", "%", "9999"))
+        assert {item.type_id for item in resolved} == {1001, 1003}
+        assert [item.type_id for item in repository.resolve_types(("1001", "1003"), producible_only=True)] == [1003]
+        with pytest.raises(ValueError, match="500"):
+            repository.resolve_types(tuple("1003" for _ in range(501)))
         with pytest.raises(ValueError, match="255"):
             repository.search_types("1" * 256)
         with pytest.raises(ValueError, match="limit"):

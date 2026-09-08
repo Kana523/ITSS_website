@@ -95,9 +95,25 @@ class TypeSearchQuery(ApiModel):
     limit: Annotated[int, Field(ge=1, le=100)] = 20
 
 
+class TypeResolutionRequest(ApiModel):
+    queries: Annotated[tuple[SearchText, ...], Field(min_length=1, max_length=500)]
+
+
 class SolarSystemSearchQuery(ApiModel):
     search: SearchText
     limit: Annotated[int, Field(ge=1, le=100)] = 20
+
+
+class BlueprintCatalogEntryResponse(ApiModel):
+    blueprint_type_id: TypeId
+    blueprint_name: str
+    product_type_id: TypeId
+    product_name: str
+
+
+class BlueprintCatalogResponse(ApiModel):
+    sde_build_number: SdeBuildNumber
+    items: tuple[BlueprintCatalogEntryResponse, ...]
 
 
 class ItemQuantityRequest(ApiModel):
@@ -422,6 +438,12 @@ class TypeSearchResponse(ApiModel):
     result_count: int
     limit: int
     items: tuple[IndustryTypeResponse, ...]
+
+
+class TypeResolutionResponse(ApiModel):
+    sde_build_number: SdeBuildNumber
+    items: tuple[IndustryTypeResponse, ...]
+    producible_type_ids: tuple[TypeId, ...]
 
 
 class RigScopeGroupResponse(ApiModel):
@@ -819,15 +841,15 @@ def calculation_response(
         ]
     ] = []
     if any(
-        step.blueprint_efficiency is not None
-        and step.blueprint_efficiency.material_efficiency > 0
+        efficiency is not None and efficiency.material_efficiency > 0
         for step in plan.build_steps
+        for efficiency in ([batch.blueprint_efficiency for batch in step.batches] if step.batches else [step.blueprint_efficiency])
     ):
         applied_modifiers.append("blueprint_material_efficiency")
     if any(
-        step.blueprint_efficiency is not None
-        and step.blueprint_efficiency.time_efficiency > 0
+        efficiency is not None and efficiency.time_efficiency > 0
         for step in plan.build_steps
+        for efficiency in ([batch.blueprint_efficiency for batch in step.batches] if step.batches else [step.blueprint_efficiency])
     ):
         applied_modifiers.append("blueprint_time_efficiency")
     if any(

@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session, aliased
 from app.industry.errors import InvalidIndustryDataError
 from app.industry.models import (
     ActivityKind,
+    BlueprintCatalogEntry,
     IndustryRecipe,
     IndustryType,
     ItemQuantity,
@@ -97,6 +98,59 @@ class SqlAlchemyIndustryRepository:
             .order_by(EveCategory.name, EveGroup.name, EveGroup.group_id)
         )
         return tuple(RigScopeGroup(**row._mapping) for row in self._session.execute(statement))
+
+    def search_blueprints(self, query: str, *, limit: int = 20) -> tuple[BlueprintCatalogEntry, ...]:
+        query = query.strip().lower()
+        if not 1 <= len(query) <= 255 or type(limit) is not int or not 1 <= limit <= 100:
+            raise ValueError("Invalid blueprint search or limit")
+        self._lock_sde_snapshot()
+        blueprint_type = aliased(EveType)
+        product_type = aliased(EveType)
+        other_product = aliased(IndustryActivityProduct)
+        numeric_id = int(query) if query.isascii() and query.isdigit() and len(query) <= 10 and int(query) <= 2147483647 else 0
+        pattern = f"%{_escape_like(query)}%"
+        statement = (select(
+            blueprint_type.type_id.label("blueprint_type_id"), blueprint_type.name.label("blueprint_name"),
+            product_type.type_id.label("product_type_id"), product_type.name.label("product_name"),
+        ).select_from(IndustryActivityProduct)
+            .join(blueprint_type, blueprint_type.type_id == IndustryActivityProduct.blueprint_type_id)
+            .join(product_type, product_type.type_id == IndustryActivityProduct.product_type_id)
+            .where(IndustryActivityProduct.activity_id == 1, blueprint_type.published.is_(True), product_type.published.is_(True),
+                   or_(func.lower(blueprint_type.name).like(pattern, escape="\\"),
+                       func.lower(product_type.name).like(pattern, escape="\\"),
+                       blueprint_type.type_id == numeric_id, product_type.type_id == numeric_id),
+                   ~exists(select(1).select_from(other_product).where(
+                       other_product.blueprint_type_id == IndustryActivityProduct.blueprint_type_id,
+                       other_product.activity_id == 1,
+                       other_product.product_type_id != IndustryActivityProduct.product_type_id,
+                   )))
+            .order_by(case((blueprint_type.type_id == numeric_id, 0),
+                           (func.lower(blueprint_type.name) == query, 1), else_=2), blueprint_type.name, blueprint_type.type_id)
+            .limit(limit))
+        return tuple(BlueprintCatalogEntry(**row._mapping) for row in self._session.execute(statement))
+
+    def resolve_types(
+        self, queries: Collection[str], *, producible_only: bool = False,
+    ) -> tuple[IndustryType, ...]:
+        if not 1 <= len(queries) <= 500:
+            raise ValueError("resolve requires 1 through 500 queries")
+        if any(not isinstance(query, str) or not query.strip() or len(query) > 255 for query in queries):
+            raise ValueError("queries must contain 1 through 255 characters")
+        self._lock_sde_snapshot()
+        names = {query.strip().lower() for query in queries}
+        ids = {int(name) for name in names if name.isascii() and name.isdigit()
+               and len(name) <= 10 and 0 < int(name) <= 2_147_483_647}
+        statement = self._type_select().where(
+            EveType.published.is_(True),
+            or_(func.lower(EveType.name).in_(names), EveType.type_id.in_(ids)),
+        )
+        if producible_only:
+            statement = statement.where(exists(select(1).select_from(IndustryActivityProduct).where(
+                IndustryActivityProduct.product_type_id == EveType.type_id,
+            )))
+        return tuple(self._to_industry_type(row) for row in self._session.execute(
+            statement.order_by(EveType.type_id)
+        ))
 
     def search_types(
         self,

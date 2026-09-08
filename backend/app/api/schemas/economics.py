@@ -35,6 +35,7 @@ class IndustryPricingRequest(EconomicsApiModel):
     facility_tax_basis_points: BasisPoints = 25
     scc_surcharge_basis_points: BasisPoints = 400
     sales_tax_basis_points: BasisPoints = 0
+    accounting_level: Annotated[int, Field(strict=True, ge=0, le=5)] | None = None
     broker_fee_basis_points: BasisPoints = 0
     job_cost_reduction_basis_points: BasisPoints = 0
     reaction_solar_system_id: TypeId | None = None
@@ -62,6 +63,7 @@ class IndustryPricingRequest(EconomicsApiModel):
             facility_tax_basis_points=self.facility_tax_basis_points,
             scc_surcharge_basis_points=self.scc_surcharge_basis_points,
             sales_tax_basis_points=self.sales_tax_basis_points,
+            accounting_level=self.accounting_level,
             broker_fee_basis_points=self.broker_fee_basis_points,
             job_cost_reduction_basis_points=(
                 self.job_cost_reduction_basis_points
@@ -115,6 +117,8 @@ class PricingOptionsResponse(EconomicsApiModel):
     facility_tax_basis_points: int
     scc_surcharge_basis_points: int
     sales_tax_basis_points: int
+    accounting_level: int | None
+    effective_sales_tax_rate: str
     broker_fee_basis_points: int
     job_cost_reduction_basis_points: int
     reaction_solar_system_id: int | None
@@ -522,6 +526,8 @@ def valuation_response(
             facility_tax_basis_points=options.facility_tax_basis_points,
             scc_surcharge_basis_points=options.scc_surcharge_basis_points,
             sales_tax_basis_points=options.sales_tax_basis_points,
+            accounting_level=options.accounting_level,
+            effective_sales_tax_rate=str(options.effective_sales_tax_rate),
             broker_fee_basis_points=options.broker_fee_basis_points,
             job_cost_reduction_basis_points=(
                 options.job_cost_reduction_basis_points

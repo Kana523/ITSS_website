@@ -34,3 +34,4 @@ class DescribedProductionPlan:
     plan: ProductionPlan
     item_types: tuple[IndustryType, ...]
     valuation: ValuedProductionPlan | None = None
+    schedule: dict | None = None

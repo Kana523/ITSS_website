@@ -1,0 +1,420 @@
+{
+  "sde_build_number": 9000001,
+  "calculation_basis": "sde_base_quantities",
+  "applied_modifiers": [
+    "blueprint_material_efficiency",
+    "blueprint_time_efficiency"
+  ],
+  "excluded_modifiers": [
+    "character_implants",
+    "owned_materials"
+  ],
+  "requested": [
+    {
+      "item": {
+        "type_id": 1001,
+        "name": "Test Product"
+      },
+      "quantity": 3
+    }
+  ],
+  "consumed_inventory": [],
+  "build_steps": [
+    {
+      "product": {
+        "type_id": 1001,
+        "name": "Test Product"
+      },
+      "recipe_key": {
+        "blueprint_type_id": 2001,
+        "activity_id": 1
+      },
+      "blueprint": {
+        "type_id": 2001,
+        "name": "Test Product Blueprint"
+      },
+      "activity": "manufacturing",
+      "required_quantity": 3,
+      "output_per_run": 2,
+      "runs": 2,
+      "produced_quantity": 4,
+      "surplus_quantity": 1,
+      "blueprint_efficiency": {
+        "material_efficiency": 10,
+        "time_efficiency": 20
+      },
+      "production_modifiers": {
+        "specialist_skills": [],
+        "specialist_time_multiplier": {
+          "numerator": "1",
+          "denominator": "1"
+        },
+        "skills": {
+          "industry_level": 0,
+          "advanced_industry_level": 0,
+          "reactions_level": 0
+        },
+        "character_time_multiplier": {
+          "numerator": "1",
+          "denominator": "1"
+        },
+        "facility_material_reduction_basis_points": 0,
+        "facility_time_reduction_basis_points": 0,
+        "rig_material_reduction_basis_points": 0,
+        "rig_time_reduction_basis_points": 0,
+        "facility_material_multiplier": {
+          "numerator": "1",
+          "denominator": "1"
+        },
+        "facility_time_multiplier": {
+          "numerator": "1",
+          "denominator": "1"
+        },
+        "rig_material_multiplier": {
+          "numerator": "1",
+          "denominator": "1"
+        },
+        "rig_time_multiplier": {
+          "numerator": "1",
+          "denominator": "1"
+        },
+        "material_multiplier": {
+          "numerator": "1",
+          "denominator": "1"
+        },
+        "time_multiplier": {
+          "numerator": "1",
+          "denominator": "1"
+        }
+      },
+      "time_seconds_per_run": 60,
+      "base_total_job_time_seconds": 120,
+      "display_job_time_seconds": 96,
+      "exact_job_time_seconds": {
+        "numerator": "96",
+        "denominator": "1"
+      },
+      "total_job_time_centiseconds": "9600",
+      "inputs": [
+        {
+          "item": {
+            "type_id": 34,
+            "name": "Raw Material"
+          },
+          "quantity_per_run": 3,
+          "base_total_quantity": 6,
+          "total_quantity": 6
+        }
+      ]
+    }
+  ],
+  "purchases": [
+    {
+      "item": {
+        "type_id": 34,
+        "name": "Raw Material"
+      },
+      "quantity": 6,
+      "reason": "no_recipe"
+    }
+  ],
+  "valuation": {
+    "market_snapshot": {
+      "region_id": 10000002,
+      "location_id": 60003760,
+      "location_name": "Jita 4-4",
+      "status": "fresh",
+      "input_strategy": "best_sell",
+      "output_strategy": "best_unrestricted_buy",
+      "resources": [
+        {
+          "resource": "industry-systems",
+          "fetched_at": "2026-08-14T11:59:00Z",
+          "fresh_until": "2026-08-14T12:04:00Z",
+          "row_count": 1,
+          "requested_compatibility_date": "2026-08-13",
+          "matched_compatibility_date": "2026-08-13"
+        },
+        {
+          "resource": "market-orders:10000002:60003760",
+          "fetched_at": "2026-08-14T11:59:00Z",
+          "fresh_until": "2026-08-14T12:04:00Z",
+          "row_count": 2,
+          "requested_compatibility_date": "2026-08-13",
+          "matched_compatibility_date": "2026-08-13"
+        },
+        {
+          "resource": "markets-prices",
+          "fetched_at": "2026-08-14T11:59:00Z",
+          "fresh_until": "2026-08-14T12:04:00Z",
+          "row_count": 1,
+          "requested_compatibility_date": "2026-08-13",
+          "matched_compatibility_date": "2026-08-13"
+        }
+      ]
+    },
+    "pricing_options": {
+      "inventory_valuation_method": "replacement_cost",
+      "recorded_inventory_costs": [],
+      "solar_system_id": 30000142,
+      "facility_tax_basis_points": 25,
+      "scc_surcharge_basis_points": 400,
+      "sales_tax_basis_points": 0,
+      "accounting_level": null,
+      "effective_sales_tax_rate": "0.0000",
+      "broker_fee_basis_points": 0,
+      "job_cost_reduction_basis_points": 0,
+      "reaction_solar_system_id": null,
+      "reaction_facility_tax_basis_points": 25,
+      "reaction_scc_surcharge_basis_points": 400,
+      "reaction_job_cost_reduction_basis_points": 0
+    },
+    "economics": {
+      "consumed_inventory": [],
+      "consumed_inventory_value": {
+        "amount_isk": "0",
+        "complete": true,
+        "missing_type_ids": [],
+        "insufficient_liquidity_type_ids": []
+      },
+      "cash_required_isk": "32.1485475",
+      "cash_surplus_isk": "21.1014525",
+      "cash_surplus_including_surplus_isk": "38.8514525",
+      "complete": true,
+      "shopping_list": [
+        {
+          "item": {
+            "type_id": 34,
+            "name": "Raw Material"
+          },
+          "quantity": 6,
+          "unit_price_isk": "5.125",
+          "available_volume": 6,
+          "has_sufficient_liquidity": true,
+          "total_isk": "30.75"
+        }
+      ],
+      "shopping_list_cost": {
+        "amount_isk": "30.75",
+        "complete": true,
+        "missing_type_ids": [],
+        "insufficient_liquidity_type_ids": []
+      },
+      "requested_outputs": [
+        {
+          "item": {
+            "type_id": 1001,
+            "name": "Test Product"
+          },
+          "quantity": 3,
+          "unit_price_isk": "17.75",
+          "available_volume": 4,
+          "has_sufficient_liquidity": true,
+          "total_isk": "53.25"
+        }
+      ],
+      "requested_output_value": {
+        "amount_isk": "53.25",
+        "complete": true,
+        "missing_type_ids": [],
+        "insufficient_liquidity_type_ids": []
+      },
+      "surplus_inventory": [
+        {
+          "item": {
+            "type_id": 1001,
+            "name": "Test Product"
+          },
+          "quantity": 1,
+          "unit_price_isk": "17.75",
+          "available_volume": 4,
+          "has_sufficient_liquidity": true,
+          "total_isk": "17.75"
+        }
+      ],
+      "surplus_inventory_value": {
+        "amount_isk": "17.75",
+        "complete": true,
+        "missing_type_ids": [],
+        "insufficient_liquidity_type_ids": []
+      },
+      "marketable_inventory": [
+        {
+          "item": {
+            "type_id": 1001,
+            "name": "Test Product"
+          },
+          "quantity": 4,
+          "unit_price_isk": "17.75",
+          "available_volume": 4,
+          "has_sufficient_liquidity": true,
+          "total_isk": "71"
+        }
+      ],
+      "marketable_inventory_value": {
+        "amount_isk": "71",
+        "complete": true,
+        "missing_type_ids": [],
+        "insufficient_liquidity_type_ids": []
+      },
+      "estimated_item_value_total_isk": "25.5",
+      "installation_cost_total_isk": "1.3985475",
+      "sales_tax_isk": "0",
+      "broker_fee_isk": "0",
+      "transaction_fees_total_isk": "0",
+      "net_output_value_isk": "53.25",
+      "total_cost_isk": "32.1485475",
+      "profit_isk": "21.1014525",
+      "profit_margin": {
+        "numerator": "21.1014525",
+        "denominator": "53.25"
+      },
+      "sales_tax_including_surplus_isk": "0",
+      "broker_fee_including_surplus_isk": "0",
+      "transaction_fees_total_including_surplus_isk": "0",
+      "net_output_value_including_surplus_isk": "71",
+      "total_cost_including_surplus_isk": "32.1485475",
+      "profit_including_surplus_isk": "38.8514525",
+      "profit_margin_including_surplus": {
+        "numerator": "38.8514525",
+        "denominator": "71"
+      },
+      "job_costs": [
+        {
+          "product": {
+            "type_id": 1001,
+            "name": "Test Product"
+          },
+          "recipe_key": {
+            "blueprint_type_id": 2001,
+            "activity_id": 1
+          },
+          "activity": "manufacturing",
+          "solar_system_id": 30000142,
+          "runs": 2,
+          "estimated_item_value_isk": "25.5",
+          "system_cost_index": "0.012345",
+          "job_cost_modifier": "1",
+          "installation_rate": "0.054845",
+          "installation_cost_isk": "1.3985475",
+          "missing_adjusted_price_type_ids": [],
+          "missing_system_cost_index": false
+        }
+      ],
+      "step_comparisons": [
+        {
+          "product": {
+            "type_id": 1001,
+            "name": "Test Product"
+          },
+          "recipe_key": {
+            "blueprint_type_id": 2001,
+            "activity_id": 1
+          },
+          "required_quantity": 3,
+          "direct_input_market_cost_isk": "30.75",
+          "installation_cost_isk": "1.3985475",
+          "direct_build_cost_isk": "32.1485475",
+          "surplus_quantity": 1,
+          "surplus_market_value_isk": "17.75",
+          "surplus_net_value_isk": "17.75",
+          "effective_build_cost_isk": "14.3985475",
+          "buy_unit_price_isk": "19.5",
+          "direct_buy_cost_isk": "58.5",
+          "savings_if_built_isk": "44.1014525",
+          "lower_cost_option": "build",
+          "missing_sell_quote_type_ids": [],
+          "insufficient_sell_liquidity_type_ids": [],
+          "missing_surplus_buy_quote": false,
+          "insufficient_surplus_buy_liquidity": false
+        }
+      ],
+      "missing_data": {
+        "inventory_cost_type_ids": [],
+        "inventory_sell_liquidity_type_ids": [],
+        "shopping_sell_quote_type_ids": [],
+        "shopping_sell_liquidity_type_ids": [],
+        "output_buy_quote_type_ids": [],
+        "output_buy_liquidity_type_ids": [],
+        "adjusted_price_type_ids": [],
+        "system_cost_indices": []
+      }
+    }
+  },
+  "schedule": {
+    "start_at": "2026-09-08T00:00:00Z",
+    "end_at": "2026-09-08T00:00:48Z",
+    "jobs": [
+      {
+        "job_id": 1,
+        "product_type_id": 1001,
+        "recipe_key": {
+          "blueprint_type_id": 2001,
+          "activity_id": 1
+        },
+        "activity": "manufacturing",
+        "runs": 1,
+        "output_quantity": 2,
+        "lot_id": "originals",
+        "blueprint_instance": 1,
+        "material_efficiency": 10,
+        "time_efficiency": 20,
+        "worker_id": "pilot",
+        "worker_slot": 1,
+        "facility_id": "factory",
+        "facility_slot": 1,
+        "start_at": "2026-09-08T00:00:00Z",
+        "end_at": "2026-09-08T00:00:48Z",
+        "duration_seconds": {
+          "numerator": "48",
+          "denominator": "1"
+        },
+        "inputs": [
+          {
+            "type_id": 34,
+            "quantity": 3
+          }
+        ],
+        "dependency_product_type_ids": []
+      },
+      {
+        "job_id": 2,
+        "product_type_id": 1001,
+        "recipe_key": {
+          "blueprint_type_id": 2001,
+          "activity_id": 1
+        },
+        "activity": "manufacturing",
+        "runs": 1,
+        "output_quantity": 2,
+        "lot_id": "originals",
+        "blueprint_instance": 2,
+        "material_efficiency": 10,
+        "time_efficiency": 20,
+        "worker_id": "pilot",
+        "worker_slot": 2,
+        "facility_id": "factory",
+        "facility_slot": 2,
+        "start_at": "2026-09-08T00:00:00Z",
+        "end_at": "2026-09-08T00:00:48Z",
+        "duration_seconds": {
+          "numerator": "48",
+          "denominator": "1"
+        },
+        "inputs": [
+          {
+            "type_id": 34,
+            "quantity": 3
+          }
+        ],
+        "dependency_product_type_ids": []
+      }
+    ],
+    "assumptions": [
+      "Purchased materials and owned inventory are available at the start.",
+      "All batches of each predecessor finish before dependent jobs begin; hauling time is excluded.",
+      "Characters use this project's skill profile. Facilities use its configured activity/category bonuses and fees.",
+      "Stock and slots are planned locally, not reserved in EVE or other projects."
+    ]
+  }
+}

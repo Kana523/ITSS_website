@@ -11,13 +11,18 @@ from app.api.schemas.industry import (
     ProductionProfileRequest,
     Quantity,
     RecipeKeyRequest,
+    MaterialEfficiencyPercent,
+    TimeEfficiencyPercent,
+    NonNegativeQuantity,
     SkillLevel,
     TypeId,
     calculation_response,
 )
 from app.industry.implants import ManufacturingTimeImplant
-from app.industry.models import RecipeKey
+from app.industry.models import RecipeKey, BlueprintEfficiency
+from app.industry.blueprint_library import BlueprintSelection
 from app.industry.views import DescribedProductionPlan
+from app.api.schemas.scheduling import ScheduleRequest, ScheduleResponse
 
 
 class BlueprintCopyRunLimitRequest(ApiModel):
@@ -26,6 +31,25 @@ class BlueprintCopyRunLimitRequest(ApiModel):
 
     def to_domain(self) -> tuple[RecipeKey, int]:
         return self.recipe_key.to_domain(), self.runs_per_copy
+
+
+class BlueprintSelectionRequest(ApiModel):
+    recipe_key: RecipeKeyRequest
+    kind: Literal["bpo", "bpc"]
+    quantity: Quantity
+    remaining_runs: NonNegativeQuantity | None = None
+    material_efficiency: MaterialEfficiencyPercent = 0
+    time_efficiency: TimeEfficiencyPercent = 0
+    lot_id: Annotated[str, Field(min_length=1, max_length=100)] | None = None
+
+    def to_domain(self) -> BlueprintSelection:
+        return BlueprintSelection(self.recipe_key.to_domain(), self.kind, self.quantity,
+                                  self.remaining_runs, BlueprintEfficiency(self.material_efficiency, self.time_efficiency), self.lot_id)
+
+    @model_validator(mode="after")
+    def validate_stock(self) -> Self:
+        self.to_domain()
+        return self
 
 
 class SpecialistSkillLevelRequest(ApiModel):
@@ -59,6 +83,7 @@ class IndustryCalculationResponse(CalculationResponse):
     """Calculation response with the additive implant modifier label."""
 
     applied_modifiers: tuple[AppliedModifier, ...]
+    schedule: ScheduleResponse | None = None
 
 
 class IndustryCalculationRequest(CalculationRequest):
@@ -77,9 +102,26 @@ class IndustryCalculationRequest(CalculationRequest):
         list[SpecialistSkillLevelRequest],
         Field(max_length=500),
     ] | None = None
+    blueprint_selections: Annotated[list[BlueprintSelectionRequest], Field(max_length=500)] = Field(default_factory=list)
+    require_owned_blueprints: bool = False
+    schedule: ScheduleRequest | None = None
 
     @model_validator(mode="after")
     def reject_duplicate_additive_inputs(self) -> Self:
+        selection_keys = [item.recipe_key.to_domain() for item in self.blueprint_selections]
+        lot_ids = [item.lot_id for item in self.blueprint_selections if item.lot_id is not None]
+        if len(lot_ids) != len(set(lot_ids)):
+            raise ValueError("Blueprint lot IDs must be unique")
+        if self.schedule is None and len(selection_keys) != len(set(selection_keys)):
+            raise ValueError("Select one blueprint lot per recipe")
+        if self.schedule is not None:
+            ids = [item.lot_id for item in self.blueprint_selections]
+            if len(selection_keys) != len(set(selection_keys)) and (None in ids or len(ids) != len(set(ids))):
+                raise ValueError("Multiple blueprint lots require distinct lot IDs")
+        manual_keys = {item.recipe_key.to_domain() for item in self.blueprint_efficiencies}
+        manual_keys.update(item.recipe_key.to_domain() for item in self.blueprint_copy_run_limits)
+        if manual_keys.intersection(selection_keys):
+            raise ValueError("Selected library stock replaces manual ME/TE and copy limits for its recipe")
         owned_type_ids = [item.type_id for item in self.owned_materials]
         if len(owned_type_ids) != len(set(owned_type_ids)):
             raise ValueError(
@@ -188,4 +230,5 @@ def industry_calculation_response(
         for modifier in payload["excluded_modifiers"]
         if modifier not in included_modifiers
     )
+    payload["schedule"] = result.schedule
     return IndustryCalculationResponse.model_validate(payload)

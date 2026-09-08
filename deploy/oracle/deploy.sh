@@ -27,6 +27,11 @@ fi
 
 compose=(docker compose -f "${COMPOSE_FILE}")
 
+if [[ -n "${INDUSTRY_SDE_ARCHIVE:-}" && ! -f "${INDUSTRY_SDE_ARCHIVE}" ]]; then
+  echo "SDE archive not found: ${INDUSTRY_SDE_ARCHIVE}" >&2
+  exit 1
+fi
+
 # Fail before changing running services if the production Compose file is invalid.
 "${compose[@]}" config -q
 
@@ -38,6 +43,19 @@ compose=(docker compose -f "${COMPOSE_FILE}")
 
 # Migrations are an explicit one-shot gate. If they fail, the new API is not started.
 docker compose -f "${COMPOSE_FILE}" --profile maintenance run --rm migrate
+
+# Import on first deployment or when refreshing SDE metadata after a migration.
+if [[ -n "${INDUSTRY_SDE_ARCHIVE:-}" ]]; then
+  sde_archive="$(realpath -- "${INDUSTRY_SDE_ARCHIVE}")"
+  "${compose[@]}" --profile maintenance run --rm \
+    --volume "${sde_archive}:/data/sde.zip:ro" migrate python -m app.sde /data/sde.zip
+fi
+
+# An empty or partially initialized database must not replace a working API.
+if ! "${compose[@]}" --profile maintenance run --rm migrate python -m app.readiness; then
+  echo "Calculator data is not ready. Set INDUSTRY_SDE_ARCHIVE to an SDE JSONL ZIP and rerun deployment." >&2
+  exit 1
+fi
 
 # Recreate only the API after a successful build and migration.
 "${compose[@]}" up -d --no-deps --force-recreate api

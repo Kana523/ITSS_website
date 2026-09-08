@@ -4,6 +4,7 @@ from fractions import Fraction
 from app.industry.errors import (
     IndustryPlanningError,
     InvalidIndustryDataError,
+    InvalidScheduleError,
     PlanTooLargeError,
     SdeNotImportedError,
     SdeVersionMismatchError,
@@ -29,6 +30,7 @@ from app.industry.planner import (
     resolve_recipe_choice,
 )
 from app.industry.repository import IndustryRepository
+from app.industry.blueprint_library import BlueprintSelection, BlueprintStockError, normalize_selections, group_selections
 from app.industry.specialist_skills import (
     MissingSpecialistSkillsError,
     SpecialistSkillRequirement,
@@ -53,6 +55,9 @@ class IndustryPlanningService:
         production_profile: ProductionProfile | None = None,
         owned_materials: Mapping[int, int] | None = None,
         blueprint_copy_run_limits: Mapping[RecipeKey, int] | None = None,
+        blueprint_selections: Iterable[BlueprintSelection] | None = None,
+        require_owned_blueprints: bool = False,
+        schedule_max_runs: int | None = None,
         specialist_skill_levels: Mapping[int, int] | None = None,
         manufacturing_time_multiplier: Fraction = Fraction(1),
         expected_sde_build_number: int | None = None,
@@ -74,6 +79,12 @@ class IndustryPlanningService:
         copy_run_limits = normalize_blueprint_copy_run_limits(
             blueprint_copy_run_limits
         )
+        selection_values = tuple(blueprint_selections or ())
+        lots = group_selections(selection_values)
+        selections = ({key: rows[0] for key, rows in lots.items()} if schedule_max_runs is not None
+                      else normalize_selections(selection_values))
+        if set(selections).intersection(set(blueprint_efficiencies or {}) | set(copy_run_limits)):
+            raise InvalidIndustryDataError("Library selections replace manual efficiencies and copy limits")
         enforce_specialist_skills = specialist_skill_levels is not None
         specialist_levels = normalize_specialist_skill_levels(
             dict(specialist_skill_levels or {})
@@ -127,6 +138,10 @@ class IndustryPlanningService:
                 manufacturing_time_multiplier,
                 build_number,
                 root_type_ids,
+                selections,
+                require_owned_blueprints,
+                lots,
+                schedule_max_runs,
             )
         except IndustryPlanningError as exc:
             exc.attach_sde_build_number(build_number)
@@ -145,6 +160,10 @@ class IndustryPlanningService:
         manufacturing_time_multiplier: Fraction,
         build_number: int,
         root_type_ids: set[int],
+        selections: Mapping[RecipeKey, BlueprintSelection],
+        require_owned_blueprints: bool,
+        lots: Mapping,
+        schedule_max_runs: int | None,
     ) -> ProductionPlan:
         recipes_by_key: dict[RecipeKey, IndustryRecipe] = {}
         visited_type_ids: set[int] = set()
@@ -171,10 +190,15 @@ class IndustryPlanningService:
             )
             next_frontier: set[int] = set()
             for product_type_id in sorted(current_type_ids):
+                choice = choice_by_type.get(product_type_id, BuildChoice())
+                candidates = recipes_by_product.get(product_type_id, ())
+                selected_candidates = [recipe for recipe in candidates if recipe.key in selections]
+                if choice.decision == BuildDecision.AUTO and len(selected_candidates) == 1:
+                    choice = BuildChoice(BuildDecision.BUILD, selected_candidates[0].key)
                 selected_recipe = resolve_recipe_choice(
                     product_type_id,
-                    recipes_by_product.get(product_type_id, ()),
-                    choice_by_type.get(product_type_id, BuildChoice()),
+                    candidates,
+                    choice,
                 )
                 if selected_recipe is None:
                     continue
@@ -233,16 +257,31 @@ class IndustryPlanningService:
                 + ", ".join(str(type_id) for type_id in missing_product_type_ids)
             )
 
+        efficiencies = dict(blueprint_efficiencies or {})
+        copy_limits = dict(blueprint_copy_run_limits)
+        for key, selection in selections.items():
+            if key not in recipes_by_key:
+                continue
+            efficiencies[key] = selection.efficiency
+            if schedule_max_runs is None and selection.kind == "bpc" and selection.remaining_runs:
+                copy_limits[key] = selection.remaining_runs
+            if schedule_max_runs is not None:
+                maximum = recipes_by_key[key].max_production_limit
+                if maximum is not None and any(lot.kind == "bpc" and lot.remaining_runs > maximum for lot in lots[key]):
+                    raise InvalidScheduleError(f"Copy runs exceed the SDE maximum for blueprint {key.blueprint_type_id}. Correct the selected lot's remaining runs.")
+
         plan = plan_production(
             demand_tuple,
             tuple(sorted(recipes_by_key.values(), key=lambda recipe: recipe.key)),
             sde_build_number=build_number,
             choices=choice_by_type,
-            blueprint_efficiencies=blueprint_efficiencies,
+            blueprint_efficiencies=efficiencies,
             production_profile=profile,
             product_types=product_types,
             owned_materials=owned_materials,
-            blueprint_copy_run_limits=blueprint_copy_run_limits,
+            blueprint_copy_run_limits=copy_limits,
+            scheduled_lots=lots,
+            schedule_max_runs=schedule_max_runs,
             manufacturing_time_multiplier=manufacturing_time_multiplier,
             specialist_skill_bonuses={
                 key: manufacturing_skill_bonuses(requirements, specialist_skill_levels)
@@ -253,6 +292,12 @@ class IndustryPlanningService:
         # Inventory can remove entire jobs and their dependency chains. Check
         # eligibility only after the final quantities and timed job splits exist.
         missing: list[tuple[RecipeKey, SpecialistSkillRequirement, int]] = []
+        for step in plan.build_steps:
+            selection = selections.get(step.recipe.key)
+            if schedule_max_runs is None and selection and selection.available_runs is not None and step.runs > selection.available_runs:
+                raise BlueprintStockError(step.recipe.key, step.runs, selection.available_runs)
+            if require_owned_blueprints and step.recipe.activity == ActivityKind.MANUFACTURING and selection is None:
+                raise BlueprintStockError(step.recipe.key, step.runs, 0)
         if enforce_specialist_skills:
             for step in sorted(plan.build_steps, key=lambda step: step.recipe.key):
                 for requirement in requirements_by_recipe.get(step.recipe.key, ()):

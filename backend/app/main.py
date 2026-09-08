@@ -8,6 +8,7 @@ from app.api.routes.market import router as market_router
 from app.api.specialist_skill_errors import install_specialist_skill_error_handler
 from app.config import get_settings
 from app.database.engine import is_database_available
+from app.readiness import calculator_readiness
 
 
 def health(response: Response) -> dict[str, str]:
@@ -17,6 +18,13 @@ def health(response: Response) -> dict[str, str]:
         response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
 
     return {"api": "ok", "database": database_status}
+
+
+def ready(response: Response) -> dict[str, str | int | None]:
+    result = calculator_readiness()
+    if result["status"] != "ready":
+        response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+    return result
 
 
 def create_app(
@@ -76,6 +84,7 @@ def create_app(
         tags=["system"],
     )
     application.include_router(industry_router)
+    application.add_api_route("/api/ready", ready, methods=["GET"], tags=["system"])
     application.include_router(market_router)
     install_error_handlers(application)
     install_specialist_skill_error_handler(application)

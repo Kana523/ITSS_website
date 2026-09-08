@@ -13,6 +13,10 @@ from app.api.schemas.industry import (
     SolarSystemSearchResponse,
     TypeSearchQuery,
     TypeSearchResponse,
+    TypeResolutionRequest,
+    TypeResolutionResponse,
+    BlueprintCatalogResponse,
+    BlueprintCatalogEntryResponse,
     product_recipes_response,
     solar_system_search_response,
     type_search_response,
@@ -64,6 +68,26 @@ def search_types(
         result,
         query=query.search,
         limit=query.limit,
+    )
+
+
+@router.get("/blueprints", response_model=BlueprintCatalogResponse, responses=ERROR_RESPONSES)
+def search_blueprints(query: Annotated[SolarSystemSearchQuery, Query()], service: IndustryServiceDependency) -> BlueprintCatalogResponse:
+    build, items = service.search_blueprints(query.search, limit=query.limit)
+    return BlueprintCatalogResponse(sde_build_number=build,
+                                    items=tuple(BlueprintCatalogEntryResponse(**asdict(item)) for item in items))
+
+
+@router.post("/types/resolve", response_model=TypeResolutionResponse, responses=ERROR_RESPONSES)
+def resolve_types(
+    request: TypeResolutionRequest,
+    service: IndustryServiceDependency,
+) -> TypeResolutionResponse:
+    result, producible_ids = service.resolve_types(request.queries)
+    return TypeResolutionResponse(
+        sde_build_number=result.sde_build_number,
+        items=type_search_response(result, query="", limit=500).items,
+        producible_type_ids=producible_ids,
     )
 
 
@@ -144,6 +168,9 @@ def calculate(
         production_profile=request.to_production_profile(),
         owned_materials=owned_materials,
         blueprint_copy_run_limits=request.to_blueprint_copy_run_limits(),
+        blueprint_selections=tuple(item.to_domain() for item in request.blueprint_selections),
+        require_owned_blueprints=request.require_owned_blueprints,
+        schedule_options=request.schedule.model_dump() if request.schedule else None,
         specialist_skill_levels=request.to_specialist_skill_levels(),
         pricing_options=request.to_pricing_options(),
         manufacturing_time_multiplier=(

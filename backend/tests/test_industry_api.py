@@ -19,6 +19,7 @@ from app.industry.errors import (
 )
 from app.industry.models import (
     ActivityKind,
+    BlueprintCatalogEntry,
     IndustryRecipe,
     IndustryType,
     ItemQuantity,
@@ -131,6 +132,20 @@ class FakeIndustryDataRepository:
         assert activity in (ActivityKind.MANUFACTURING, ActivityKind.REACTION)
         return (RigScopeGroup(18, "Mineral", 4, "Material"),)
 
+    def search_blueprints(self, query, *, limit=20):
+        return tuple(BlueprintCatalogEntry(recipe.key.blueprint_type_id, recipe.blueprint_name,
+                                           recipe.products[0].type_id, self.types[recipe.products[0].type_id].name)
+                     for recipe in self.recipes if recipe.activity == ActivityKind.MANUFACTURING
+                     and (query.lower() in recipe.blueprint_name.lower()
+                          or query in {str(recipe.key.blueprint_type_id), str(recipe.products[0].type_id)}))[:limit]
+
+    def resolve_types(self, queries, *, producible_only=False):
+        names = {query.strip().lower() for query in queries}
+        producible_ids = {product.type_id for recipe in self.recipes for product in recipe.products}
+        return tuple(item for item in self.types.values() if item.published
+                     and (item.name.lower() in names or str(item.type_id) in names)
+                     and (not producible_only or item.type_id in producible_ids))
+
     def search_types(
         self,
         query: str,
@@ -205,6 +220,28 @@ def api_client() -> Iterator[TestClient]:
     with TestClient(application) as client:
         yield client
     application.dependency_overrides.clear()
+
+
+def test_bulk_type_resolution_contract(api_client: TestClient) -> None:
+    response = api_client.post("/api/industry/types/resolve", json={
+        "queries": [" RAW RESOURCE ", "1003", "Final", "%", "Unpublished Product", "9999"],
+    })
+    assert response.status_code == 200
+    result = response.json()
+    assert result["sde_build_number"] == 9_000_001
+    assert {item["type_id"] for item in result["items"]} == {1001, 1003}
+    assert result["producible_type_ids"] == [1003]
+
+
+@pytest.mark.parametrize("queries", [[], ["x"] * 501, ["x" * 256], [" "], [34], None])
+def test_bulk_resolution_rejects_invalid_queries(api_client: TestClient, queries) -> None:
+    assert api_client.post("/api/industry/types/resolve", json={"queries": queries}).status_code == 422
+
+
+def test_bulk_resolution_body_guard(api_client: TestClient) -> None:
+    response = api_client.post("/api/industry/types/resolve", content=b" " * 1_048_577,
+                               headers={"Content-Type": "application/json"})
+    assert response.status_code == 413
 
 
 def test_type_search_contract(api_client: TestClient) -> None:

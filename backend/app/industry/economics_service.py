@@ -95,6 +95,7 @@ class IndustryPricingOptions:
     facility_tax_basis_points: int = 25
     scc_surcharge_basis_points: int = 400
     sales_tax_basis_points: int = 0
+    accounting_level: int | None = None
     broker_fee_basis_points: int = 0
     job_cost_reduction_basis_points: int = 0
     reaction_solar_system_id: int | None = None
@@ -106,6 +107,12 @@ class IndustryPricingOptions:
 
     def __post_init__(self) -> None:
         _require_positive_int(self.solar_system_id, "solar_system_id")
+        if self.accounting_level is not None and (
+            isinstance(self.accounting_level, bool)
+            or not isinstance(self.accounting_level, int)
+            or not 0 <= self.accounting_level <= 5
+        ):
+            raise ValueError("accounting_level must be an integer from 0 to 5")
         if self.reaction_solar_system_id is not None:
             _require_positive_int(
                 self.reaction_solar_system_id,
@@ -122,6 +129,14 @@ class IndustryPricingOptions:
             "reaction_job_cost_reduction_basis_points",
         ):
             _require_basis_points(getattr(self, field_name), field_name)
+    @property
+    def effective_sales_tax_rate(self) -> Decimal:
+        if self.accounting_level is not None:
+            # CCP: 7.5% base tax, Accounting reduces it by 11% per level.
+            # Keep 3.375% exact at level V; integer basis points would round it.
+            return Decimal("0.075") * (1 - Decimal("0.11") * self.accounting_level)
+        return _rate(self.sales_tax_basis_points)
+
     def activity_fee_rates(
         self,
         activity: ActivityKind,
@@ -187,7 +202,7 @@ class IndustryPricingOptions:
             solar_system_id=manufacturing.solar_system_id,
             facility_tax_rate=manufacturing.facility_tax_rate,
             scc_surcharge_rate=manufacturing.scc_surcharge_rate,
-            sales_tax_rate=_rate(self.sales_tax_basis_points),
+            sales_tax_rate=self.effective_sales_tax_rate,
             broker_fee_rate=_rate(self.broker_fee_basis_points),
             default_job_cost_modifier=manufacturing.default_job_cost_modifier,
             activity_fee_rates=activity_rates,

@@ -17,6 +17,7 @@ from app.industry.errors import (
     ConflictingRigModifiersError,
     IndustryError,
     InvalidIndustryDataError,
+    InvalidScheduleError,
     InvalidRecipeChoiceError,
     MissingActivityPricingError,
     MissingRecipeError,
@@ -33,6 +34,7 @@ from app.industry.errors import (
     UnsupportedSelfDependentRecipeError,
 )
 from app.industry.valuation import InvalidValuationDataError
+from app.industry.blueprint_library import BlueprintStockError
 
 
 logger = logging.getLogger(__name__)
@@ -77,6 +79,13 @@ async def industry_error_handler(
     _request: Request,
     exc: IndustryError,
 ) -> JSONResponse:
+    if isinstance(exc, BlueprintStockError):
+        return _error_response(409, "insufficient_blueprint_stock", str(exc), {
+            "recipe_key": {"blueprint_type_id": exc.recipe_key.blueprint_type_id, "activity_id": exc.recipe_key.activity_id},
+            "required_runs": exc.required_runs, "available_runs": exc.available_runs,
+        }, sde_build_number=exc.sde_build_number)
+    if isinstance(exc, InvalidScheduleError):
+        return _error_response(422, "invalid_schedule", str(exc), sde_build_number=exc.sde_build_number)
     if isinstance(exc, SdeNotImportedError):
         return _error_response(
             status.HTTP_503_SERVICE_UNAVAILABLE,

@@ -22,6 +22,7 @@ from app.industry.models import (
     RigScopeGroup,
 )
 from app.industry.repository import IndustryDataRepository
+from app.industry.blueprint_library import BlueprintSelection
 from app.industry.service import IndustryPlanningService
 from app.industry.views import (
     DescribedProductionPlan,
@@ -50,6 +51,15 @@ class IndustryApplicationService:
                 "An EVE SDE snapshot must be imported before using industry data"
             )
         return build_number
+
+    def search_blueprints(self, query: str, *, limit: int = 20):
+        return self._require_build_number(), self._repository.search_blueprints(query, limit=limit)
+
+    def resolve_types(self, queries: tuple[str, ...]) -> tuple[TypeSearchResult, tuple[int, ...]]:
+        build_number = self._require_build_number()
+        items = self._repository.resolve_types(queries)
+        producible = self._repository.resolve_types(queries, producible_only=True)
+        return TypeSearchResult(build_number, items), tuple(item.type_id for item in producible)
 
     def search_types(
         self,
@@ -128,6 +138,9 @@ class IndustryApplicationService:
         production_profile: ProductionProfile | None = None,
         owned_materials: Mapping[int, int] | None = None,
         blueprint_copy_run_limits: Mapping[RecipeKey, int] | None = None,
+        blueprint_selections: Iterable[BlueprintSelection] | None = None,
+        require_owned_blueprints: bool = False,
+        schedule_options: dict | None = None,
         specialist_skill_levels: Mapping[int, int] | None = None,
         pricing_options: IndustryPricingOptions | None = None,
         manufacturing_time_multiplier: Fraction = Fraction(1),
@@ -140,6 +153,9 @@ class IndustryApplicationService:
             production_profile=production_profile,
             owned_materials=owned_materials,
             blueprint_copy_run_limits=blueprint_copy_run_limits,
+            blueprint_selections=blueprint_selections,
+            require_owned_blueprints=require_owned_blueprints,
+            schedule_max_runs=schedule_options["max_runs_per_job"] if schedule_options else None,
             specialist_skill_levels=specialist_skill_levels,
             manufacturing_time_multiplier=manufacturing_time_multiplier,
             expected_sde_build_number=expected_sde_build_number,
@@ -153,6 +169,10 @@ class IndustryApplicationService:
             related_type_ids.update(item.type_id for item in step.recipe.products)
             related_type_ids.update(item.type_id for item in step.inputs)
 
+        schedule = None
+        if schedule_options is not None:
+            from app.industry.scheduling import create_schedule
+            schedule = create_schedule(plan, schedule_options, pricing_options)
         valuation = None
         if pricing_options is not None:
             if self._economics is None:
@@ -169,6 +189,7 @@ class IndustryApplicationService:
             plan=plan,
             item_types=self._load_complete_type_set(related_type_ids),
             valuation=valuation,
+            schedule=schedule,
         )
 
     def _load_complete_type_set(

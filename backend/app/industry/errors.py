@@ -65,6 +65,10 @@ class IndustryPlanningError(IndustryError):
         self.sde_build_number = build_number
 
 
+class InvalidScheduleError(IndustryPlanningError):
+    """User scheduling constraints cannot produce a supported schedule."""
+
+
 class PlanTooLargeError(IndustryPlanningError):
     def __init__(self, maximum_types: int) -> None:
         self.maximum_types = maximum_types

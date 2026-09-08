@@ -5,12 +5,26 @@ on:
     branches: [main, indy-calc, develop]
     paths:
       - "backend/**"
+      - "assets/js/industry*.js"
+      - "assets/styling/css/**"
+      - "industry/**"
+      - "tests/browser/**"
+      - "tests/frontend/**"
+      - "package*.json"
+      - "playwright.config.cjs"
       - "compose.production.yaml"
       - "deploy/oracle/**"
       - ".github/workflows/backend-ci.yml"
   pull_request:
     paths:
       - "backend/**"
+      - "assets/js/industry*.js"
+      - "assets/styling/css/**"
+      - "industry/**"
+      - "tests/browser/**"
+      - "tests/frontend/**"
+      - "package*.json"
+      - "playwright.config.cjs"
       - "compose.production.yaml"
       - "deploy/oracle/**"
       - ".github/workflows/backend-ci.yml"
@@ -45,11 +59,15 @@ jobs:
       ESI_COMPATIBILITY_DATE: "2026-08-13"
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
       - uses: actions/setup-python@v5
         with:
           python-version: "3.14"
       - uses: astral-sh/setup-uv@v6
         with:
+          version: "0.12.10"
           enable-cache: true
       - name: Install dependencies
         working-directory: backend
@@ -57,6 +75,19 @@ jobs:
       - name: Audit installed Python dependencies
         working-directory: backend
         run: uv run --locked pip-audit --local --progress-spinner off
+      - name: Install browser test dependencies
+        run: npm ci
+      - name: Install Chromium for browser tests
+        run: npx playwright install --with-deps chromium
+      - name: Run browser journeys
+        run: npm run test:browser
+      - name: Upload browser artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-test-results
+          path: test-results/
+          if-no-files-found: ignore
       - name: Check migrations
         working-directory: backend
         run: uv run alembic upgrade head
